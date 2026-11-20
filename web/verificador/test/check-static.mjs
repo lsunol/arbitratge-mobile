@@ -3,6 +3,7 @@
 // Uso: node web/verificador/test/check-static.mjs
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildManifest } from "../tools/gen-manifest.mjs";
@@ -21,6 +22,18 @@ t("ficheros de texto con LF (los hashes dependen de los bytes; ver .gitattribute
   for (const f of JSON.parse(read("precache-manifest.json")).files.map((x) => x.path).filter((x) => !x.endsWith(".png"))) {
     assert.ok(!readFileSync(join(root, f)).includes(13), `${f} tiene CR`);
   }
+});
+t("el manifiesto no incluye ficheros ocultos (.gitattributes)", () => {
+  for (const f of JSON.parse(read("precache-manifest.json")).files) assert.ok(!/(^|\/)\./.test(f.path), f.path);
+});
+t("vendor/jsQR.js: procedencia (SHA-256 fijado = README = manifiesto)", () => {
+  const PINNED = "bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859"; // jsqr@1.4.0 dist/jsQR.js
+  const actual = createHash("sha256").update(readFileSync(join(root, "vendor/jsQR.js"))).digest("hex");
+  assert.equal(actual, PINNED);
+  const m = /SHA-256 de `jsQR\.js`: `([0-9a-f]{64})`/.exec(read("vendor/README.md"));
+  assert.ok(m, "README sin SHA-256 de 64 hex");
+  assert.equal(m[1], actual);
+  assert.equal(JSON.parse(read("precache-manifest.json")).files.find((f) => f.path === "vendor/jsQR.js").sha256, actual);
 });
 t("versión de sw.js = manifiesto", () => {
   assert.equal(/const VERSION = "([^"]+)"/.exec(read("sw.js"))[1], JSON.parse(read("precache-manifest.json")).version);

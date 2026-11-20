@@ -7,7 +7,7 @@
 //   avisa y solo se activa cuando el usuario lo pide (mensaje SKIP_WAITING). Nunca a mitad de
 //   una verificación.
 // Cambiar VERSION cada vez que cambie cualquier fichero (tools/gen-manifest.mjs lo lee de aquí).
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 const CACHE = "verificador-" + VERSION;
 const MANIFEST = "precache-manifest.json";
 
@@ -54,6 +54,8 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("message", (event) => {
   const type = event.data && event.data.type;
   if (type === "SKIP_WAITING") self.skipWaiting();
+  // La página pregunta qué worker la controla: «preparat» se liga a su versión y su caché.
+  if (type === "GET_INFO" && event.ports && event.ports[0]) event.ports[0].postMessage({ version: VERSION, cache: CACHE });
   // Caché borrada o incompleta con el SW ya activo: volver a descargarlo todo (con red).
   if (type === "PRECACHE") event.waitUntil(precache().catch(() => {}));
 });

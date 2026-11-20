@@ -4,19 +4,23 @@
 import { verifyToken, FORBIDDEN_NAME_CHARS_RE } from "./lib/arb1.js";
 import { loadDeployedKeys } from "./lib/keys.js";
 import { decodeImageFile, startCamera } from "./lib/qr.js";
-import { checkPrepared } from "./lib/offline.js";
+import { checkPrepared, getControllerInfo } from "./lib/offline.js";
+import { CameraSession } from "./lib/camera-session.js";
 import { T, VIEWS, CODE_VIEW } from "./lib/text.js";
 
 const $ = (id) => document.getElementById(id);
 const host = location.host || location.hostname || "(local)";
 let appVersion = "?";
 let keys = new Map();
-let keysLoaded = false;
 let prepared = { state: "unchecked" };
 let deferredInstall = null;
 let swReg = null;
 let lastResult = null;
 let camera = null;
+let discardedKeys = [];
+let keysPromise = null;
+const camSession = new CameraSession(({ signal }) =>
+  startCamera($("video"), onCameraFound, { signal, onNoQr: () => { $("cam-hint").textContent = `${T.cam_noqr} ${T.cam_noqr_alt}`; } }));
 let current = null;
 
 const standalone = () =>
@@ -126,21 +130,43 @@ function maybeInstallBanner() {
 // ---------- actualización del SW (04 §5.9): no se activa a mitad de una verificación
 let updating = false;
 function showUpdate(worker) {
+  $("update-text").textContent = T.update_pwa;
+  $("btn-update-apply").textContent = "Actualitzar";
   $("update-banner").hidden = false;
   $("btn-update-apply").onclick = () => {
     updating = true;
     worker.postMessage({ type: "SKIP_WAITING" });
   };
 }
+// Otra pestaña ha activado una versión nueva: aquí el JS es el antiguo pero el worker (y sus claves)
+// ya son los nuevos. Se recargan las claves YA (p. ej. una clave marcada «compromised») y la página
+// se recarga sola solo en una pantalla sin nada en curso; si no, se avisa y decide el usuario.
+let hadController = false;
+async function onControllerChange() {
+  if (updating) { location.reload(); return; }
+  if (!hadController) { // primera instalación: el worker toma el control, no es una actualización
+    hadController = true;
+    await loadVersion();
+    refreshPrepared();
+    return;
+  }
+  keysPromise = (async () => { await loadVersion(); await loadKeys(); })();
+  await keysPromise;
+  refreshPrepared();
+  const idle = current === "home" || current === "first";
+  if (idle) { location.reload(); return; }
+  $("update-text").textContent = T.update_other_tab;
+  $("btn-update-apply").textContent = "Recarregar";
+  $("update-banner").hidden = false;
+  $("btn-update-apply").onclick = () => location.reload();
+}
 async function registerSw() {
   if (!("serviceWorker" in navigator) || !isSecureContext) return;
+  hadController = !!navigator.serviceWorker.controller;
   try {
     swReg = await navigator.serviceWorker.register("sw.js");
   } catch { return; }
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (updating) location.reload();
-    else refreshPrepared();
-  });
+  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
   if (swReg.waiting && navigator.serviceWorker.controller) showUpdate(swReg.waiting);
   swReg.addEventListener("updatefound", () => {
     const nw = swReg.installing;
@@ -158,17 +184,19 @@ async function loadKeys() {
   try {
     const r = await loadDeployedKeys("keys/");
     keys = r.keys;
+    discardedKeys = r.discarded;
   } catch {
     keys = new Map();
+    discardedKeys = ["keys/index.json"];
   }
-  keysLoaded = true;
   $("keys-warning").hidden = keys.size > 0;
   const ids = [...keys.keys()].sort().join(", ") || "cap";
   $("foot-version").textContent = `Versió ${appVersion} · claus: ${ids}`;
 }
 async function loadVersion() {
   try {
-    appVersion = (await (await fetch("precache-manifest.json")).json()).version || "?";
+    const info = await getControllerInfo(); // versión del worker que controla la página
+    appVersion = info?.version || (await (await fetch("precache-manifest.json")).json()).version || "?";
   } catch { /* sin manifiesto */ }
 }
 
@@ -262,7 +290,7 @@ async function checkUpdate() {
 }
 
 async function process(raw) {
-  if (!keysLoaded) await keysPromise;
+  await keysPromise; // siempre la lista vigente (se recarga si cambia el worker)
   const res = await verifyToken(raw, keys);
   showResult(res);
 }
@@ -320,35 +348,50 @@ function camError(msg, retry) {
   $("cam-error-text").textContent = msg;
   $("btn-cam-retry").hidden = !retry;
 }
+function onCameraFound(text) {
+  camSession.release();
+  camera = null;
+  navigator.vibrate?.(60);
+  process(text);
+}
 async function beginCamera() {
   $("cam-rationale").hidden = true;
   $("cam-error").hidden = true;
   $("cam-live").hidden = false;
   $("cam-hint").textContent = T.cam_hint;
-  try {
-    camera = await startCamera($("video"), (text) => { camera = null; navigator.vibrate?.(60); process(text); }, {
-      onNoQr: () => { $("cam-hint").textContent = `${T.cam_noqr} ${T.cam_noqr_alt}`; },
-    });
+  const r = await camSession.begin();
+  if (r.status === "stale") return; // el usuario salió mientras se pedía el permiso: no se muestra nada
+  if (current !== "camera") { camSession.cancel(); return; }
+  if (r.status === "live") {
+    camera = r.cam;
     $("btn-torch").hidden = !camera.canTorch;
-  } catch (e) {
-    camera = null;
-    if (e?.name === "NotAllowedError" || e?.name === "SecurityError") camError(T.cam_denied, false);
-    else if (e?.name === "NotReadableError" || e?.name === "AbortError" || e?.name === "TrackStartError") camError(T.cam_busy, true);
-    else camError(T.cam_unsupported, false);
+    return;
   }
+  camera = null;
+  const e = r.error;
+  if (e?.name === "NotAllowedError" || e?.name === "SecurityError") camError(T.cam_denied, false);
+  else if (e?.name === "NotReadableError" || e?.name === "AbortError" || e?.name === "TrackStartError") camError(T.cam_busy, true);
+  else camError(T.cam_unsupported, false);
 }
-function stopCamera() { camera?.stop(); camera = null; }
+function stopCamera() { camSession.cancel(); camera = null; }
 $("btn-cam-continue").addEventListener("click", beginCamera);
 $("btn-cam-retry").addEventListener("click", beginCamera);
 $("btn-cam-cancel").addEventListener("click", () => history.back());
 $("btn-torch").addEventListener("click", async () => { try { await camera?.toggleTorch(); } catch { $("btn-torch").hidden = true; } });
-document.addEventListener("visibilitychange", () => { if (document.hidden) stopCamera(); });
+// App en segundo plano: se invalida cualquier arranque pendiente y se para el stream. Al volver se
+// ofrece reintentar (nunca se reanuda sola una cámara que el usuario ya no tenía a la vista).
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden || current !== "camera") return;
+  const wasBusy = camSession.busy;
+  stopCamera();
+  if (wasBusy) camError(T.cam_paused, true);
+});
 
 // ---------- sobre
 function fillAbout() {
   $("about-version").textContent = `Versió del verificador: ${appVersion}.`;
   const ids = [...keys.entries()].map(([k, v]) => `${k} (${v.status === "active" ? "activa" : v.status === "retired" ? "retirada" : "no acceptada"})`);
-  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.`;
+  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.` + (discardedKeys.length ? ` ${T.keys_discarded(discardedKeys.length)}` : "");
 }
 
 // ---------- cableado general
@@ -378,7 +421,7 @@ $("btn-first-ok").addEventListener("click", () => {
 });
 
 // ---------- arranque
-const keysPromise = (async () => { await loadVersion(); await loadKeys(); })();
+keysPromise = (async () => { await loadVersion(); await loadKeys(); })();
 let seen = false;
 try { seen = localStorage.getItem("firstVisitDone") === "1"; } catch { /* ignore */ }
 const first = !standalone() && !seen;

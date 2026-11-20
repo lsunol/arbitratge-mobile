@@ -55,6 +55,7 @@ p { margin: 0 0 12px; }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
 .card.note { border-color: var(--brand); border-width: 2px; }
+.banner { max-width: 40rem; margin: 16px auto 0; width: calc(100% - 32px); }
 .warn { border-left: 6px solid #8a5a00; padding: 4px 0 4px 12px; margin: 16px 0; }
 .warn-keys { border: 2px solid var(--r-format); border-radius: 10px; padding: 8px 12px; font-weight: 600; }
 .ok-line { font-weight: 600; }

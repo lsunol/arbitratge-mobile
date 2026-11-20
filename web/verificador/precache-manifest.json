@@ -1,14 +1,10 @@
 {
-  "version": "0.1.0",
-  "cache": "verificador-0.1.0",
+  "version": "0.1.1",
+  "cache": "verificador-0.1.1",
   "files": [
     {
-      "path": ".gitattributes",
-      "sha256": "cd702671cf1599692763a45636b1d93f49fca6c39c822f3385e1c7c3cf3a91f0"
-    },
-    {
       "path": "app.js",
-      "sha256": "4478dcb69e99b379832465c15327220e8981280357cd0a6da488dfe1c713fbf3"
+      "sha256": "677cd8a294bfe0c1d703a30a1c5c1360517d9e0118a4357e6a2aa5265c7ee908"
     },
     {
       "path": "icons/apple-touch-icon.png",
@@ -32,7 +28,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "344af3dd9367feb661e1fc53ccbd08e05c4c6af4cbbe6b87d4c1911cdabf67ac"
+      "sha256": "51a26500556233cdd7d77ddbb188c848307b7e0d2ac463793e49002341ec2271"
     },
     {
       "path": "keys/index.json",
@@ -47,24 +43,28 @@
       "sha256": "ca4ecda89e031a45a313092f2698a7d4f6ac365c3c3b6c47c84fd09c42b14d74"
     },
     {
+      "path": "lib/camera-session.js",
+      "sha256": "83940d1145f8ded593683c6ed6d298ed39b9a500372478a6c5d991121d5f80f9"
+    },
+    {
       "path": "lib/json-restricted.js",
       "sha256": "2241997cf43ba990ad4fde5ba0e42ff7610d886884f4d4c92262f374d3d04752"
     },
     {
       "path": "lib/keys.js",
-      "sha256": "459b00e357876f4d49b38fde0be8414f1e8d822ec42ad90fcd5101a31f8b5d3b"
+      "sha256": "612542222351be225a9d238c3c12686eb58d9a60b232ffd3d3db19759f79c8e1"
     },
     {
       "path": "lib/offline.js",
-      "sha256": "338c4a97a7b8032e08ba7e37a76044c9381d9295a7896287b299487fcb94a9c7"
+      "sha256": "6095d9f391bfe53d1fe4ddfb0315f09e33650873f7a08f225b7d7d8b4898379a"
     },
     {
       "path": "lib/qr.js",
-      "sha256": "4dee712b610c25265c6619f07102fa48c0f58c0a27f39eac1d25175adf06a653"
+      "sha256": "baeabb2af908793a75d323a0f006438aaa6c4a5e6e3886c34f8723bb2d5ac868"
     },
     {
       "path": "lib/text.js",
-      "sha256": "69850b5f8e9f88026ff9d2c712a9da61c055bd1ac7fad0aed617a4bdde712679"
+      "sha256": "ecfd42ee054dbbb09f029e855d805e7cfa22aaef8b27048054df98b2411e2c4f"
     },
     {
       "path": "manifest.webmanifest",
@@ -72,7 +72,7 @@
     },
     {
       "path": "styles.css",
-      "sha256": "3cbb721ad2d06bec7d1f4a9dbc0c019ccad01d6033fba69e76b9f6caad6b636b"
+      "sha256": "d827aceff0c5b9cc9d3a1b8c1907b56651bcb6ec55c00ca2cb60431d39be6edd"
     },
     {
       "path": "vendor/jsQR.js",

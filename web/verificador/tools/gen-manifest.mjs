@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 
 const dir = process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)), "..");
 // Fuera del precache: el propio sw.js (lo gestiona el navegador), el manifiesto, tests, herramientas
-// y documentación/licencias.
-const EXCLUDE = [/^sw\.js$/, /^precache-manifest\.json$/, /^test\//, /^tools\//, /(^|\/)README\.md$/, /^vendor\/LICENSE/];
+// documentación/licencias y ficheros ocultos (.gitattributes…).
+const EXCLUDE = [/(^|\/)\.[^/]+$/, /^sw\.js$/, /^precache-manifest\.json$/, /^test\//, /^tools\//, /(^|\/)README\.md$/, /^vendor\/LICENSE/];
 
 export function buildManifest(root) {
   const sw = readFileSync(join(root, "sw.js"), "utf8");

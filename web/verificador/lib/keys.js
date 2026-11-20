@@ -53,18 +53,33 @@ export async function buildTrustedKeys(entries, names = null, subtle = globalThi
   return { keys, discarded };
 }
 
-/** Carga en el navegador: keys/index.json = {"files":["s1.json", …]} (copia de trusted-keys/). */
-export async function loadDeployedKeys(base = "keys/", fetchFn = fetch) {
-  const idx = await (await fetchFn(base + "index.json")).json();
-  const files = Array.isArray(idx.files) ? idx.files : [];
+/**
+ * Carga en el navegador: keys/index.json = {"files":["s1.json", …]} (copia de trusted-keys/).
+ * Cada fichero se carga por separado: uno ilegible, no descargable o mal formado se descarta
+ * (y se informa en `discarded`) sin invalidar los demás. Si index.json no se puede leer, lanza.
+ */
+export async function loadDeployedKeys(base = "keys/", fetchFn = fetch, subtle = globalThis.crypto.subtle) {
+  const ri = await fetchFn(base + "index.json");
+  if (!ri.ok) throw new Error("keys/index.json " + ri.status);
+  const idx = await ri.json();
+  const files = Array.isArray(idx?.files) ? idx.files : [];
   const entries = [];
   const names = [];
+  const discarded = [];
   for (const f of files) {
-    if (typeof f !== "string" || !/^[a-z0-9]{1,16}\.json$/.test(f)) continue;
-    const r = await fetchFn(base + f);
-    if (!r.ok) continue;
-    entries.push(await r.json());
-    names.push(f.slice(0, -5));
+    if (typeof f !== "string" || !/^[a-z0-9]{1,16}\.json$/.test(f)) {
+      discarded.push(`${String(f).slice(0, 40)}: nombre de fichero no válido`);
+      continue;
+    }
+    try {
+      const r = await fetchFn(base + f);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      entries.push(await r.json());
+      names.push(f.slice(0, -5));
+    } catch (err) {
+      discarded.push(`${f}: ${err.message}`);
+    }
   }
-  return buildTrustedKeys(entries, names);
+  const built = await buildTrustedKeys(entries, names, subtle);
+  return { keys: built.keys, discarded: [...discarded, ...built.discarded] };
 }

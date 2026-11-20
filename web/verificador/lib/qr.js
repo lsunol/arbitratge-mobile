@@ -75,24 +75,48 @@ async function loadBitmap(file) {
 }
 
 /**
- * Escáner de cámara. `onFound(text)` se llama una vez. Devuelve {stop, torch}.
+ * Escáner de cámara. `onFound(text)` se llama una vez. Devuelve {stop, canTorch, toggleTorch}.
  * Lanza el error de getUserMedia (NotAllowedError, NotFoundError, NotReadableError…).
+ * `signal` (AbortSignal): si se aborta mientras el permiso está pendiente o el stream arranca,
+ * se paran las pistas que se concedan después y se lanza un error `AbortError`.
+ * `mediaDevices` y `createCanvas` son inyectables para pruebas.
  */
-export async function startCamera(video, onFound, { onNoQr, noQrMs = 10000 } = {}) {
-  if (!navigator.mediaDevices?.getUserMedia) {
+export async function startCamera(video, onFound, opts = {}) {
+  const { onNoQr, noQrMs = 10000, signal, mediaDevices = globalThis.navigator?.mediaDevices } = opts;
+  const createCanvas = opts.createCanvas ?? (() => document.createElement("canvas"));
+  const aborted = () => {
+    const e = new Error("aborted");
+    e.name = "AbortError";
+    return e;
+  };
+  if (signal?.aborted) throw aborted();
+  if (!mediaDevices?.getUserMedia) {
     const e = new Error("unsupported");
     e.name = "NotSupportedError";
     throw e;
   }
-  const stream = await navigator.mediaDevices.getUserMedia({
+  const stream = await mediaDevices.getUserMedia({
     audio: false,
     video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
   });
+  const release = () => {
+    for (const tr of stream.getTracks()) tr.stop();
+    video.srcObject = null;
+  };
+  // El usuario pudo salir mientras el permiso estaba pendiente: el stream llega tarde.
+  if (signal?.aborted) {
+    release();
+    throw aborted();
+  }
   video.srcObject = stream;
   video.setAttribute("playsinline", "");
   video.muted = true;
   await video.play().catch(() => {});
-  const canvas = document.createElement("canvas");
+  if (signal?.aborted) {
+    release();
+    throw aborted();
+  }
+  const canvas = createCanvas();
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   let stopped = false;
   let busy = false;
@@ -129,9 +153,9 @@ export async function startCamera(video, onFound, { onNoQr, noQrMs = 10000 } = {
     if (stopped) return;
     stopped = true;
     clearInterval(timer);
-    for (const tr of stream.getTracks()) tr.stop();
-    video.srcObject = null;
+    release();
   }
+  signal?.addEventListener("abort", stop, { once: true });
   const track = stream.getVideoTracks()[0];
   const canTorch = !!track?.getCapabilities?.().torch;
   let torchOn = false;

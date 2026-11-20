@@ -18,6 +18,7 @@ export const T = {
   cam_unsupported: "Aquest dispositiu no permet escanejar des del navegador.",
   cam_busy: "No s'ha pogut obrir la càmera. Tanca altres apps que la facin servir i torna-ho a provar.",
   cam_noqr: "No trobem cap QR. Allunya o acosta el mòbil i evita reflexos.",
+  cam_paused: "La càmera s'ha aturat en sortir de l'app. Toca per tornar-la a obrir.", // (nou)
   cam_noqr_alt: "Pots triar una imatge o enganxar el text.", // 04 §5.3
   // Imatge
   img_noqr: "No hem trobat cap QR en aquesta imatge. Prova amb una imatge més nítida o enganxa el text.",
@@ -50,6 +51,8 @@ export const T = {
   update_offline: "Cal connexió a internet per buscar actualitzacions.", // (nou)
   update_unavailable: "Aquest navegador no permet buscar actualitzacions.", // (nou)
   update_pwa: "Hi ha una versió nova del verificador.",
+  update_other_tab: "El verificador s'ha actualitzat en una altra pestanya. Les claus ja s'han tornat a carregar; recarrega la pàgina per fer servir la versió nova.", // (nou)
+  keys_discarded: (n) => `Entrades de claus descartades per error: ${n}.`, // (nou)
   // Instal·lació
   install_state_ok: "Preparat: ja pots fer-lo servir sense internet.",
   install_state_wait: "Encara no està tot descarregat. Espera uns segons amb internet.",

@@ -23,6 +23,11 @@
   <h1 id="app-title">Verificador de credencials · CFBB</h1>
 </header>
 
+<div class="card note banner" id="update-banner" hidden role="status">
+  <p id="update-text">Hi ha una versió nova del verificador.</p>
+  <button type="button" class="btn" id="btn-update-apply">Actualitzar</button>
+</div>
+
 <main id="main">
 
   <!-- V10: primera visita -->
@@ -38,10 +43,6 @@
   <!-- V0: inici -->
   <section id="screen-home" class="screen" hidden aria-labelledby="home-title">
     <h2 id="home-title" tabindex="-1" class="sr-only">Inici</h2>
-    <div class="card note" id="update-banner" hidden role="status">
-      <p>Hi ha una versió nova del verificador.</p>
-      <button type="button" class="btn" id="btn-update-apply">Actualitzar</button>
-    </div>
     <div class="card note" id="install-banner" hidden>
       <p>Instal·la el verificador al teu mòbil per fer-lo servir sense connexió.</p>
       <button type="button" class="btn" id="btn-install-banner">Instal·lar</button>
