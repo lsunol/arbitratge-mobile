@@ -1,0 +1,54 @@
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Android / Gradle
+.gradle/
+**/build/
+/local.properties
+/captures/
+.externalNativeBuild/
+.cxx/
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pk8
+*.pem
+*.key
+
+# Web / Node
+node_modules/
+dist/
+.cache/
+.npm/
+coverage/
+playwright-report/
+test-results/
+
+# Configuración local y secretos
+.env
+.env.*
+!.env.example
+secrets/
+private/
+local/
+*.secrets.json
+
+# Banco real de preguntas (la muestra pública debe vivir en bank-sample/)
+bank-private/
+bank/
+!bank-sample/
+**/bank.json
+!**/bank-sample.json
+
+# Salidas sensibles o locales
+*.apk
+*.aab
+SHA256SUMS.txt
+*.log
+*.tmp
+*.bak

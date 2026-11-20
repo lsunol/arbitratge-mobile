@@ -1,0 +1,13 @@
+{
+  "subagents": {
+    "defaultModel": "anthropic/claude-haiku-5-5",
+    "agentOverrides": {
+      "scout": { "model": "anthropic/claude-haiku-5-5", "thinking": "low" },
+      "researcher": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
+      "evidence-auditor": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
+      "worker": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
+      "reviewer": { "model": "github-copilot/gpt-6.1-terra", "thinking": "high" },
+      "oracle": { "model": "anthropic/claude-opus-5-5", "thinking": "high" }
+    }
+  }
+}
