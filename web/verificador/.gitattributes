@@ -1,0 +1,4 @@
+# Los hashes de precache-manifest.json dependen de los bytes exactos: sin conversion de fin de linea.
+* text=auto eol=lf
+*.png binary
+*.svg text eol=lf

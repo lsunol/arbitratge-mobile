@@ -1,0 +1,82 @@
+{
+  "version": "0.1.0",
+  "cache": "verificador-0.1.0",
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sha256": "cd702671cf1599692763a45636b1d93f49fca6c39c822f3385e1c7c3cf3a91f0"
+    },
+    {
+      "path": "app.js",
+      "sha256": "4478dcb69e99b379832465c15327220e8981280357cd0a6da488dfe1c713fbf3"
+    },
+    {
+      "path": "icons/apple-touch-icon.png",
+      "sha256": "c3e31703c5857e4b991848f242824327880cf6ba746260bb6ee2445432284880"
+    },
+    {
+      "path": "icons/icon-192.png",
+      "sha256": "3a9a64348caac2a614476727e1f083e0ee20c07dc327d8f2fa2bee13a6458728"
+    },
+    {
+      "path": "icons/icon-512.png",
+      "sha256": "8ad1335babef5f08f693d7cc0edfc4845f0adbc2e80a9bda3fed4664cb5c430c"
+    },
+    {
+      "path": "icons/icon-maskable-512.png",
+      "sha256": "fd0630279bc84b2a3ea00b4094690799286c8894c70d644ac1a621755d1357d3"
+    },
+    {
+      "path": "icons/icon.svg",
+      "sha256": "734aa3a3eadc8522440bf84a49ecf1e31ee391afb2d6b4c247e5da071f2abed4"
+    },
+    {
+      "path": "index.html",
+      "sha256": "344af3dd9367feb661e1fc53ccbd08e05c4c6af4cbbe6b87d4c1911cdabf67ac"
+    },
+    {
+      "path": "keys/index.json",
+      "sha256": "fe74a7b2fc2cd6a167a7bb81f9a02e29c38aa3b72a1df63cd52d860799790696"
+    },
+    {
+      "path": "lib/arb1.js",
+      "sha256": "c121a3b9eb1d7e448db5e473a169fc4c18c939881d93178b0eda3e67efe58135"
+    },
+    {
+      "path": "lib/base64url.js",
+      "sha256": "ca4ecda89e031a45a313092f2698a7d4f6ac365c3c3b6c47c84fd09c42b14d74"
+    },
+    {
+      "path": "lib/json-restricted.js",
+      "sha256": "2241997cf43ba990ad4fde5ba0e42ff7610d886884f4d4c92262f374d3d04752"
+    },
+    {
+      "path": "lib/keys.js",
+      "sha256": "459b00e357876f4d49b38fde0be8414f1e8d822ec42ad90fcd5101a31f8b5d3b"
+    },
+    {
+      "path": "lib/offline.js",
+      "sha256": "338c4a97a7b8032e08ba7e37a76044c9381d9295a7896287b299487fcb94a9c7"
+    },
+    {
+      "path": "lib/qr.js",
+      "sha256": "4dee712b610c25265c6619f07102fa48c0f58c0a27f39eac1d25175adf06a653"
+    },
+    {
+      "path": "lib/text.js",
+      "sha256": "69850b5f8e9f88026ff9d2c712a9da61c055bd1ac7fad0aed617a4bdde712679"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "sha256": "8cdb7e676c1aba31b0a9db495b63033d2ad8599978a27bd92ef0404ad9ff65fe"
+    },
+    {
+      "path": "styles.css",
+      "sha256": "3cbb721ad2d06bec7d1f4a9dbc0c019ccad01d6033fba69e76b9f6caad6b636b"
+    },
+    {
+      "path": "vendor/jsQR.js",
+      "sha256": "bc40c8a15196236b2314db0856f72ca0b49980cd5413b8c852a7349f5fee0859"
+    }
+  ]
+}
