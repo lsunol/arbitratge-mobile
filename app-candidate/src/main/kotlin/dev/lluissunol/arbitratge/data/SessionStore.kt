@@ -60,6 +60,12 @@ interface SessionStore {
     /** Última sesión terminada por ORDEN DE INSERCIÓN (no por hora de pared, que puede cambiarse). */
     suspend fun latestFinished(): StoredSession?
 
+    /**
+     * Marca como terminales ("UNREADABLE") las filas de sesión cuyos datos ya no se pueden decodificar, para que
+     * dejen de bloquear la recuperación. Devuelve cuántas. Un fallo de E/S NO marca nada.
+     */
+    suspend fun quarantineUnreadable(): Int
+
     /** Sesiones `FINISHED` de examen SIN fila `credential`, en orden de inserción (recuperación de emisión). */
     suspend fun finishedWithoutCredential(): List<StoredSession>
     suspend fun session(id: String): StoredSession?

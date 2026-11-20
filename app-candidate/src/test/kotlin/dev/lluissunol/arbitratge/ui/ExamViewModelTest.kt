@@ -620,4 +620,109 @@ class ExamViewModelTest {
         assertEquals(saved.remainingMsSaved, vm3.q.remainingMs)
         assertEquals(8, store.sessions.values.single().clock.anchorBoot)
     }
+
+    // ------------------------------------------------------------------ avisos de tiempo (04 §2.4)
+
+    @Test fun noFiveMinuteWarningWhenLimitIsFiveMinutes() = testBody {
+        val clock = FakeClock()
+        val vm = vmOf(InMemoryStore(), clock)
+        begin(vm)
+        assertNull(vm.q.banner, "sin aviso al empezar con límite = 5 min")
+        assertNull(vm.q.level)
+        clock.advance(2 * 60_000L); settle(1000)
+        assertNull(vm.q.banner)
+        clock.advance(2 * 60_000L + 5_000L); settle(1000) // quedan 55 s: se cruza el umbral de 1 min
+        assertEquals(TimeBanner.ONE_MIN, vm.q.banner)
+    }
+
+    @Test fun warningsFireOnlyWhenCrossingThresholdsDuringTheExam() = testBody {
+        val bank = TestEnv.bank.copy(rules = TestEnv.bank.rules.copy(timeLimitMinutes = 10))
+        val clock = FakeClock()
+        val vm = ExamViewModel(TestEnv.deps(InMemoryStore(), clock, bank = Result.success(bank))).also { vms += it }
+        begin(vm)
+        assertNull(vm.q.banner)
+        clock.advance(5 * 60_000L - 1_000L); settle(1000) // quedan 5:01
+        assertNull(vm.q.banner)
+        clock.advance(2_000L); settle(1000) // 4:59
+        assertEquals(TimeBanner.FIVE_MIN, vm.q.banner)
+        vm.onDismissBanner(); assertNull(vm.q.banner)
+        clock.advance(4 * 60_000L); settle(1000) // 0:59
+        assertEquals(TimeBanner.ONE_MIN, vm.q.banner)
+    }
+
+    // ------------------------------------------------------------------ Atrás en cada fase (04 §1.2)
+
+    @Test fun backBehavesPerStageAndNeverLosesTheExam() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock(), prefs = FakePrefs(welcomeSeen = false))
+        settle()
+        assertTrue(!vm.onBack(), "Welcome: lo gestiona el sistema")
+        vm.onWelcomeUnderstood(); settle()
+        assertTrue(!vm.onBack(), "Home")
+        vm.onStartExam(); settle()
+        assertTrue(vm.onBack()); settle(); assertIs<Stage.Home>(vm.stage.value) // Name → Home
+        vm.onStartExam(); settle(); vm.onNameChange("Maria Puig"); vm.onNameContinue()
+        assertTrue(vm.onBack()); assertIs<Stage.Name>(vm.stage.value) // Rules → Name
+        vm.onNameContinue(); vm.onBeginExam(); settle()
+        // Question: nunca sale; abre «Sortir» y un segundo Atrás lo cierra; la sesión sigue activa
+        assertTrue(vm.onBack()); assertEquals(QuestionDialog.EXIT, vm.q.dialog)
+        assertTrue(vm.onBack()); assertNull(vm.q.dialog)
+        assertEquals(SessionState.IN_PROGRESS, store.sessions.values.single().state)
+        // con fallo de guardado Atrás se consume sin hacer nada
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        store.failAlways(Op.COMMIT_ANSWER)
+        vm.onNext(); settle(2000)
+        assertTrue(vm.onBack()); assertEquals(SaveError.ANSWER, vm.q.saveError)
+        store.healAll(); vm.onRetrySave(); settle(100)
+        playAll(vm, listOf(true, true, true, true))
+        // Result → Credential → Atrás → Result → Home
+        val res = assertIs<Stage.Result>(vm.stage.value)
+        vm.onOpenCredential((res.credential as CredentialPhase.Ready).credential, fromResult = true)
+        assertTrue(vm.onBack()); settle()
+        assertIs<Stage.Result>(vm.stage.value)
+        vm.onOpenCredential((assertIs<Stage.Result>(vm.stage.value).credential as CredentialPhase.Ready).credential, fromResult = true)
+        vm.onPresentation(true)
+        assertTrue(vm.onBack()); assertEquals(false, assertIs<Stage.Credential>(vm.stage.value).presentation)
+        assertTrue(vm.onBack()); settle(); assertIs<Stage.Result>(vm.stage.value)
+        assertTrue(vm.onBack()); settle(); val home = assertIs<Stage.Home>(vm.stage.value)
+        // credencial abierta desde Home: Atrás → Home
+        vm.onOpenCredential(home.credential!!)
+        assertTrue(vm.onBack()); settle(); assertIs<Stage.Home>(vm.stage.value)
+        // Review desde Home: lista → Home; detalle → lista
+        vm.onReview(home.last!!.sessionId, fromResult = false); settle()
+        vm.onReviewFilter(false); vm.onReviewOpen(0)
+        assertTrue(vm.onBack()); assertNull(assertIs<Stage.Review>(vm.stage.value).openIndex)
+        assertTrue(vm.onBack()); settle(); assertIs<Stage.Home>(vm.stage.value)
+    }
+
+    @Test fun backOnTimeUpAndGradingDoesNothing() = testBody {
+        val clock = FakeClock()
+        val vm = vmOf(InMemoryStore(), clock)
+        begin(vm)
+        clock.advance(6 * 60_000L); settle(1000)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+        assertTrue(vm.onBack())
+        assertIs<Stage.TimeUp>(vm.stage.value)
+    }
+
+    // ------------------------------------------------------------------ recuperación de datos corruptos
+
+    @Test fun corruptFinishedSessionDoesNotLoopRecovery() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        playAll(vm, listOf(false, false, false, false, false))
+        vm.viewModelScope.cancel()
+        store.corruptIds += "session-1"
+        val vm2 = vmOf(store, clock)
+        settle()
+        assertEquals(Stage.StateError, vm2.stage.value)
+        vm2.onRecover(); settle()
+        val home = assertIs<Stage.Home>(vm2.stage.value) // Home alcanzable
+        assertNull(home.last)
+        // y se puede empezar un examen nuevo
+        vm2.onStartExam(); settle(); vm2.onNameChange("Maria Puig"); vm2.onNameContinue(); vm2.onBeginExam(); settle()
+        assertIs<Stage.Question>(vm2.stage.value)
+    }
 }

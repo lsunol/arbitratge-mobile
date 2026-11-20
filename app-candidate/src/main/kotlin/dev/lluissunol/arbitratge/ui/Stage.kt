@@ -55,6 +55,8 @@ sealed interface Stage {
         val dialog: QuestionDialog?,
         val saving: Boolean,
         val saveError: SaveError?,
+        /** Umbral de tiempo cruzado (independiente de si el aviso se ha descartado); null si no aplica. */
+        val level: TimeBanner? = null,
     ) : Stage {
         val isLast: Boolean get() = index == total - 1
     }
@@ -78,7 +80,7 @@ sealed interface Stage {
     ) : Stage
 
     /** C11 y modo presentación. */
-    data class Credential(val credential: StoredCredential, val presentation: Boolean) : Stage
+    data class Credential(val credential: StoredCredential, val presentation: Boolean, val fromResult: Boolean = false) : Stage
 
     /** 04 §2.10: banco/ajustes inválidos (build roto). */
     data object BuildError : Stage

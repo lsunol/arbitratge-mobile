@@ -61,12 +61,21 @@ class InMemoryStore : SessionStore {
         throw StorageException("fallo inyectado: $op")
     }
 
-    override suspend fun active() = sessions.values.firstOrNull { it.state == SessionState.IN_PROGRESS }.also { maybeFail(Op.READ) }
+    override suspend fun active() = sessions.values.firstOrNull { it.state == SessionState.IN_PROGRESS }.also { maybeFail(Op.READ); failIfCorrupt() }
     override suspend fun latestFinished() =
         sessions.values.lastOrNull { it.state == SessionState.FINISHED }.also { maybeFail(Op.READ) }
+    /** Ids "corruptos": toda lectura falla (como una fila ilegible en Room) hasta que se ponen en cuarentena. */
+    val corruptIds = mutableSetOf<String>()
+    private fun failIfCorrupt() { if (corruptIds.isNotEmpty()) throw StorageException("dades il·legibles") }
+    override suspend fun quarantineUnreadable(): Int {
+        val n = corruptIds.size
+        corruptIds.forEach { sessions.remove(it) }
+        corruptIds.clear()
+        return n
+    }
     override suspend fun finishedWithoutCredential() =
         sessions.values.filter { it.state == SessionState.FINISHED && credentials.values.none { c -> c.sessionId == it.id } }
-            .also { maybeFail(Op.READ) }
+            .also { maybeFail(Op.READ); failIfCorrupt() }
     override suspend fun session(id: String) = sessions[id].also { maybeFail(Op.READ) }
 
     override suspend fun create(session: StoredSession) {

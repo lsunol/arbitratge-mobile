@@ -34,6 +34,12 @@ abstract class SessionDao {
     )
     abstract suspend fun finishedWithoutCredential(): List<SessionEntity>
 
+    @Query("SELECT id FROM session WHERE state IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')")
+    abstract suspend fun readableCandidateIds(): List<String>
+
+    @Query("UPDATE session SET state = 'UNREADABLE', active_slot = NULL WHERE id = :id")
+    abstract suspend fun markUnreadable(id: String): Int
+
     @Query("SELECT * FROM answer WHERE session_id = :id ORDER BY q_index")
     abstract suspend fun answers(id: String): List<AnswerEntity>
 

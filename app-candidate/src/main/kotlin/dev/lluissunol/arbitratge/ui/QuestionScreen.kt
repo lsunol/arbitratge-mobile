@@ -4,6 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -152,14 +157,18 @@ fun QuestionScreen(
 private fun QuestionTopBar(st: Stage.Question, onToggleTime: () -> Unit) {
     val amber = Color(0xFFFFE08A)
     val scheme = MaterialTheme.colorScheme
-    val (bg, fg) = when (st.banner ?: bannerLevel(st.remainingMs)) {
+    val (bg, fg) = when (st.level) {
         TimeBanner.ONE_MIN -> scheme.error to scheme.onError
         TimeBanner.FIVE_MIN -> amber to Color(0xFF3B2F00)
         null -> scheme.surfaceVariant to scheme.onSurfaceVariant
     }
-    val urgent = bannerLevel(st.remainingMs) != null
+    val urgent = st.level != null
     Surface(color = scheme.background) {
-        Column(Modifier.padding(horizontal = 20.dp).padding(top = 8.dp)) {
+        // Edge-to-edge: esta barra propia no es TopAppBar, así que respeta ella misma la barra de estado y el recorte.
+        Column(
+            Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                .padding(horizontal = 20.dp).padding(top = 8.dp),
+        ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -201,12 +210,6 @@ private fun QuestionTopBar(st: Stage.Question, onToggleTime: () -> Unit) {
             )
         }
     }
-}
-
-private fun bannerLevel(remainingMs: Long): TimeBanner? = when {
-    remainingMs <= 60_000L -> TimeBanner.ONE_MIN
-    remainingMs <= 300_000L -> TimeBanner.FIVE_MIN
-    else -> null
 }
 
 @Composable

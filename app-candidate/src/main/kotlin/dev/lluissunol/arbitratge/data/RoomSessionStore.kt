@@ -34,6 +34,22 @@ class RoomSessionStore(private val dao: SessionDao) : SessionStore {
     override suspend fun finishedWithoutCredential(): List<StoredSession> =
         guard { dao.finishedWithoutCredential().map { load(it) } }
 
+    override suspend fun quarantineUnreadable(): Int = guard {
+        var n = 0
+        for (id in dao.readableCandidateIds()) {
+            val ok = try {
+                dao.session(id)?.let { load(it) }
+                true
+            } catch (e: SerializationException) {
+                false
+            } catch (e: IllegalArgumentException) {
+                false
+            }
+            if (!ok) { dao.markUnreadable(id); n++ }
+        }
+        n
+    }
+
     override suspend fun session(id: String): StoredSession? = guard { dao.session(id)?.let { load(it) } }
 
     override suspend fun create(session: StoredSession) = guard {

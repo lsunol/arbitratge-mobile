@@ -43,7 +43,7 @@ fun ArbitratgeRoot(vm: ExamViewModel) {
             is Stage.Grading -> GradingScreen(st, vm::onRetryGrading, vm::onAbandon)
             is Stage.Result -> ResultScreen(
                 st,
-                onSeeCredential = { vm.onOpenCredential(it.credential) },
+                onSeeCredential = { vm.onOpenCredential(it.credential, fromResult = true) },
                 onRetryCredential = vm::onRetryCredential,
                 onReview = { vm.onReview(st.sessionId, fromResult = true) },
                 onRetry = vm::onStartExam,

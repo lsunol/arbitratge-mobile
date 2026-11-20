@@ -102,7 +102,7 @@ class ComposeScreensTest {
     }
 
     @Test fun timerHasSpokenDescriptionAndWarningIconUnderFiveMinutes() {
-        show(questionState(QuestionType.SINGLE_CHOICE, remaining = 4 * 60_000L + 59_000L))
+        show(questionState(QuestionType.SINGLE_CHOICE, remaining = 4 * 60_000L + 59_000L).copy(level = TimeBanner.FIVE_MIN))
         rule.onNodeWithContentDescription("Et queden 4 minuts i 59 segons").assertIsDisplayed()
         rule.onNodeWithText("⚠ 04:59").assertIsDisplayed()
     }

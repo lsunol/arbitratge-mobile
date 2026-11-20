@@ -177,6 +177,24 @@ class RoomPersistenceTest {
         assertFailsWith<StorageException> { store.session("s1") }
     }
 
+    @Test fun quarantineMarksUnreadableRowsTerminalAndUnblocksRecovery() = runBlocking<Unit> {
+        val database = openDb()
+        val store = RoomSessionStore(database.sessionDao())
+        val s = newSession("s1")
+        store.create(s)
+        store.finish("s1", ClockState(300_000, 0, 5, null, 6), Finish(FinishReason.TIMED_OUT, 5, 7))
+        store.create(newSession("s2", "7f3a92c1-4b5d-4e6f-8a9b-000000000002"))
+        database.openHelper.writableDatabase.execSQL("UPDATE session SET snapshot = '{corrupt' WHERE id = 's1'")
+        assertFailsWith<StorageException> { store.finishedWithoutCredential() }
+        assertEquals(1, store.quarantineUnreadable())
+        assertEquals(0, store.quarantineUnreadable(), "idempotente")
+        assertTrue(store.finishedWithoutCredential().isEmpty())
+        assertNull(store.latestFinished())
+        assertEquals("s2", store.active()?.id, "la sesión legible no se toca")
+        store.abandon("s2")
+        store.create(newSession("s3", "7f3a92c1-4b5d-4e6f-8a9b-000000000003")) // se puede empezar de nuevo
+    }
+
     // ---- muerte del proceso: todo se recompone desde la base de datos ----
 
     @Test fun processDeathRecoveryOverRealDatabase() = runBlocking<Unit> {

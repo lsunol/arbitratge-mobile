@@ -273,14 +273,16 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         val idx = s.session.currentIndex
         val q = s.session.snapshot.questions.getOrNull(idx) ?: return
         val rem = remainingNow(s).coerceAtLeast(0L)
+        // Un umbral solo avisa si el límite lo supera (04 §2.4): con 5 min de límite no hay aviso de 5 min al empezar.
+        val limit = s.clock.limitMs
         val level = when {
-            rem <= 60_000L -> TimeBanner.ONE_MIN
-            rem <= 300_000L -> TimeBanner.FIVE_MIN
+            rem <= 60_000L && limit > 60_000L -> TimeBanner.ONE_MIN
+            rem <= 300_000L && limit > 300_000L -> TimeBanner.FIVE_MIN
             else -> null
         }
         val d = dismissedBanner
         val banner = level?.takeIf { d == null || it.ordinal > d.ordinal }
-        _stage.value = Stage.Question(idx, s.session.total, q, selected, rem, timeHidden, banner, dialog, saving, saveError)
+        _stage.value = Stage.Question(idx, s.session.total, q, selected, rem, timeHidden, banner, dialog, saving, saveError, level)
     }
 
     fun onSelect(optionId: String) {
@@ -650,8 +652,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         _stage.value = st.copy(openIndex = index)
     }
 
-    fun onOpenCredential(credential: StoredCredential) {
-        _stage.value = Stage.Credential(credential, presentation = false)
+    fun onOpenCredential(credential: StoredCredential, fromResult: Boolean = false) {
+        _stage.value = Stage.Credential(credential, presentation = false, fromResult = fromResult)
     }
 
     fun onPresentation(on: Boolean) {
@@ -684,6 +686,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             null
         }
         if (active != null) runCatching { deps.store.abandon(active.id) }
+        // Filas ilegibles (corrupción): se marcan terminales para que Home sea alcanzable (sin bucle).
+        runCatching { deps.store.quarantineUnreadable() }
         resolve()
     }
 
@@ -701,7 +705,11 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
                 st.fromResult -> backToResult(st.sessionId)
                 else -> onGoHome()
             }
-            is Stage.Credential -> if (st.presentation) onPresentation(false) else onGoHome()
+            is Stage.Credential -> when {
+                st.presentation -> onPresentation(false)
+                st.fromResult -> backToResult(st.credential.sessionId)
+                else -> onGoHome()
+            }
             is Stage.Result -> onGoHome()
             is Stage.TimeUp, is Stage.Grading, Stage.Loading -> Unit
             is Stage.Home, Stage.Welcome, Stage.BuildError, Stage.StateError, Stage.RecoveryError -> return false
