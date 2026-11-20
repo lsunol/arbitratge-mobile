@@ -1,10 +1,10 @@
 {
-  "version": "0.1.2",
-  "cache": "verificador-0.1.2",
+  "version": "0.1.3",
+  "cache": "verificador-0.1.3",
   "files": [
     {
       "path": "app.js",
-      "sha256": "81b6eaaccc3dba250ba351f11063cc86f5525311829ab959c5c6797b455065d3"
+      "sha256": "0d6a9a6345f564963344e23850ca049fb889fc84bb2881973b41af28650f69ea"
     },
     {
       "path": "icons/apple-touch-icon.png",
@@ -28,7 +28,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "51a26500556233cdd7d77ddbb188c848307b7e0d2ac463793e49002341ec2271"
+      "sha256": "c0ccf39d86342d91ff33ff17c5fbab4ace6f6578f4bde43c38e25350a690c153"
     },
     {
       "path": "keys/index.json",
@@ -51,10 +51,6 @@
       "sha256": "2241997cf43ba990ad4fde5ba0e42ff7610d886884f4d4c92262f374d3d04752"
     },
     {
-      "path": "lib/key-store.js",
-      "sha256": "fc9513705394cf277419ad57c74a6ce2709ededc3ec1dcc9b23bde1be06c13ba"
-    },
-    {
       "path": "lib/keys.js",
       "sha256": "855c48e09095a3b6c6e08eec81f48fbc229efe6fb452fca7d47e2d642834a2fd"
     },
@@ -68,7 +64,11 @@
     },
     {
       "path": "lib/text.js",
-      "sha256": "b6bcbcb5103c2ad8c3d80483e89b4c854a8ba046af1364fa2f45c527fca29c2a"
+      "sha256": "76f98b8a82b2956105591c6da3d0f2db659f23a84c10390961c7a5357e2c2dd7"
+    },
+    {
+      "path": "lib/verifier-state.js",
+      "sha256": "9f0b17988b2adb0465d5c90fe7bf342fc0178eadcf21fce09c5f4bbf87d5d6ce"
     },
     {
       "path": "manifest.webmanifest",

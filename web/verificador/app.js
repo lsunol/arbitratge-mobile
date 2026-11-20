@@ -3,7 +3,7 @@
 // no es de fiar.
 import { verifyToken, FORBIDDEN_NAME_CHARS_RE } from "./lib/arb1.js";
 import { loadDeployedKeys } from "./lib/keys.js";
-import { KeyStore, verifyCurrent } from "./lib/key-store.js";
+import { VerifierState } from "./lib/verifier-state.js";
 import { decodeImageFile, startCamera } from "./lib/qr.js";
 import { checkPrepared, getControllerInfo } from "./lib/offline.js";
 import { CameraSession } from "./lib/camera-session.js";
@@ -15,11 +15,9 @@ let appVersion = "?";
 let prepared = { state: "unchecked" };
 let deferredInstall = null;
 let swReg = null;
-let lastResult = null;
 let camera = null;
-let lastRaw = null; // solo en memoria, para repetir la comprobación si cambian las claves
-const store = new KeyStore(() => loadDeployedKeys("keys/"));
-store.onChange = onKeysChanged;
+const vs = new VerifierState();
+vs.onChange = applyPhase;
 const camSession = new CameraSession(({ signal }) =>
   startCamera($("video"), onCameraFound, { signal, onNoQr: () => { $("cam-hint").textContent = `${T.cam_noqr} ${T.cam_noqr_alt}`; } }));
 let current = null;
@@ -47,6 +45,7 @@ const visible = (s) =>
 // ---------- navegación
 const SCREENS = ["first", "home", "camera", "image", "text", "result", "install", "about"];
 function render(id, { focus = true } = {}) {
+  if (vs.phase === "stale") return;
   stopCamera();
   current = id;
   for (const s of SCREENS) $("screen-" + s).hidden = s !== id;
@@ -68,7 +67,8 @@ function go(id) {
 }
 window.addEventListener("popstate", (e) => {
   const s = e.state?.s;
-  render(s && SCREENS.includes(s) && (s !== "result" || lastResult) ? s : "home");
+  if (vs.phase === "stale") return; // «enrere» no puede restaurar nada tras una actualización
+  render(s && SCREENS.includes(s) && (s !== "result" || vs.lastResult) ? s : "home");
 });
 
 // ---------- estado sin conexión (V0 / V8)
@@ -139,26 +139,48 @@ function showUpdate(worker) {
     worker.postMessage({ type: "SKIP_WAITING" });
   };
 }
-// Otra pestaña ha activado una versión nueva: aquí el JS es el antiguo pero el worker (y sus claves)
-// ya son los nuevos. Se recargan las claves YA (p. ej. una clave marcada «compromised») y la página
-// se recarga sola solo en una pantalla sin nada en curso; si no, se avisa y decide el usuario.
+// Una actualización cambió el worker que controla la página (aquí o en otra pestaña): el JS cargado
+// es el antiguo y las claves pueden haber cambiado. Se bloquea todo hasta recargar; nunca se recarga
+// sola a mitad de un flujo.
 let hadController = false;
 async function onControllerChange() {
-  if (updating) { location.reload(); return; }
+  if (updating) { location.reload(); return; } // el usuario pulsó «Actualitzar» aquí
   if (!hadController) { // primera instalación: el worker toma el control, no es una actualización
     hadController = true;
     await loadVersion();
+    paintKeys();
     refreshPrepared();
     return;
   }
-  await reloadKeys();
-  refreshPrepared();
-  const idle = current === "home" || current === "first";
-  if (idle) { location.reload(); return; }
-  $("update-text").textContent = T.update_other_tab;
-  $("btn-update-apply").textContent = "Recarregar";
-  $("update-banner").hidden = false;
-  $("btn-update-apply").onclick = () => location.reload();
+  vs.enterStale();
+}
+// Pantalla bloqueante: sin resultat, sin entradas, sin cámara, sin historial restaurable.
+function enterStaleUi() {
+  stopCamera();
+  $("token-input").value = "";
+  clear($("result-body"));
+  $("result-word").textContent = "";
+  $("result-sub").textContent = "";
+  $("result-icon").textContent = "";
+  $("result-head").className = "verdict";
+  $("result-head").removeAttribute("aria-label");
+  for (const s of SCREENS) $("screen-" + s).hidden = true;
+  $("main").hidden = true;
+  $("update-banner").hidden = true;
+  $("install-banner").hidden = true;
+  $("stale-notice").hidden = false;
+  history.replaceState({ s: "stale" }, "");
+  $("btn-stale-reload").focus();
+}
+$("btn-stale-reload").addEventListener("click", () => location.reload());
+// Entradas de verificación: deshabilitadas hasta que las claves estén cargadas y tras `stale`.
+const VERIFY_CONTROLS = ["btn-camera", "btn-image", "btn-text", "btn-pick", "btn-clip", "btn-check", "btn-cam-continue", "btn-cam-retry", "file-input", "token-input"];
+function applyPhase(phase) {
+  if (phase === "stale") { enterStaleUi(); return; }
+  $("keys-loading").hidden = phase !== "loading";
+  for (const id of VERIFY_CONTROLS) $(id).disabled = phase !== "ready";
+  paintKeys();
+  if (current === "text") updateCheckBtn();
 }
 async function registerSw() {
   if (!("serviceWorker" in navigator) || !isSecureContext) return;
@@ -181,28 +203,20 @@ async function registerSw() {
 
 // ---------- claus
 function paintKeys() {
-  $("keys-warning").hidden = store.keys.size > 0;
-  const ids = [...store.keys.keys()].sort().join(", ") || "cap";
-  $("foot-version").textContent = `Versió ${appVersion} · claus: ${ids}`;
+  $("keys-warning").hidden = vs.phase !== "ready" || vs.keys.size > 0;
+  const ids = [...vs.keys.keys()].sort().join(", ") || "cap";
+  $("foot-version").textContent = `Versió ${appVersion} · claus: ${vs.phase === "ready" ? ids : "…"}`;
 }
-async function reloadKeys() {
+// Se carga UNA vez por carga de página, antes de habilitar la verificación.
+async function loadKeys() {
   await loadVersion();
-  await store.refresh();
-}
-// La lista de claves se ha sustituido (p. ej. una clave ahora «compromised»). Lo que se muestre se
-// calculó con la lista anterior: si hay un resultat en pantalla se repite con la nueva y se avisa;
-// si no, se descarta para que «enrere» no pueda mostrar un resultat caducat.
-async function onKeysChanged() {
-  paintKeys();
-  if (lastRaw === null) return;
-  if (current === "result") {
-    const raw = lastRaw;
-    const res = await verifyCurrent(store, raw, verifyToken);
-    if (current === "result" && lastRaw === raw) showResult(res, { replace: true, notice: T.keys_changed });
-  } else {
-    lastResult = null;
-    lastRaw = null;
+  let r;
+  try {
+    r = await loadDeployedKeys("keys/");
+  } catch {
+    r = { keys: new Map(), discarded: ["keys/index.json"] }; // sin lista fiable: nada se acepta
   }
+  vs.setKeys(r.keys, r.discarded);
 }
 async function loadVersion() {
   try {
@@ -221,8 +235,7 @@ function dl(rows, big) {
 }
 const fmtDate = (iat) => iat.split("-").reverse().join("/");
 
-function showResult(res, { replace = false, notice = null } = {}) {
-  lastResult = res;
+function showResult(res) {
   const cv = CODE_VIEW[res.code];
   const view = VIEWS[cv.view];
   const head = $("result-head");
@@ -233,7 +246,6 @@ function showResult(res, { replace = false, notice = null } = {}) {
   head.setAttribute("aria-label", view.aria);
   const body = $("result-body");
   clear(body);
-  if (notice) body.append(el("p", { class: "notice", role: "status" }, notice));
 
   if (res.code === "OK") {
     const f = res.fields;
@@ -273,8 +285,7 @@ function showResult(res, { replace = false, notice = null } = {}) {
   body.append(el("div", { class: "actions" }, again));
   body.append(el("p", { class: "small addr" }, `Adreça que estàs fent servir: ${host}`));
   body.querySelector("#btn-update-check")?.addEventListener("click", checkUpdate);
-  if (replace) render("result");
-  else go("result");
+  go("result");
 }
 
 function untrustedBlock(members) {
@@ -303,17 +314,15 @@ async function checkUpdate() {
 }
 
 async function process(raw) {
-  lastRaw = raw;
-  // Siempre con la lista vigente; si cambia durante la comprobación, se descarta y se repite.
-  const res = await verifyCurrent(store, raw, verifyToken);
-  if (lastRaw !== raw) return; // otra comprobación más reciente (o claves cambiadas sin resultat)
-  showResult(res);
+  const r = await vs.verify(raw, verifyToken);
+  if (r.status !== "ok") return; // bloqueada o descartada (actualización durante la comprobación)
+  showResult(r.res);
 }
 
 // ---------- V3 text
 function updateCheckBtn() {
   const empty = $("token-input").value.length === 0;
-  $("btn-check").disabled = empty;
+  $("btn-check").disabled = empty || !vs.canVerify;
   $("paste-hint").hidden = !empty;
   $("token-input").setAttribute("aria-describedby", empty ? "paste-hint" : "");
 }
@@ -335,7 +344,7 @@ $("btn-pick").addEventListener("click", () => $("file-input").click());
 $("file-input").addEventListener("change", async () => {
   const f = $("file-input").files?.[0];
   $("file-input").value = "";
-  if (!f) return;
+  if (!f || !vs.canVerify) return;
   $("image-fail").hidden = true;
   $("image-msg").textContent = T.img_reading;
   let text = null;
@@ -405,8 +414,8 @@ document.addEventListener("visibilitychange", () => {
 // ---------- sobre
 function fillAbout() {
   $("about-version").textContent = `Versió del verificador: ${appVersion}.`;
-  const ids = [...store.keys.entries()].map(([k, v]) => `${k} (${v.status === "active" ? "activa" : v.status === "retired" ? "retirada" : "no acceptada"})`);
-  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.` + (store.discarded.length ? ` ${T.keys_discarded(store.discarded.length)}` : "");
+  const ids = [...vs.keys.entries()].map(([k, v]) => `${k} (${v.status === "active" ? "activa" : v.status === "retired" ? "retirada" : "no acceptada"})`);
+  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.` + (vs.discarded.length ? ` ${T.keys_discarded(vs.discarded.length)}` : "");
 }
 
 // ---------- cableado general
@@ -436,7 +445,8 @@ $("btn-first-ok").addEventListener("click", () => {
 });
 
 // ---------- arranque
-reloadKeys();
+applyPhase(vs.phase); // «Carregant…»: nada se puede verificar hasta tener las claves
+loadKeys();
 let seen = false;
 try { seen = localStorage.getItem("firstVisitDone") === "1"; } catch { /* ignore */ }
 const first = !standalone() && !seen;

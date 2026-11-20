@@ -9,7 +9,7 @@ import { CameraSession } from "../lib/camera-session.js";
 import { startCamera } from "../lib/qr.js";
 import { checkPrepared } from "../lib/offline.js";
 import { loadDeployedKeys, buildTrustedKeys } from "../lib/keys.js";
-import { KeyStore, verifyCurrent } from "../lib/key-store.js";
+import { VerifierState } from "../lib/verifier-state.js";
 import { verifyToken } from "../lib/arb1.js";
 
 let n = 0;
@@ -268,52 +268,77 @@ const V01 = casesJson.find((c) => c.id === "V01").input;
 const deferred = () => { let resolve; const promise = new Promise((r) => (resolve = r)); return { promise, resolve }; };
 const keysWithStatus = async (status) => (await buildTrustedKeys([{ ...tk[0], status }])).keys;
 
-await t("KeyStore: una carga antigua que termina tarde no pisa a la nueva", async () => {
-  const gates = [deferred(), deferred()];
-  let call = 0;
-  const store = new KeyStore(async () => gates[call++].promise);
-  const p1 = store.refresh(); // arranque (lento)
-  const p2 = store.refresh(); // controllerchange (más nuevo, rápido)
-  gates[1].resolve({ keys: await keysWithStatus("compromised"), discarded: [] });
-  assert.equal(await p2, true);
-  gates[0].resolve({ keys: await keysWithStatus("active"), discarded: [] });
-  assert.equal(await p1, false); // descartada
-  assert.equal(store.keys.get("test").status, "compromised");
-  assert.equal(store.generation, 1);
+await t("estado: sin claves cargadas no se puede verificar (loading)", async () => {
+  const vs = new VerifierState();
+  assert.equal(vs.phase, "loading");
+  assert.equal(vs.canVerify, false);
+  let called = 0;
+  const r = await vs.verify(V01, async () => { called++; return {}; });
+  assert.deepEqual(r, { status: "blocked" });
+  assert.equal(called, 0);
+  assert.equal(vs.lastResult, null);
 });
-await t("KeyStore: una carga que falla deja la lista vacía (nada se acepta)", async () => {
-  const store = new KeyStore(async () => { throw new Error("red"); });
-  await store.refresh();
-  assert.equal(store.keys.size, 0);
+await t("estado: tras cargar las claves verifica y guarda el resultado; setKeys solo una vez", async () => {
+  const vs = new VerifierState();
+  const seen = [];
+  vs.onChange = (p) => seen.push(p);
+  assert.equal(vs.setKeys(await keysWithStatus("active")), true);
+  assert.equal(vs.canVerify, true);
+  const r = await vs.verify(V01, verifyToken);
+  assert.equal(r.status, "ok");
+  assert.equal(r.res.code, "OK");
+  assert.equal(vs.lastRaw, V01);
+  assert.equal(vs.setKeys(await keysWithStatus("compromised")), false); // sin recarga de claves en la página
+  assert.equal(vs.keys.get("test").status, "active");
+  assert.deepEqual(seen, ["ready"]);
 });
-await t("verificación en curso + cambio de claves => se descarta y se repite (compromised => KID_NOT_ACCEPTED)", async () => {
-  const store = new KeyStore(async () => ({ keys: await keysWithStatus("active"), discarded: [] }));
-  await store.refresh();
+await t("estado: stale borra resultado y token, bloquea y es irreversible", async () => {
+  const vs = new VerifierState();
+  vs.setKeys(await keysWithStatus("active"));
+  await vs.verify(V01, verifyToken);
+  assert.ok(vs.lastResult);
+  const seen = [];
+  vs.onChange = (p) => seen.push(p);
+  vs.enterStale();
+  assert.equal(vs.phase, "stale");
+  assert.equal(vs.lastResult, null);
+  assert.equal(vs.lastRaw, null);
+  assert.equal(vs.keys.size, 0);
+  assert.equal(vs.canVerify, false);
+  assert.deepEqual(await vs.verify(V01, verifyToken), { status: "blocked" });
+  assert.equal(vs.setKeys(await keysWithStatus("active")), false); // no se sale de stale sin recargar
+  assert.equal(vs.phase, "stale");
+  vs.enterStale();
+  assert.deepEqual(seen, ["stale"]);
+});
+await t("estado: una comprobación que termina DESPUÉS de stale se descarta", async () => {
+  const vs = new VerifierState();
+  vs.setKeys(await keysWithStatus("active"));
   const gate = deferred();
-  let calls = 0;
-  const slowVerify = async (raw, keys) => {
-    const mine = ++calls;
-    const res = await verifyToken(raw, keys); // se calcula con la lista que tenía al empezar
-    if (mine === 1) await gate.promise; // y se queda «en vuelo»
-    return res;
-  };
-  const p = verifyCurrent(store, V01, slowVerify);
+  const p = vs.verify(V01, async (raw, keys) => { const res = await verifyToken(raw, keys); await gate.promise; return res; });
   await tick();
-  store.load = async () => ({ keys: await keysWithStatus("compromised"), discarded: [] });
-  await store.refresh(); // actualización: la clave pasa a compromised
+  vs.enterStale(); // llega la actualización con la comprobación en vuelo
   gate.resolve();
-  const res = await p;
-  assert.equal(res.code, "KID_NOT_ACCEPTED");
-  assert.equal(calls, 2);
+  assert.deepEqual(await p, { status: "discarded" });
+  assert.equal(vs.lastResult, null);
+  assert.equal(vs.lastRaw, null);
 });
-await t("verificación: sin cambios devuelve el resultado normal; carga en curso se espera", async () => {
-  const gate = deferred();
-  const store = new KeyStore(async () => { await gate.promise; return { keys: await keysWithStatus("active"), discarded: [] }; });
-  store.refresh();
-  const p = verifyCurrent(store, V01, verifyToken);
-  await tick();
-  gate.resolve();
-  assert.equal((await p).code, "OK");
+await t("estado: stale mientras aún carga => las claves que lleguen tarde se ignoran", async () => {
+  const vs = new VerifierState();
+  vs.enterStale();
+  assert.equal(vs.setKeys(await keysWithStatus("active")), false);
+  assert.equal(vs.keys.size, 0);
+});
+await t("estado: dos comprobaciones solapadas => solo la última se aplica", async () => {
+  const vs = new VerifierState();
+  vs.setKeys(await keysWithStatus("active"));
+  const g1 = deferred();
+  const p1 = vs.verify("uno", async () => { await g1.promise; return { code: "BAD_FORMAT" }; });
+  const p2 = vs.verify("dos", async () => ({ code: "OK" }));
+  assert.equal((await p2).status, "ok");
+  g1.resolve();
+  assert.deepEqual(await p1, { status: "discarded" });
+  assert.equal(vs.lastRaw, "dos");
 });
 await t("claves: entradas del índice que no son texto no vacían la lista", async () => {
   const evil = { toString: null, valueOf: null };
