@@ -1171,7 +1171,7 @@ revocación en fase 2, repo público y verificación optativa.)*
    `latest.json` (recomendado), o prefieres cero Internet y avisos solo por la web/club?
 6. **Cuenta de desarrollador (Android)**: ¿quién es titular —persona o CFBB con `futbolbotons.cat`
    verificado—? ¿Aceptas el "flujo avanzado" para el candidato si no se verifica? ¿Qué
-   `applicationId` definitivo (p. ej. `cat.futbolbotons.arbitratge`)? No puede cambiarse
+   `applicationId` definitivo? **Respondido: `dev.lluissunol.arbitratge`.** No puede cambiarse
    después sin re-registrar. ¿Se aclara el límite 20 vs 50 de *limited distribution*?
 7. **Reloj**: ¿conforme con la política única indulgente de §8.2–8.3 (restante persistido,
    reanclaje atómico, el apagado no cuenta; sustituye a la estimación por hora de pared de 01)?

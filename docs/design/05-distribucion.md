@@ -775,8 +775,8 @@ los fija 04; aquí, los códigos de `core-credential`).
   Límite de Android: 2 100 000 000 (no es problema) [PV: tipo del campo al implementar].
 - **Control** en `release.yml` (paso 2): el `versionCode` nuevo debe ser mayor que el de la última
   release publicada; si no, falla.
-- **`applicationId`**: fijo para siempre (cambiarlo = app nueva). Propuesta
-  `cat.futbolbotons.arbitratge` (candidato) [pendiente, pregunta abierta 7]. Cualquier `applicationId` pasa por el
+- **`applicationId`**: fijo para siempre (cambiarlo = app nueva). **Decidido (2026-11-20, usuario)**:
+  `dev.lluissunol.arbitratge` (namespace de paquetes Kotlin `dev.lluissunol.arbitratge.*`). Cualquier `applicationId` pasa por el
   registro de desarrolladores de Android (§8.3).
 - **Versión de la PWA**: la misma `versionName` que la última release del candidato, o versión propia
   si la PWA se publica sin release de APK (decisión menor, pregunta abierta 11).

@@ -4,14 +4,14 @@ plugins {
 }
 
 android {
-    namespace = "cat.futbolbotons.arbitratge"
+    namespace = "dev.lluissunol.arbitratge"
     compileSdk {
         version = release(37) { minorApiLevel = 2 }
     }
 
     defaultConfig {
-        // applicationId provisional: pregunta oberta 7 de 05 (s'ha de fixar abans de publicar).
-        applicationId = "cat.futbolbotons.arbitratge"
+        // applicationId definitiu (decidit 2026-11-20, 05 §7): no es pot canviar un cop publicat.
+        applicationId = "dev.lluissunol.arbitratge"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

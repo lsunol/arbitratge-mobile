@@ -89,5 +89,9 @@ de sello ARB1 existe en el APK final por ADR 0001, pero su material de build sig
 - Un solo agente escribe en un directorio a la vez; para trabajo paralelo, usa worktrees o
   separa los módulos. Nunca dejes a dos subagentes editando el mismo árbol.
 - `bank-curator` es el único agente autorizado para leer el banco real. Nunca imprime su
-  contenido: solo recuentos, versiones e IDs técnicos.
+  contenido: solo recuentos, versiones e IDs técnicos. Para crear preguntas o explicaciones
+  a partir del reglamento usa la skill global `rulebook-exam-questions` (trabajo en la
+  carpeta privada del banco, nunca en este repo).
+- Paquete y `applicationId`: `dev.lluissunol.arbitratge` (decidido). La firma de release
+  usa el keystore compartido `dev.lluissunol` (skill global `lluissunol-apk-signing`).
 - Cada tarea termina con pruebas ejecutadas, riesgos/pendientes y rutas tocadas.

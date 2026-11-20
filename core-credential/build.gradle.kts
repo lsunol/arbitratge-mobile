@@ -26,7 +26,7 @@ tasks.register<JavaExec>("generateTestVectors") {
     group = "verification"
     description = "Regenera els vectors públics ARB1 de test-vectors/ (claus de prova fixes)."
     classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("cat.futbolbotons.arbitratge.credential.vectors.GenerateTestVectorsKt")
+    mainClass.set("dev.lluissunol.arbitratge.credential.vectors.GenerateTestVectorsKt")
     args(testVectorsDir.asFile.absolutePath)
     // Només el primer cop: ./gradlew :core-credential:generateTestVectors -PinitKeys
     if (providers.gradleProperty("initKeys").isPresent) args("--init-keys")
