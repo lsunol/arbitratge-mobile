@@ -69,6 +69,7 @@ que genera `.claude/agents/`, `.pi/agents/`, `.opencode/agent/` y `.github/agent
 | `release-engineer` | sonnet-5-5 · medium | CI, firma, Actions, Releases, Pages, secretos y protección del repo público |
 | `trust-architect` | opus-5-5 · high | Consultor de cambios al contrato o confianza; no implementa salvo aprobación |
 | `ux-designer` | sonnet-5-5 · medium | Consultor de implementación frente a UX, catalán y accesibilidad |
+| `ui-designer` | opus-5-5 · high | Consultor de diseño visual móvil (identidad, color, tipografía, componentes); propone, no implementa |
 
 Los originales de diseño retirados quedan en `docs/agents-archive/` y no se cargan como
 subagentes. Los agentes integrados de pi usan `.pi/settings.json`: `scout` Haiku/low,
@@ -92,6 +93,12 @@ de sello ARB1 existe en el APK final por ADR 0001, pero su material de build sig
   contenido: solo recuentos, versiones e IDs técnicos. Para crear preguntas o explicaciones
   a partir del reglamento usa la skill global `rulebook-exam-questions` (trabajo en la
   carpeta privada del banco, nunca en este repo).
+- Reglamento en `docs/reglament/` (público; `rules.json` con unidades citables). Preguntas nuevas:
+  comando `/genera-preguntes <N> [abast]` (original en `.agents/commands/`, sincronizado por
+  `scripts/sync-agents.mjs`).
+- **Navegación del examen (decisión del usuario, 2026-11-20):** el candidato puede volver a
+  preguntas anteriores y cambiar respuestas hasta finalizar; sustituye el "secuencial sin
+  retroceso" de `01` §1.3 / `03` §4.3. La persistencia antes de avanzar se mantiene.
 - Paquete y `applicationId`: `dev.lluissunol.arbitratge` (decidido). La firma de release
   usa el keystore compartido `dev.lluissunol` (skill global `lluissunol-apk-signing`).
 - Cada tarea termina con pruebas ejecutadas, riesgos/pendientes y rutas tocadas.

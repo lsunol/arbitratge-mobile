@@ -116,3 +116,48 @@ for (const t of targets) {
   }
   console.log(`${t.dir}: ${agents.length} agentes`);
 }
+
+// ---------------------------------------------------------------------------
+// Comandos (prompt templates) portables: .agents/commands/<nombre>.md
+// Frontmatter: description (obligatorio), argument-hint (opcional).
+// Cuerpo con $1, $2… y $ARGUMENTS (pi, Claude Code y opencode los entienden;
+// para Copilot se traducen a ${input:...}).
+const cmdDir = path.join(root, ".agents", "commands");
+if (fs.existsSync(cmdDir)) {
+  const CMD_HEADER = "<!-- GENERADO por scripts/sync-agents.mjs desde .agents/commands/. No editar. -->\n\n";
+  const cmds = fs.readdirSync(cmdDir).filter((f) => f.endsWith(".md")).sort().map((f) => {
+    const raw = fs.readFileSync(path.join(cmdDir, f), "utf8").replace(/\r\n/g, "\n");
+    const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    if (!m) throw new Error(`${f}: falta el frontmatter`);
+    const meta = {};
+    for (const line of m[1].split("\n")) {
+      const kv = line.match(/^([\w-]+):\s*(.*)$/);
+      if (kv) meta[kv[1]] = kv[2].trim().replace(/^"(.*)"$/, "$1");
+    }
+    if (!meta.description) throw new Error(`${f}: falta 'description'`);
+    return { name: f.replace(/\.md$/, ""), meta, body: m[2].trimStart() };
+  });
+  const hint = (meta) => (meta["argument-hint"] ? `\nargument-hint: ${q(meta["argument-hint"])}` : "");
+  const cmdTargets = [
+    { dir: ".pi/prompts", file: (n) => `${n}.md`, fm: (meta) => `description: ${q(meta.description)}${hint(meta)}`, body: (b) => b },
+    { dir: ".claude/commands", file: (n) => `${n}.md`, fm: (meta) => `description: ${q(meta.description)}${hint(meta)}`, body: (b) => b },
+    { dir: ".opencode/command", file: (n) => `${n}.md`, fm: (meta) => `description: ${q(meta.description)}`, body: (b) => b },
+    {
+      dir: ".github/prompts",
+      file: (n) => `${n}.prompt.md`,
+      fm: (meta) => `description: ${q(meta.description)}\nmode: agent`,
+      body: (b) => b.replace(/\$ARGUMENTS/g, "${input:arguments}").replace(/\$(\d)/g, "${input:arg$1}"),
+    },
+  ];
+  for (const t of cmdTargets) {
+    const dir = path.join(root, t.dir);
+    fs.mkdirSync(dir, { recursive: true });
+    const expected = new Set(cmds.map((c) => t.file(c.name)));
+    for (const f of fs.readdirSync(dir)) {
+      const p = path.join(dir, f);
+      if (!expected.has(f) && fs.readFileSync(p, "utf8").includes("GENERADO por scripts/sync-agents.mjs desde .agents/commands")) fs.unlinkSync(p);
+    }
+    for (const c of cmds) fs.writeFileSync(path.join(dir, t.file(c.name)), `---\n${t.fm(c.meta)}\n---\n${CMD_HEADER}${t.body(c.body)}`);
+    console.log(`${t.dir}: ${cmds.length} comandos`);
+  }
+}
