@@ -144,7 +144,7 @@ function showUpdate(worker) {
 // sola a mitad de un flujo.
 let hadController = false;
 async function onControllerChange() {
-  if (updating) { location.reload(); return; } // el usuario pulsó «Actualitzar» aquí
+  if (updating) { vs.enterStale(); location.reload(); return; } // el usuario pulsó «Actualitzar» aquí: bloquear antes de recargar
   if (!hadController) { // primera instalación: el worker toma el control, no es una actualización
     hadController = true;
     await loadVersion();
@@ -157,6 +157,7 @@ async function onControllerChange() {
 // Pantalla bloqueante: sin resultat, sin entradas, sin cámara, sin historial restaurable.
 function enterStaleUi() {
   stopCamera();
+  $("keys-loading").hidden = true;
   $("token-input").value = "";
   clear($("result-body"));
   $("result-word").textContent = "";
@@ -185,10 +186,12 @@ function applyPhase(phase) {
 async function registerSw() {
   if (!("serviceWorker" in navigator) || !isSecureContext) return;
   hadController = !!navigator.serviceWorker.controller;
+  // El listener va antes de esperar al registro: un cambio de worker activado desde otra pestaña
+  // mientras `register()` está pendiente (o si falla) también debe bloquear esta página.
+  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
   try {
     swReg = await navigator.serviceWorker.register("sw.js");
   } catch { return; }
-  navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
   if (swReg.waiting && navigator.serviceWorker.controller) showUpdate(swReg.waiting);
   swReg.addEventListener("updatefound", () => {
     const nw = swReg.installing;
@@ -332,6 +335,7 @@ $("btn-clip").addEventListener("click", async () => {
   $("clip-msg").textContent = "";
   try {
     const t = await navigator.clipboard.readText();
+    if (!vs.canVerify) return; // `stale` (o aún cargando) mientras se leía el porta-retalls
     $("token-input").value = t;
     updateCheckBtn();
     $("token-input").focus();
