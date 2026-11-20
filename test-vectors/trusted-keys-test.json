@@ -1,0 +1,18 @@
+[
+  {
+    "kid": "test",
+    "alg": "ES256",
+    "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEpRY4bm511peBPv5faFlGdQKs7xBl3aesN9-fPqKAaygzPlF9kobC3OHEhaTc1GxZFl2G7olvX8BwCCAkCBy9pw",
+    "sha256_spki": "ada963a9547c4ed37503d9ff50b903cef256dbd38df7710ee52c9c2bdc05e552",
+    "status": "active",
+    "valid_from": "2026-01-01"
+  },
+  {
+    "kid": "testx",
+    "alg": "ES256",
+    "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEc5qx2k_YCXDRE7keWU7HVwJtUThZKU_dfo4GkFtgUvSVPJX5QFZbhzrIOxKHp-0ZyzJSv7mGTGCPT9l8EP-OAQ",
+    "sha256_spki": "633eea0022f9aebcba0c0392139c0df61f6f4ece936e1741bfcae2502a88acf5",
+    "status": "compromised",
+    "valid_from": "2026-01-01"
+  }
+]

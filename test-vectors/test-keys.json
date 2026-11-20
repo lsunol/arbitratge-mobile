@@ -1,0 +1,24 @@
+{
+  "warning": "CLAUS DE PROVA, PUBLIQUES PER DISSENY (02 3.7.9, 05 5.5). Mai a produccio ni a trusted-keys/.",
+  "keys": [
+    {
+      "name": "test",
+      "kid": "test",
+      "status": "active",
+      "pkcs8": "MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCD5rUdLRNOB7bVU5YW8LY2mXBVq5UZCspfuOvnI9IxntA",
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEpRY4bm511peBPv5faFlGdQKs7xBl3aesN9-fPqKAaygzPlF9kobC3OHEhaTc1GxZFl2G7olvX8BwCCAkCBy9pw"
+    },
+    {
+      "name": "testx",
+      "kid": "testx",
+      "status": "compromised",
+      "pkcs8": "MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBrOwc4aKX9VnhD7DAY0Hm-enGHMGj9-STA8o907v9TQw",
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEc5qx2k_YCXDRE7keWU7HVwJtUThZKU_dfo4GkFtgUvSVPJX5QFZbhzrIOxKHp-0ZyzJSv7mGTGCPT9l8EP-OAQ"
+    },
+    {
+      "name": "other",
+      "pkcs8": "MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCDZF-W2m2Jtz6ooSLOe9ccdVeG9kqxEXjQLroarFx1p_Q",
+      "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIawf1_7q0twZLU2v9V8QeL33QD6Y2vnyy5oFyIATv9P9bX_rOShj2NDiH71zARBQ9zt9dEtCYxIg3KvFm0DP5A"
+    }
+  ]
+}

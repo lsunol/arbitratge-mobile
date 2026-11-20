@@ -1,0 +1,1621 @@
+{
+  "format": "arb1-test-vectors/2",
+  "contract": "docs/design/02-credencial-y-amenazas.md 3.7 (ARB1); cases 3.7.11",
+  "trustedKeys": "trusted-keys-test.json",
+  "generator": "./gradlew :core-credential:generateTestVectors",
+  "cases": [
+    {
+      "id": "V01",
+      "group": "V01",
+      "description": "Emissor de producci\u00f3 (kid=test): nom\u00e9s obligatoris, nom ASCII",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "90717b65-8827-45f7-8c85-038cff09cff6",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "9071-7B65"
+    },
+    {
+      "id": "V02",
+      "group": "V02",
+      "description": "Emissor: accents i l\u00b7l (U+00B7) en UTF-8 directe",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMzVmNGZjNjgtNzBkOS00NDI5LTlhNDktYzdlNjBlYzJhNGFhIiwibm9tIjoiTsO6cmlhIEdhbMK3bGEgUMOpcmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.ZdSJ3uotRf-po9qDM6oz0jG11VCt5bbLje40-DPLZar-mr0RC-MTktAZ0ZgyR70SOnoAd8woud1BESVlCAXjzA",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "35f4fc68-70d9-4429-9a49-c7e60ec2a4aa",
+        "nom": "N\u00faria Gal\u00b7la P\u00e9rez",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "35F4-FC68"
+    },
+    {
+      "id": "V03",
+      "group": "V03",
+      "description": "Mateix nom que V02 amb escapes \\u00XX al JSON (vector fix; bytes id\u00e8ntics als de CredentialIssuer.withNonAsciiEscapes, que l'usa a G5)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiNWQ5Y2RmNDctNTQwNy00YmQ5LWFiYzItMDg2MzNhYmVjNmQ1Iiwibm9tIjoiTlx1MDBmYXJpYSBHYWxcdTAwYjdsYSBQXHUwMGU5cmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.dey48LBxtizKQR5loYioeNHc7P7Gay3psbETdRN1c532EkHZw_goS2z-YJrz5M1eYmm7yF6QYHEWGVGwwC0J0Q",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "5d9cdf47-5407-4bd9-abc2-08633abec6d5",
+        "nom": "N\u00faria Gal\u00b7la P\u00e9rez",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "5D9C-DF47"
+    },
+    {
+      "id": "V04",
+      "group": "V04",
+      "description": "Emissor: nom de 80 punts de codi amb un car\u00e0cter fora del BMP (U+20BB7)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYTM0MzkwNGEtMzhmMS00NTBiLTlmZDAtNjgzMDU1NThiMzg2Iiwibm9tIjoi8KCut-eUsCBNYXJpYSBBbnTDsm5pYSBFeGVtcGxlIFB1aWcgRmVycmVyIEZvbnQgVmlkYWwgU2VycmEgUG9ucyBSb2NhIFNvbGVyIENhc2FscyBSaWUiLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.8-xc10Zz5SYZy7WvIe-jQLw9zpRK4GUP3gvawaQBByvCX1bcZyreCTZ_gGQ1KBPtqmj-6M4YlTQCmqyPWaj9KA",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "a343904a-38f1-450b-9fd0-68305558b386",
+        "nom": "\ud842\udfb7\u7530 Maria Ant\u00f2nia Exemple Puig Ferrer Font Vidal Serra Pons Roca Soler Casals Rie",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "A343-904A"
+    },
+    {
+      "id": "V05",
+      "group": "V05",
+      "description": "Emissor: amb bv i app",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiZDE4YWEzN2QtZWMxMS00YmIxLWE1YjUtYTA5N2Y3NmM3MmY0Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImJ2IjoiMjAyNi4xMS4xIiwiYXBwIjoiMS4wLjArNSJ9.9tBj409PervttF1gf5BQLB-NxUNE3ikMWlXI2GtltLlLp7wC95xprmjfhihqHx0_1NWHj2HAU0kSjIwi8rwFXw",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "d18aa37d-ec11-4bb1-a5b5-a097f76c72f4",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "bv": "2026.11.1",
+        "app": "1.0.0+5"
+      },
+      "shortCode": "D18A-A37D"
+    },
+    {
+      "id": "V06",
+      "group": "V06",
+      "description": "Emissor: amb membre desconegut (s'ignora)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiNDRmNzQ5OTEtOTc4Yy00ZTRjLTk5YjctZGI1MDU4NzMyYjEwIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm5vdGEiOiJwcm92YSJ9.IjGBicsChSk6r311FGFJtW0Nu1t8FqCAEUSI4fRcCYoRoYg7owezU0lfMBHiO1KWvsEpu2HPoHudjQ2JN3m2ZQ",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "44f74991-978c-4e4c-99b7-db5058732b10",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "44F7-4991"
+    },
+    {
+      "id": "V07",
+      "group": "V07",
+      "description": "JSON amb espais insignificants (espai, tab, LF, CR) dins i fora de l'objecte",
+      "input": "ARB1.DQogewogICJ2IiA6IDEgLAoJImtpZCI6InRlc3QiICwiY2lkIiA6ImMxNjA0ODk4LWZjYzgtNDRhMi05NDRkLWE2ODYxZDUwZDQ2YSIsDQogICJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsICJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIKfQkgCg.Y_YA1GsfISH4YY1IzKW59h-sgv-_qrg9tKyT9YJx8oj4z0cOZ4FdmZspF12yfIJYCvoFepLrAPa2h_4RM8Pg-w",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "c1604898-fcc8-44a2-944d-a6861d50d46a",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "C160-4898"
+    },
+    {
+      "id": "V08",
+      "group": "V08",
+      "description": "Emissor: r o s amb zeros a l'esquerra (INTEGER DER de 31 bytes o amb 0x00)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMmRmZjZhZTctYzYwMS00MmUxLWI2NjQtYmRmMmYwZTNkZDQ2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.7FQee8CuL5_C-QzcPQ7wkAbwjizBLivWh2OaX2gYmxsAPv_UhMB5u9bDlRDovGJM6DCySZyGJmS6KYgkgplC3w",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "2dff6ae7-c601-42e1-b664-bdf2f0e3dd46",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "2DFF-6AE7"
+    },
+    {
+      "id": "V09",
+      "group": "V09",
+      "description": "s alt: n\u2212s de V01 (sense requisit low-S)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRmRSg7sP-oOCGiUtUpCsoV5GSl1-h5w465r0s56vCjYog",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "90717b65-8827-45f7-8c85-038cff09cff6",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "9071-7B65"
+    },
+    {
+      "id": "V10",
+      "group": "V10",
+      "description": "V01 amb espais, tabuladors, salts, U+00A0, U+200B i U+FEFF intercalats i exteriors",
+      "input": " \t\nARB1\r\n.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3\u00a0MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm \n9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9\u200b.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRl\tutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw\ufeff \r\n",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "90717b65-8827-45f7-8c85-038cff09cff6",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "9071-7B65"
+    },
+    {
+      "id": "V11",
+      "group": "V11",
+      "description": "nom en NFD signat per un emissor de prova (el verificador no comprova NFC)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiZTMxYzk4MTUtMTA3Yi00N2M2LWEyYTgtMGExNzVkYzE1M2U2Iiwibm9tIjoiTnXMgXJpYSBQZcyBcmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.nMyFaJo93khI73Jq5VvIvfgTahyojqRpZa6OygwG1XnnAUFvt-olMW-S6Wf0gxB6kIDLm5Azhjes28ZcQgnB_Q",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "e31c9815-107b-47c6-a2a8-0a175dc153e6",
+        "nom": "Nu\u0301ria Pe\u0301rez",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "E31C-9815"
+    },
+    {
+      "id": "F01-empty",
+      "group": "F01",
+      "description": "Buit",
+      "input": "",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F01-spaces",
+      "group": "F01",
+      "description": "Nom\u00e9s espais i salts",
+      "input": "  \t\r\n  ",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F01-removable-only",
+      "group": "F01",
+      "description": "Nom\u00e9s U+00A0, U+200B i U+FEFF",
+      "input": "\u00a0\u200b\ufeff",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F02-https",
+      "group": "F02",
+      "description": "URL https://",
+      "input": "https://example.org/verificador#ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "IS_URL",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F02-http-upper",
+      "group": "F02",
+      "description": "URL HTTP:// en maj\u00fascules",
+      "input": "HTTP://EXAMPLE.ORG/ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "IS_URL",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F03-token-plus-spaces",
+      "group": "F03",
+      "description": "Entrada bruta > 2048 (V01 + espais fins a 2049)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F03-2049-chars",
+      "group": "F03",
+      "description": "Entrada bruta de 2049 'A'",
+      "input": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F04-lowercase",
+      "group": "F04",
+      "description": "Prefix en min\u00fascules arb1.",
+      "input": "arb1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F04-arb0",
+      "group": "F04",
+      "description": "Prefix ARB0.",
+      "input": "ARB0.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F04-arb01",
+      "group": "F04",
+      "description": "Prefix ARB01.",
+      "input": "ARB01.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F04-no-dot",
+      "group": "F04",
+      "description": "ARB1 sense punt",
+      "input": "ARB1",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F04-no-dot-with-rest",
+      "group": "F04",
+      "description": "ARB1 enganxat al payload sense punt",
+      "input": "ARB1eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F05-two-segments",
+      "group": "F05",
+      "description": "2 segments",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F05-four-segments",
+      "group": "F05",
+      "description": "4 segments",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F05-trailing-dot",
+      "group": "F05",
+      "description": "4 segments (punt final)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw.",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F06-padding-payload",
+      "group": "F06",
+      "description": "Payload amb farciment '='",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9=.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F06-padding-signature",
+      "group": "F06",
+      "description": "Firma amb farciment '=='",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw==",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F06-plus",
+      "group": "F06",
+      "description": "'+' al payload (alfabet base64 est\u00e0ndard)",
+      "input": "ARB1.+yJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F06-slash",
+      "group": "F06",
+      "description": "'/' a la firma (alfabet base64 est\u00e0ndard)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9./bfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F06-non-ascii",
+      "group": "F06",
+      "description": "Car\u00e0cter no ASCII (U+00E9) al payload",
+      "input": "ARB1.eyJ2IjoxLC\u00e9raWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F07-payload-noncanonical",
+      "group": "F07",
+      "description": "Payload base64url no can\u00f2nic (bits sobrants \u2260 0)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMzVmNGZjNjgtNzBkOS00NDI5LTlhNDktYzdlNjBlYzJhNGFhIiwibm9tIjoiTsO6cmlhIEdhbMK3bGEgUMOpcmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifR.ZdSJ3uotRf-po9qDM6oz0jG11VCt5bbLje40-DPLZar-mr0RC-MTktAZ0ZgyR70SOnoAd8woud1BESVlCAXjzA",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F07-signature-noncanonical",
+      "group": "F07",
+      "description": "Firma base64url no can\u00f2nica (bits sobrants \u2260 0)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrx",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F07-length-1-mod-4",
+      "group": "F07",
+      "description": "Payload de longitud \u2261 1 (mod 4)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZla.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F08-63-bytes",
+      "group": "F08",
+      "description": "Firma de 63 bytes",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpM",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F08-65-bytes",
+      "group": "F08",
+      "description": "Firma de 65 bytes",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrwA",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F08-der",
+      "group": "F08",
+      "description": "Firma en DER en lloc de R\u2016S",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.MEUCIQCtt-veW3GFJv-rPJ34o--VX2p65EIHV9EPbpuod-xBGQIgbrXxEsAV8fiXa0q1vU16hqO9hLOIprrWh-b8SEA6TK8",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F09-empty-payload",
+      "group": "F09",
+      "description": "Payload buit",
+      "input": "ARB1..rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F09-513-bytes",
+      "group": "F09",
+      "description": "Payload de 513 bytes (signat)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMmFiNWE1ZTUtODViYy00NmM2LTkxNTAtMTllNTI4OWY2ZmIyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsInBhZCI6Inh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eCJ9.PB5nWPnYihdW4K9yfTV57VMRGmZPeKHlUfm9WiESvE_iKjVfckbJHUjqYl32r2K1JHeyiqmUw1vuoQpva3v1HQ",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "F09-token-over-1024",
+      "group": "F09",
+      "description": "Token > 1024 car\u00e0cters",
+      "input": "ARB1.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "U01-arb2-valid-rest",
+      "group": "U01",
+      "description": "ARB2. + resta v\u00e0lida",
+      "input": "ARB2.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "UNKNOWN_VERSION",
+      "result": "VERSI\u00d3 DESCONEGUDA"
+    },
+    {
+      "id": "U01-arb2-xyz",
+      "group": "U01",
+      "description": "ARB2.xyz",
+      "input": "ARB2.xyz",
+      "code": "UNKNOWN_VERSION",
+      "result": "VERSI\u00d3 DESCONEGUDA"
+    },
+    {
+      "id": "U01-arb999",
+      "group": "U01",
+      "description": "ARB999.",
+      "input": "ARB999.",
+      "code": "UNKNOWN_VERSION",
+      "result": "VERSI\u00d3 DESCONEGUDA"
+    },
+    {
+      "id": "P01-overlong-c1",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: overlong C1 81",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiwYEiLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.tomeCkW-0xj6z3huJOPo4ByQWs74q9UahrSK5pK1c2C55nTEcgKBpbxBhzisWBogjmQr38RwfgwZLPxtLFOmBw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-overlong-c0",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: overlong C0 AF",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiwK8iLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.TFZf1Qmh4wE3E9kJ6iBZ82CJBil4vRLJ8vDOmKYlJXrQPMzwk15Cx3rP8vt-j1rt8vxF5n-3YL2RF1TZsMrbfw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-overlong-e0",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: overlong E0 80 AF",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi4ICvIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.6ivtdOH81Hm1JZPlL_fENPiQ4Q_NuERfO8NUBczzjBwb44hV0DM7_yILAjRAmAjMDD2xrmGnOy2Uxb7cXin13A",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-encoded-surrogate",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: substitut codificat ED A0 80 (U+D800)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi7aCAIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.dnhnkiQHl0yzZr_Ej2bcFuDRxwyk0CA3ZypUuDWpZjsKDU0Fe4IXBLr5Fklot57vn1k0Qa2sL1lQ6m0vtygk_A",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-cesu8-pair",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: parell de substituts codificats (CESU-8)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi7aC97biAIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.p4prG1VsDUH6_MA_Z0n0tBToygu6p-xsPy28cG3sQDiYa1DG1luyR4AgtexGEaIkhIUM3uf-eB6_1ofKJJSJRw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-stray-continuation",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: byte de continuaci\u00f3 solt 0x80",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoigCIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.cAERPYak9VWUJkzFuPiGxGaP7gZjanBy6v_5thA3Lp6Oxm7edAX0JoGv5IZRdNs9ZRt2d_mPjuLFww6hDPjEJQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-truncated",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: seq\u00fc\u00e8ncia truncada E2 82",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi4oIiLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.DK6lHqWkvRzG5j2G2OJ_yJKdfuCv6PRwZd4U19mmn4j3g4BdRdZ6w04dqrAtN9HTdbZlFA9t16qIDn-n1GX-jQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-byte-ff",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: byte 0xFF",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi_yIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.lnF2uIjLAtd41sQvfdUBLT4O-Lei_MkoTan9iy1klm0NlZYIt_qoEyWHu8r_zj97VfwlLTlcOTKk1hBNY4rtRA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P01-above-10ffff",
+      "group": "P01",
+      "description": "UTF-8 inv\u00e0lid dins nom: > U+10FFFF (F4 90 80 80)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoi9JCAgCIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.n1KWbknsF5wGJNoS3o5eTZbCZurq36RCYACeja90fhbERZCjFHGy_dJ71rDPVRG4XCx8EV9ffFNBRDWCqaShtQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P02",
+      "group": "P02",
+      "description": "BOM EF BB BF inicial",
+      "input": "ARB1.77u_eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.ieLeKvtsWgTz1Fzn70fxnMIv9jKiR-0edy9KS00D4a6rT9xshDggKzXK-PDUVqlnyAJsqktCFZTuhQEfoOoTUw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-array",
+      "group": "P03",
+      "description": "No objecte o mal format: array",
+      "input": "ARB1.WzFd.98SlXZwaV-mM7UHj-E53yeWXLuU1fMC6oTIDsEMqtrSfsl-vW7sxDSEYDwgj6qbhXqGqk7plRLweuLLh5WWgug",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-text",
+      "group": "P03",
+      "description": "No objecte o mal format: text",
+      "input": "ARB1.IkFSQiI.69YaR6ZhTYV1FvDztPDK-Emd6b73wnoKhoMENbCHLJPq-ZghaXIL79FR8om3V3Rjcewh1DL-mnfeb9tv01Ym9g",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-integer",
+      "group": "P03",
+      "description": "No objecte o mal format: enter",
+      "input": "ARB1.MQ.4Cb30cGAFcp1YBYzWgopmeZvqYyVaqmDmb_eEXdVE7T_uS9-DAXp1oWirmvjof2rGqObp6QOFDL6JnQoHwaxGw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-unclosed",
+      "group": "P03",
+      "description": "No objecte o mal format: sense '}' final",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSI.QaBr4nu6bUrwwM2hUL7mpzRsoUBz_sz6mUkvu0IxAbN5wua-3on-ETppjPfGLWwjP7pnFtNWfr1YUBJH_Hnujg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-trailing-comma",
+      "group": "P03",
+      "description": "No objecte o mal format: coma final",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsfQ.8o_cRphzU_6XS4HZwz_EtajTZPSLdF9akFF8EpV0yqjSmePQcz7gO8WPUjsjiDWT_JocTcGuSn_-sPrmT50Nzg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-trailing-garbage",
+      "group": "P03",
+      "description": "No objecte o mal format: contingut despr\u00e9s de l'objecte",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9IHg.bBGnFc9-_w_ryrVd6B-e2rhNjSaQl2Hdn7OJpz7781tIzfJipShojd57nwSsfrK-csH-eoVxjbTZ8kMEFqh8wg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-two-objects",
+      "group": "P03",
+      "description": "No objecte o mal format: dos objectes",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9e30.7mhTOYAtXAI9Q2ILahsv9y_MmROO-ibhwevnpdBlaPQ_qa_zVAfLM_6ngok5klFwtQjlO7J5gLPzpbIi3V5egw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-single-quotes",
+      "group": "P03",
+      "description": "No objecte o mal format: cometes simples",
+      "input": "ARB1.eyd2JzoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.PeXCF8cqoS2Vve_rIp-baN7tXLuMwJWdDgruuIrKhkKJWgLM7ll1OTNtZeTiZHbvQf6SXprV8xr_jCuGVhnxsw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-unquoted-name",
+      "group": "P03",
+      "description": "No objecte o mal format: nom sense cometes",
+      "input": "ARB1.e3Y6MSwia2lkIjoidGVzdCIsImNpZCI6IjlmMWQzNWExLTA2NDMtNDcxMS1hNzJkLTE0NWU2Y2Y5ZDM4MiIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.qdB73fzhEx5clpXXLSK5VW2OBtRJ5gUB9ykJu_qC9vELwNbFV31DblXEoSZn4YIIO7BBAfP2aI0c5hUwelJPgQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-raw-control",
+      "group": "P03",
+      "description": "No objecte o mal format: control U+0007 sense escapar dins un text",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYQdQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.TnRiOvfaQ_O2vF3vpu1QuVYtlS4mPBNjtijwJYdLxhvczmm8EUFThQNB07gsUJ8tAVY_OVnauWFSNmpMvoQLdw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-bad-escape",
+      "group": "P03",
+      "description": "No objecte o mal format: escapament inv\u00e0lid \\x41",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYVx4NDEiLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.vSos5jqROCwLJ5cs_A1L6Y4BD5Z120mWdP8axg1s1NXdwEQpDQ1A6pd5-G7eipdMYJKdNchwa9CqTW066AJbzQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P03-feff-as-space",
+      "group": "P03",
+      "description": "No objecte o mal format: U+FEFF com a espai entre membres",
+      "input": "ARB1.eyJ2IjoxLO-7vyJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.iDaIsUFj48dbBe1Xqhojqi-uznCd0O8lxnmkEX5uyvWUOY6sFLes_foP4wgiuRlY2o8343TVu9oxGXoiLAATig",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-nested",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: objecte niuat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOnsiYSI6MX19.bKd9ugBhFOYRMvSjmDdnkbtCMFh2MBEPdBP0G3iYXzZ7o9lZeNTzin6PW0ubWf8EIIPRzRG-zbOUWte_sid_Aw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-empty-object",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: objecte buit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOnt9fQ.iV76iJJ6rwB7B9PYiCcmEDc-eGv8WC0iE8nZQ5FLhhssPNhcVcsPmynnEn9KCVZKmNnDomGf2QRV0jwuE4zw4g",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-array",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: array",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOlsxXX0.VXzaqNjJT43y21_T56E_z77rPIXXlGqFCY7FFkc4EFrfoXCE6THXopw2o3rV7g9Qli4W5faD5xWbngDRcb2wjw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-empty-array",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: array buit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOltdfQ.vIVWfjcJ0sxL4SWLzvnLoptCAJjsHs13Z1SBcUVWqCvSz7ErYqKcqFy7AWPYUVGv10522qnpWW_PSZdhpnzhsg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-true",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: true",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOnRydWV9.qp-BGvU6Ntosi9yPzjO7aEX2QcLJ4b9ROjBrTKdxlXxHKInZV07D72KlFR1fjRJTCyJsMxrlbmWM7jFdgCKCxg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-false",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: false",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOmZhbHNlfQ.wt4Jo-yqkE15uVo_PNcV0b5c-bfFKhTofJRcYIrak4IGOiLfJLDFyVJP67w_nJkOxnD2fggyYR8gTGIYW_is0Q",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-null",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: null",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOm51bGx9.3RO-xWeBHr6TCE6J_Ci_vdizuG4aEIQJrmGfiBrkJZYQ11mq47Nr1dJWcegLMiJ-DbJOpOYPf2hQ3LEyoS1KNw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-decimal",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: decimal",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOjEuMH0.N8f8Z47RCN5JYaPeWPQBNDrdGW2nt6yh0SQbopGKnQ2nQONEsJeFRBrRuvhGUmH3uBNhFtYc5C_P_yLKFt1dcA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-exponent",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: exponent",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOjFlMH0.t-npbU0ZIHn5NpwJqBUU8ihkPjb0pdI-2qaEHeGP0BxMP2xJP7iDZKH1LQ8vxPM9mpxObcYbaIp3r-w--SrW7A",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-negative",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: negatiu",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOi0xfQ.js5al7t-5bwBnxA6y_OW8wEeDmtW5nODDWON8IaEByDqZgySL35jUghYSIB0cRPs9-pONt0DfMVQesHaqQhauw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-ten-digits",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: enter de 10 d\u00edgits",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOjEyMzQ1Njc4OTB9.QxEATjI9i0FlCykDZbeTppaPPf2qYp6lumQ5_V66MQG3NYDEbODs3Sd8Aj4-W0qPB9PZt_aCFl84QfrHofnBYA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-leading-zero",
+      "group": "P04",
+      "description": "Valor no adm\u00e8s al membre x: zero a l'esquerra",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOjAxfQ.ec82fXneqYIJqiL6c7106Cwc7a3mMjzbZjB7CuNYbDzKh8R61Bb-YR4fptXTZtdH5cnTPCLmpXTu71QO3TA76A",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-v-decimal",
+      "group": "P04",
+      "description": "v decimal 1.0",
+      "input": "ARB1.eyJ2IjoxLjAsImtpZCI6InRlc3QiLCJjaWQiOiI5ZjFkMzVhMS0wNjQzLTQ3MTEtYTcyZC0xNDVlNmNmOWQzODIiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.3G7uK78d-TEg45BpYCCxVJ4lTIXtjeCB82hfK7jC0yXmLOeGedOGdt2xm4VQfcpJObIMXdXmHdvzQ4Jp7jQdnw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-v-exponent",
+      "group": "P04",
+      "description": "v amb exponent 1e0",
+      "input": "ARB1.eyJ2IjoxZTAsImtpZCI6InRlc3QiLCJjaWQiOiI5ZjFkMzVhMS0wNjQzLTQ3MTEtYTcyZC0xNDVlNmNmOWQzODIiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0._g0ZB6lDyCw9uklm6ByOtNVgbQrM7nZXqxrvAxKUWZG6fu3LhI0Osg63UqQvqJIAEeZ6Zt6LuaYew03y3k4Tvw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P05-nom",
+      "group": "P05",
+      "description": "nom duplicat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm5vbSI6IkFsdHJhIFBlcnNvbmEifQ.9Spi9CkBh-NmityC5SYUEhAEDQAbIPAA_R6UoBs2HOFDXUxBx6SAwJ8NbepgM22NZjax992XiiLykEENrWQNzA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P05-nom-escaped",
+      "group": "P05",
+      "description": "nom duplicat per escapament (n\\u006fm)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm5cdTAwNmZtIjoiQWx0cmEgUGVyc29uYSJ9.C80L3gkLtKDc1_Pft4TKPG-4GdsEDBFEiNs7s39S7X6SB_qsbyLrwW_D7-yeGXhXR_YHuDZcO8jMt8OXNq1Bwg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P05-kid-escaped",
+      "group": "P05",
+      "description": "kid duplicat per escapament (\\u006bid)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIlx1MDA2YmlkIjoidGVzdCJ9.UYr56rbH7Op85Nth16mi_lmdW5Md6URHvbD0rbU7nLB3Y0cwnh3RltArNhQXU1CoiBTuELmXJQ90y0P5WW3pjQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P05-v",
+      "group": "P05",
+      "description": "v duplicat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsInYiOjF9.Rj7zvhUo0HU5XLGq2kfDrpvwRX26D7C4aurOSxwCwENkd6O91Kdb0BLfP6L6P24_q58FTFas3lslIim2NeZjiA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P05-unknown",
+      "group": "P05",
+      "description": "membre desconegut duplicat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOiJhIiwieCI6ImIifQ.rcQigEdCiOAE7BL3YIMsnmfoXqzduM1MSCOhpLB6blFfOfGkziymmL33T1c7j6Yr8RwMrPLa8vHJPxjNYdKkdA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-lone-high",
+      "group": "P06",
+      "description": "Substitut a\u00efllat a nom: \\ud800 a\u00efllat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBcdWQ4MDAgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.3M0IJPZWMT8EXf0vUEK6QIjHdI65DgMJLCWBY2zhr34KmcG0krzkBV0-Se6rC7l77kwSH_FzFNSbievlOxEBjA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-lone-low",
+      "group": "P06",
+      "description": "Substitut a\u00efllat a nom: \\udc00 a\u00efllat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBcdWRjMDAgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.RhCjxSAsQ87lBc5b2_Wnjr_0Sy-RnWk-qVHIBi8aStjkUQ4aqs1KNYqYfWEw1OygKNyp14EIfMlWIwgCF3YDyA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-high-then-bmp",
+      "group": "P06",
+      "description": "Substitut a\u00efllat a nom: alt seguit d'un no substitut",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBcdWQ4MDBcdTAwNDEgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.j1y-wsiVU06fsqcoPWwR0XX5JEy8zCJ23OzoNyPLEzOWPnTOuABtR62rW-ols3WHq40QHkxEltUvtd1VeH0eQA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-reversed-pair",
+      "group": "P06",
+      "description": "Substitut a\u00efllat a nom: parell invertit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBcdWRjMDBcdWQ4MDAgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.cdftJYgp2WV5YxXwtSGakdYGkQtMJLTGcW5PTgwKoHmWaBTEJQEVS34pPc9XwMKtQX2B60qElp2q_7WvhiJ2qw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-high-at-end",
+      "group": "P06",
+      "description": "Substitut a\u00efllat a nom: alt al final del text",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBQdWlnXHVkODNkIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.H4QRpOlGNDbwnSMvftyqJDRTfvgNpbKukQU5RQmS1cLtyHxdTeSidfEA6RAmeSEdYgWTpREgy-eI4EzTC3iP2Q",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P06-member-name",
+      "group": "P06",
+      "description": "Substitut a\u00efllat en un nom de membre",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsInhcdWQ4MDAiOiJhIn0.Lti6SLc4rcaEvswmTk8tT0aPpa5Hci4ENwnOAkpKoIN2UEM7Dx1qhPbkC9OCLVkotKuaw2Ii8d6-pNvHigC9hg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-missing-v",
+      "group": "P07",
+      "description": "v/kid: falta v",
+      "input": "ARB1.eyJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.dD5GimM1MrnL1SrfZUiD23gQrYZsqBU40NRnM18oeW0QTF-go66uB7DN3Rqc85R1Z0lFQ2thsdOt0FdcXkcbdw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-missing-kid",
+      "group": "P07",
+      "description": "v/kid: falta kid",
+      "input": "ARB1.eyJ2IjoxLCJjaWQiOiI5ZjFkMzVhMS0wNjQzLTQ3MTEtYTcyZC0xNDVlNmNmOWQzODIiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.lvziNZhZpsi6EiQkgBNCA4j9972IsWBrYRhRaIerSEYb8hMvO5S7ORue-JQHtmrA8PJUc_pZO6nVdiHyMpmiEg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-v-text",
+      "group": "P07",
+      "description": "v/kid: v com a text",
+      "input": "ARB1.eyJ2IjoiMSIsImtpZCI6InRlc3QiLCJjaWQiOiI5ZjFkMzVhMS0wNjQzLTQ3MTEtYTcyZC0xNDVlNmNmOWQzODIiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.ZtcjrH6f0UbWB5CmUxwlXlD_X95dpbgR9eTVHZ41vhPTCUqKq3XAZ_kx5OF3eJUuRaaAgrof6f4Z2-vtQoTURA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-v-2",
+      "group": "P07",
+      "description": "v/kid: v=2 a ARB1",
+      "input": "ARB1.eyJ2IjoyLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.5Kr5woHhYD8fK5E-B5ASVnbpvwnQhGnISj4xrAXHRNcG_LlY3GWC7yJMXqwYqbzI9QUYuCkqVhLyVLB_zLvpyQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-v-0",
+      "group": "P07",
+      "description": "v/kid: v=0",
+      "input": "ARB1.eyJ2IjowLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.-TcvZYyykgesoAu9sQz5uy2nXTXBGpCXGt6Q1Zok-Fu-F0Y0KXySAeq-1matky2N4KEDVitT1m_C9iAj00rSPw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-kid-uppercase",
+      "group": "P07",
+      "description": "v/kid: kid amb maj\u00fascules",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJUZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.T9pQczPMqsLjhQsfrkjfX0UG74-juGgIbetqeGRkX3MPnsSr4ZpPmzbkThEQYGr_S4T9mhYJ1YHScyDxdxAAyA",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-kid-dash",
+      "group": "P07",
+      "description": "v/kid: kid amb '-'",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZS1zdCIsImNpZCI6IjlmMWQzNWExLTA2NDMtNDcxMS1hNzJkLTE0NWU2Y2Y5ZDM4MiIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.L-F7ENw97pcF6UyEu13HADLPjzHOyg5O2GAgOojZCPWBgTXM2c-n-ttN8mhB4aCY0NO49XM7aYi5iFECKDrGZQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-kid-empty",
+      "group": "P07",
+      "description": "v/kid: kid buit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiIiLCJjaWQiOiI5ZjFkMzVhMS0wNjQzLTQ3MTEtYTcyZC0xNDVlNmNmOWQzODIiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.zDyB6OUucR1WT9XMyBKlJ75jvKT1LWDEzvdx8Pi5mHQuezR7eyU664vMDmLTvPhGJJ9572RYlUkOjLoJ2kDgIQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-kid-17-chars",
+      "group": "P07",
+      "description": "v/kid: kid de 17 car\u00e0cters",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJhYWFhYWFhYWFhYWFhYWFhYSIsImNpZCI6IjlmMWQzNWExLTA2NDMtNDcxMS1hNzJkLTE0NWU2Y2Y5ZDM4MiIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.5987GuFBlCQjevqMpCpI1mSZJFjZmghma7btlrurry7dZApac1Gia7gzdBftxYDmn6VB-xMOoO4o9A0QhlzkFw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P07-kid-integer",
+      "group": "P07",
+      "description": "v/kid: kid enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOjEsImNpZCI6IjlmMWQzNWExLTA2NDMtNDcxMS1hNzJkLTE0NWU2Y2Y5ZDM4MiIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.3oz3QuzT21DkxjIzXvNRLA8J7AS2j1XJUiBrUkwWOlfOq0Yz-6HFXEZPiU3XwxSPZGJ7hMObOQPu8r8xo7geVg",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P08",
+      "group": "P08",
+      "description": "17 membres",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOWYxZDM1YTEtMDY0My00NzExLWE3MmQtMTQ1ZTZjZjlkMzgyIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngxIjoiMSIsIngyIjoiMiIsIngzIjoiMyIsIng0IjoiNCIsIng1IjoiNSIsIng2IjoiNiIsIng3IjoiNyIsIng4IjoiOCIsIng5IjoiOSJ9.fPzDa74JCGV6VRaS-UxiaUO7b49lRa-J5Icr4WqBqtaVDBqZMNySnZp15wBY3RQMhkBrLU4Puv2DbyVkIQj8Bw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P09-last-byte",
+      "group": "P09",
+      "description": "Darrer byte del payload de V01 alterat ('}' \u2192 ']'), firma de V01",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJd.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P09-first-byte",
+      "group": "P09",
+      "description": "Primer byte del payload de V01 alterat ('{' \u2192 '['), firma de V01",
+      "input": "ARB1.WyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "K01-unknown",
+      "group": "K01",
+      "description": "kid inexistent (zz9), firma correcta amb test",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ6ejkiLCJjaWQiOiJkNjkyN2YyYy1kZGI0LTQ3N2QtOTgyZC1kYjZhZWRkZTAwMzAiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.t7f8pWTHrrHeiNpQCXhfJC3ZnlmguEct9Py-wlRXAsSDv-wN7IW6IG2hlmw1SUyo4-DC1RtbpBEI-lq_7XLsOA",
+      "code": "UNKNOWN_KID",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "K01-production-kid",
+      "group": "K01",
+      "description": "kid de producci\u00f3 (s1) contra la llista de prova",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJzMSIsImNpZCI6ImQ2OTI3ZjJjLWRkYjQtNDc3ZC05ODJkLWRiNmFlZGRlMDAzMCIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.73aaeqp6RdCHEp-Xs4YIXAxM4ZA7p3laO3Et8c0mWIYXMsWtlQ-7w3OBgLb4hoHJea-ggF-wP3It4YoWGH_XsQ",
+      "code": "UNKNOWN_KID",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "K03",
+      "group": "K03",
+      "description": "kid=testx (compromised), signat amb la clau testx",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0eCIsImNpZCI6ImQ2OTI3ZjJjLWRkYjQtNDc3ZC05ODJkLWRiNmFlZGRlMDAzMCIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.GjfMevpgm27a1O5uF2Plu-8KvXxjtDWMsPiltlJ0Owe2vOpeFIE6XaskGbTnwYw6liDsiIB_6wbKyFlE8k0jAw",
+      "code": "KID_NOT_ACCEPTED",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S01",
+      "group": "S01",
+      "description": "Un car\u00e0cter de nom canviat (JSON v\u00e0lid), firma de V01",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWYiLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S02-r-bit",
+      "group": "S02",
+      "description": "Un bit de r canviat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltwhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S02-s-bit",
+      "group": "S02",
+      "description": "Un bit de s canviat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-IdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S03",
+      "group": "S03",
+      "description": "Payload de V02 amb la firma de V01",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMzVmNGZjNjgtNzBkOS00NDI5LTlhNDktYzdlNjBlYzJhNGFhIiwibm9tIjoiTsO6cmlhIEdhbMK3bGEgUMOpcmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-r-zero",
+      "group": "S04",
+      "description": "r = 0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAButfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-s-zero",
+      "group": "S04",
+      "description": "s = 0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-r-n",
+      "group": "S04",
+      "description": "r = n",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9._____wAAAAD__________7zm-q2nF56E87nKwvxjJVFutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-r-max",
+      "group": "S04",
+      "description": "r = 2^256 \u2212 1",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.__________________________________________9utfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-s-n",
+      "group": "S04",
+      "description": "s = n",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRn_____AAAAAP__________vOb6racXnoTzucrC_GMlUQ",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S04-r-plus-n",
+      "group": "S04",
+      "description": "r = r + n (si cap en 256 bits) o r + 1",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRputfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S05",
+      "group": "S05",
+      "description": "Firma sobre els bytes JSON descodificats (contracte antic de 03 \u00a76.2.2)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiNWFlZmYyNTMtOWZkMC00OTZlLWEyZTAtYjZlZTNhNmJkZmM1Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.vpxRvYDfKWYt97OEmvXZKMNeSVPmdS8XSZgvvfQaDloZRn_V4RLp0ee51w8UfW7JxMsBz5syo4FNeF5xIlvadg",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "S06",
+      "group": "S06",
+      "description": "Signat amb una altra clau P-256 i kid=test",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiNWFlZmYyNTMtOWZkMC00OTZlLWEyZTAtYjZlZTNhNmJkZmM1Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.gAKJaB8PXXsfMSokvpD-_XAt-df1RNr66Km87iDVhx5g1UDPzWc-1qZqfzk4cskPfMYnsPwCstqK4ut0BCH7Lg",
+      "code": "BAD_SIGNATURE",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "C01-missing-cid",
+      "group": "C01",
+      "description": "Falta cid",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.RUo6oO4kLudFQmxon0347QGxkcuNCcVHqszpYD218LFwefIb__ZQvxAsIPm5htjwiVHPewOMLuZ57ribvLDS-w",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C01-missing-nom",
+      "group": "C01",
+      "description": "Falta nom",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.G5HrHO-qsD9RH62FbCMruSrqwmgYk_nLjqdhrw-RLtRtAgplkmuJ0b0nH-HJapAXsafxIYdJ4hpq7Y7DB3-vug",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C01-missing-res",
+      "group": "C01",
+      "description": "Falta res",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.vP5t7zsmVw0CfLKO3w3dZlK0X9zX27f7bXhGJ2xC6HntbM4KOGhRBqOoc9ynbQhHYVgZ08xRloU40ZzaynitKg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C01-missing-exv",
+      "group": "C01",
+      "description": "Falta exv",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.AE3YsF3ZVvgJEQ0icruXrOXej3IIpC7IG0J5s4n7QxrlxjSjxCsaZzMVQ8PIfaIuxas-SgzpYVqm_h9TPrFWug",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C01-missing-iat",
+      "group": "C01",
+      "description": "Falta iat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsIm9yaWciOiJhdXRvc2VydmVpIn0.H4jr9N_HcdUhwvoASi5g1VNj_DN_DQGFWHJLAC9kmz8AnN4WmQWuZ7P-GJv7Fv4fUuAhvG8hkLyqEm9S3H1NPQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C01-missing-orig",
+      "group": "C01",
+      "description": "Falta orig",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAifQ.1i2-cSTihs8CatZTLdiA3n4PPB7CvfCZxkgDSXpXEJ4rZi9mBZ-BkOBxLLJrg0Ts26Nz6CNLRkGgONo464Z7KQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C02-lowercase",
+      "group": "C02",
+      "description": "res = \"apte\"",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJhcHRlIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.uyCO4BVrOt3YMChKMZZ-K8gUc_t7-Nh_O11oY3jya1zBPywiwljkRCNSBQXOML5yVHhJiSiW2zUvDYai3sgbgw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C02-apta",
+      "group": "C02",
+      "description": "res = \"APTA\"",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRBIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.JWEHxo80swa45j6JOvLLApfzkMh6jwcr1_tNJZ6UzZQXvGrvpbi_aDx_t4UO_yTYCcznNHnFshykPBzz8w98aw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C02-integer",
+      "group": "C02",
+      "description": "res enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOjEsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.ikNEJsQf_QnrLJ1bkhhu0DKnD56Ja-EsWzNl2o2sotm88ZOz-_6iI0lrZzciWywIPbskrM5yVhhKixcaem-uiw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C03-capitalized",
+      "group": "C03",
+      "description": "orig = \"Autoservei\"",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiQXV0b3NlcnZlaSJ9.8RfPLvPleNYkImQI651VwE7JsLwuCI4ZLuy2U40Wr4WWhIQWjd2HRBy6sfL5YCZMdDc23C9BpWPWVakAivc9oA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C03-other",
+      "group": "C03",
+      "description": "orig = \"organitzador\"",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoib3JnYW5pdHphZG9yIn0.ZM2IVW6sppU5SjsXR-oC9EqBREFqqfpZ4h7OnBG3D3vY25DwCvNUkZGHEG3PPZB6AvT6hQYnb2ob_9csGkEokQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C04-uppercase",
+      "group": "C04",
+      "description": "cid en maj\u00fascules",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiQjE5NDkxOTktRTVBOS00RkU3LTk4RjktNjlDNDcwMTNFMUY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.C6VWw6KSWUq8Rxa9dYgCg3U6PJcYYJBFh5_Dg5Z-ptGcvvtv2G-Ff741OwMZSAUmAg26nK_tR5iMuJrnJi186A",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C04-version-1",
+      "group": "C04",
+      "description": "cid versi\u00f3 1 (no v4)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS0xZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.Y4k649y-UHkQ1Rf0yTHB1-BOUiA3kzdi5AvNqN3WB0S-4qaZYRFZJbxRkIRod210a3OlkNLhP3Onv2LE_Te-UQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C04-variant-c",
+      "group": "C04",
+      "description": "cid amb variant 'c'",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LWM4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.8eF43FKBzp5bU0IS_VZiW57N0G9mkZoRS-uCfdQfNyWOZOfUeDj-NE9SvzwjAeuQTOIHtEVom_zvGCdfCCH4kQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C04-no-dashes",
+      "group": "C04",
+      "description": "cid sense guions",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTllNWE5NGZlNzk4Zjk2OWM0NzAxM2UxZjYiLCJub20iOiJBbm5hIEV4ZW1wbGUgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.1QuIFNg-ctnKbgDhzPMkkdHwooSL8GSUEHsCZ8XqWmD32REgEloi1wFnToMy5YKt4pIXXy1jZUQ4XDgz1XR0bg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-feb-30",
+      "group": "C05",
+      "description": "iat: 2026-02-30",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMDItMzAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.aCzjjN58SOwdNPJ5l4erXT9P4joTqpEvMzIeFoQIq-e9c7GP7SFHvIb3iMiYxKgD_9BQeF_J2wQSUkOvuOGifw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-with-time",
+      "group": "C05",
+      "description": "iat: amb hora",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjBUMTA6MDA6MDAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.tBP13kA1cl5htlc0wH_mlEAtAiIIWIR1cIfQyazE_o0lyRGLHUo_6eMi5VdK0sWW8Gg1nXQISGUObuCyi_I3VA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-integer",
+      "group": "C05",
+      "description": "iat: enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6MjAyNjExMjAsIm9yaWciOiJhdXRvc2VydmVpIn0.tX0erXuTHkN7eGTmTn5OPiPkyrilzOnqKZpVvgnQ-jVC150zjrX1B-lteVxTX0fCT-sInfCYX8Cwj32j8NQ82g",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-month-13",
+      "group": "C05",
+      "description": "iat: mes 13",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTMtMDEiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.f6jYkyJRX-F8X7vEVDBfFqgnF7olY6kQU9lI6h31Dn1wHZDyD7WstVEHH46ew7nLWwjwRr8Ch5GaamRNBz_e1A",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-month-00",
+      "group": "C05",
+      "description": "iat: mes 00",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMDAtMTAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.Rgo6s95WBfj2Lkb8nEIa_oNw0WMEv-h6q5k63MpcpUjcFQ1AOpioMN5_kFtTjtqLHR8UciHXTxTB8aD74-9jpQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-feb-29-2025",
+      "group": "C05",
+      "description": "iat: 29 de febrer no bixest (2025)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjUtMDItMjkiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.JUlKhXZU5xwPd2n3mZs4QC7rmCKwRxHN6OmPiB4IVLjSOjIcN0IGvRw3Z1TrJNQZ0vTFMyjUsaFXWnO0kIScCQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-feb-29-1900",
+      "group": "C05",
+      "description": "iat: 1900-02-29 (no bixest)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjE5MDAtMDItMjkiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.kefH2d6gSdQQStLKfWoc0eqLDmHKyO2M1fCkrKV_PS6OBnmkTr-Z5HU1CEt2CgOUAQiW9BTGKvWvDePH5ilDFQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C05-no-padding",
+      "group": "C05",
+      "description": "iat: sense zeros",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMS01Iiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.0-tcY3n6YOG5c_T29lfrnM_X5TH49fuMEtqUhGjNzpz6DTQDx_twrQYc76xd-20_x55E3E7APqsmmP8I4j4TBw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-empty",
+      "group": "C06",
+      "description": "nom: buit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.6kFK8PH7rjM99S2El2aT28wCBYzNzIxRTHipmGKc2-NTmq924tNo8Xm34TYTK7EeqlGmxe-_igrjMrBcyPFiWw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-leading-space",
+      "group": "C06",
+      "description": "nom: espai inicial",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiIEFubmEgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.c7FOoBXsLpI36E9NNzgRhoJzr4mQOLMWbzIBrOnePsl8PF8rCIQPbLcgceGZnhvDgYnKnznzpRZbPxH3t1uAEg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-trailing-space",
+      "group": "C06",
+      "description": "nom: espai final",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBQdWlnICIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.kZcZfBRmRcEE4Q76JJODWUHHVWuAHDd2NRSpFqy_dVT2IS4sS45wPGb2meLFS3vkBy75TUk2nVuSpVkHv1iixg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-double-space",
+      "group": "C06",
+      "description": "nom: doble espai",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSAgUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.yYbVPFMM1_gHNthHuqSUO2NJG1durmGt2iMBOye3z9PD-sP8zKi2Omk_4mfe2BPcYb37bWwiIvZuby2jGGeyVw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-u0007",
+      "group": "C06",
+      "description": "nom: U+0007 escapat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYVx1MDAwN1B1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.2xQHU4hTrsklgAtF4yhSpEgOHrr4OnUngOiFT6048nLNDl7udHAdhCj6ZPDiJUN-Fo0L_ShDsOsvlmRY9ir_7w",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-u202e",
+      "group": "C06",
+      "description": "nom: U+202E en UTF-8",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSDigK4gUHVpZyIsInJlcyI6IkFQVEUiLCJleHYiOiIxIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.OQlYIdiCONC85OwdE-yO_6RGSdjXVFuyQrhVnyxXNn7qqup4RWkhO5W1xvbkTXokS3DeLOMb693gKBtUzG5fsQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-u00a0",
+      "group": "C06",
+      "description": "nom: U+00A0 escapat",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYVx1MDBhMFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.79XXJxbQbW-Q_bXVjazD4VRScot8GpsOIdCaMYNvsj4IOQDndIHHFeQ2GYrsRyh-SRC3hcwBfnkV_ItW_OAFDA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-u200b",
+      "group": "C06",
+      "description": "nom: U+200B en UTF-8",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYeKAi1B1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.tQUxi2oqwpQbXxS7XPbJ17YBQc8ZMOMOg6fE9aJkMHblNe6dHwitwMMgB-oemHMxKcVOzzik3n9JYgpm_akeug",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-ufeff",
+      "group": "C06",
+      "description": "nom: U+FEFF en UTF-8",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYe-7v1B1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.dAqaLQlLa1T0JFtIZ_SQyfx4SnhiTGcm1EanNEreydcczwnOWkWiGthnTVmsfnyrT4solEgyfArCuGbOCzHz3w",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-81-code-points",
+      "group": "C06",
+      "description": "nom: 81 punts de codi",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.Jgt38h-SvphvPt4zgOgb_UzL82FXOKdkDVJRGfkOhCMtjZjTuvWJzsyLXlseComDvcQLNddIsevuKghpCkyiJA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C06-integer",
+      "group": "C06",
+      "description": "nom enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoxLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.CwWrpR7f7w3H7Xltw6VseWJlXJ69OO9kMseaG3zOnuhUe9a3WigxpWxJ4z0JULWaLtEUoYyRAzTwh21EJOyJ3A",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-exv-empty",
+      "group": "C07",
+      "description": "exv: buit",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.KgFwPkWcPd5eyzuO2Yg4dgOdHOzPz0nItzpZJlM_mX402U3DWPirsS96dTeCMXVWSFOjQSOLuM68kfuqeW7Ysg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-exv-space",
+      "group": "C07",
+      "description": "exv: amb espai",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSAwIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.I3G4wj5H6LeQ1OoWbyE3ALMpyAL8pFAI2XQ-Muab8P6vcbcZW168U6_G0pccOeRBOywY22JN5LoECjXs0WHofQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-exv-17-chars",
+      "group": "C07",
+      "description": "exv: 17 car\u00e0cters",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMTExMTExMTExMTExMTExMTEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.YjkmZhtWu6Vl36TO8e6ErMm039A4jVNLlhg6rUewQDvtrpMDItlaWTIWeo10GnCidsIBQTL7a8apEKO1X3d-9Q",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-exv-plus",
+      "group": "C07",
+      "description": "exv: amb '+'",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSsyIiwiaWF0IjoiMjAyNi0xMS0yMCIsIm9yaWciOiJhdXRvc2VydmVpIn0.xTwLfJDzD8vgZgwYJ-8flcjzWJPi3J8fk89ZAOtvpuZTnIJxdQL9I-wJfWtr9tfuIaZP1alCpBwcu1s9C0X9yw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-exv-integer",
+      "group": "C07",
+      "description": "exv: enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoxLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.vYW7amISzr1gLTYONXWSC-X1qROz74GmtNaJtYGFzeRFmeo7W6xaOOGzgegQWmLTWPNdmw3vA63kXRTLxq6mZg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-bv-slash",
+      "group": "C07",
+      "description": "bv: amb '/'",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImJ2IjoiMjAyNi8xMSJ9.XWM6YVZamgiZUDxwcUl04monK9hq1svGUmF4EitIy8vpdwWInbTVtqxaDBUFaUOOPnOgZRp5ZKPnd8SaIghEDQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-bv-25-chars",
+      "group": "C07",
+      "description": "bv: 25 car\u00e0cters",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImJ2IjoiMTExMTExMTExMTExMTExMTExMTExMTExMSJ9.MxaMKMujvG14mIwFrjEiFkMbnTCdLg13l-aHFY-8dFOv0BB-dQxP48kKqWwZszZcQmV2rgO4iDa9SXYa5w9XLA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-bv-integer",
+      "group": "C07",
+      "description": "bv: enter",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImJ2IjoxfQ.9oQhL818Aif0G2pIiBQzXDWKVxdDJ6sasOrWty75BTO_DVD0WaI7JRlVIM1cYrgn75y4Se1F_V6B49RQA_RSrA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-app-space",
+      "group": "C07",
+      "description": "app: amb espai",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImFwcCI6IjEuMCBiZXRhIn0.yuugJO8mzhLr3b5r_o8DnF-T2Ghhrp6WgttL_kOE2xTkyVEAAsz13pDUbkctoAt3PLoxSudDisC3PP0aybOmDw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-app-33-chars",
+      "group": "C07",
+      "description": "app: 33 car\u00e0cters",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImFwcCI6IjExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMSJ9.psSk4aQI0va6Qz-up5VwlWFXjBXB7zi6iaR_gI1ze1BCbZUxbf4aCtjvGwydvxkCUw0eEOotzqxrpKkGWvnOwQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C07-app-non-ascii",
+      "group": "C07",
+      "description": "app: no ASCII",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImFwcCI6IjEuMMOpIn0.6fl-OsQGTfTjHDUZohQ3IbDS7LKEKKfIRA5-YFi__4jKZJ-HLpcPu8Sr88MHORv2YlXIQCynx64p0r6dPJAk8Q",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C08-exp",
+      "group": "C08",
+      "description": "Nom reservat exp present",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImV4cCI6OTk5OTk5OTk5fQ.Z_dNgAetQnTBt2HcHSbv8VpjaTk082bvjte1NKvql8Cb7gEJPph8NBDVyOtasbjqjgCMTWpi_IExMf-91Yzc0Q",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C08-nbf",
+      "group": "C08",
+      "description": "Nom reservat nbf present",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm5iZiI6MH0.TtQl4NK_KPaP8ilj81tlvvrSHR9uRdKvComRZmL0wOdA-q0eo3o37CFEF0J6Q8LIlpX-X6ZUABb6O5qc34TQVw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C08-crit",
+      "group": "C08",
+      "description": "Nom reservat crit present",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImNyaXQiOiJleHAifQ.WmA99rrbmbXVWNqrO64SChxxM4yv4G9TeA3leNNlZo1cMmke-S6aneYlluWe4DK9PUrwVFvYjoMTO8j4eHwqCg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C08-alg",
+      "group": "C08",
+      "description": "Nom reservat alg present",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjE5NDkxOTktZTVhOS00ZmU3LTk4ZjktNjljNDcwMTNlMWY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImFsZyI6Im5vbmUifQ.1MQ4ZqwykA8yeh-EdUSet2_rVKFAjXstYOHZaGQx72k303Ea5eVg98MvDj4AA3HU-QOfL0qsB_Y3UoNfrQ_3jQ",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "X01",
+      "group": "X01",
+      "description": "Entrada bruta d'exactament 2048 (V01 + espais)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "90717b65-8827-45f7-8c85-038cff09cff6",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "9071-7B65"
+    },
+    {
+      "id": "X02",
+      "group": "X02",
+      "description": "Payload d'exactament 512 bytes",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiN2I0YWNhZjctNTNmZS00MGE3LWJmOTUtMWRiNDA1N2E1NmQwIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsInBhZCI6Inh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4In0.45K5oENobR6WvfEMFd4GRTtjOgxJ8Lz_Ah3piVAi25Y_4PjjCVFEGOw6qkPkUlpoX-is27a8W4vPDdmzQHPHTw",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "7b4acaf7-53fe-40a7-bf95-1db4057a56d0",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "7B4A-CAF7"
+    },
+    {
+      "id": "X03",
+      "group": "X03",
+      "description": "16 membres",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiN2I0YWNhZjctNTNmZS00MGE3LWJmOTUtMWRiNDA1N2E1NmQwIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngxIjoiMSIsIngyIjoiMiIsIngzIjoiMyIsIng0IjoiNCIsIng1IjoiNSIsIng2IjoiNiIsIng3IjoiNyIsIng4IjoiOCJ9._oaNBumEXMJByTwcBxMsoM4lSb9pr27a7jaWmIy_qqeNl63RJYoWdttoNOl0OikPrj6lQ5-6Ady8JdaBxTnyFg",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "7b4acaf7-53fe-40a7-bf95-1db4057a56d0",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "7B4A-CAF7"
+    },
+    {
+      "id": "X04",
+      "group": "X04",
+      "description": "Prefix de 4 d\u00edgits ARB1000.",
+      "input": "ARB1000.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "X05",
+      "group": "X05",
+      "description": "Versi\u00f3 de 2 d\u00edgits ARB10.",
+      "input": "ARB10.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiOTA3MTdiNjUtODgyNy00NWY3LThjODUtMDM4Y2ZmMDljZmY2Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.rbfr3ltxhSb_qzyd-KPvlV9qeuRCB1fRD26bqHfsQRlutfESwBXx-JdrSrW9TXqGo72Es4imutaH5vxIQDpMrw",
+      "code": "UNKNOWN_VERSION",
+      "result": "VERSI\u00d3 DESCONEGUDA"
+    },
+    {
+      "id": "X06",
+      "group": "X06",
+      "description": "URL amb espais davant i maj\u00fascules barrejades",
+      "input": "  hTtPs://example.org/x",
+      "code": "IS_URL",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "X07",
+      "group": "X07",
+      "description": "Noms de membre amb escapes (\\u006eom = nom) i escapes \\/ i \\\"",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiN2I0YWNhZjctNTNmZS00MGE3LWJmOTUtMWRiNDA1N2E1NmQwIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkiLCJcdTAwNmVvbSI6IkFubmEgT1wiRXhlbXBsZVwvUHVpZyJ9.hg--ifoWdfhKiTPaea8dn8YDRXFtOxyWzE8kl2NBDymYBioA1md_7zbcQLLAcVulcN2FYE8Hz1RuHLNLFxE1QA",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "7b4acaf7-53fe-40a7-bf95-1db4057a56d0",
+        "nom": "Anna O\"Exemple/Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "7B4A-CAF7"
+    },
+    {
+      "id": "X08",
+      "group": "X08",
+      "description": "iat 2000-02-29 (bixest per la regla dels 400 anys)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiN2I0YWNhZjctNTNmZS00MGE3LWJmOTUtMWRiNDA1N2E1NmQwIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMDAtMDItMjkiLCJvcmlnIjoiYXV0b3NlcnZlaSJ9.MtUDC2fHlP1z1Xwr12DidMTFfx9kfKL1vjTgbrZ4Y3XTdJyAP2O5FqxSx5xjUS70wCwOJFp5Ih-HZ7Ddfi7W7w",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "7b4acaf7-53fe-40a7-bf95-1db4057a56d0",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2000-02-29",
+        "orig": "autoservei"
+      },
+      "shortCode": "7B4A-CAF7"
+    },
+    {
+      "id": "X09",
+      "group": "X09",
+      "description": "kid=testx signat amb una clau d'una altra (l'estat decideix abans que la firma)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0eCIsImNpZCI6ImQ2OTI3ZjJjLWRkYjQtNDc3ZC05ODJkLWRiNmFlZGRlMDAzMCIsIm5vbSI6IkFubmEgRXhlbXBsZSBQdWlnIiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkifQ.DGmoVQq8h0o_op5xYDx55X_z4Zc_BTSANwphppYubCJS9WSEqSjBT3iWNlFXeG7PCGD4auKbChXEX4tWToNKgg",
+      "code": "KID_NOT_ACCEPTED",
+      "result": "NO V\u00c0LIDA"
+    },
+    {
+      "id": "X10",
+      "group": "X10",
+      "description": "Membre desconegut enter de 9 d\u00edgits i 0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiN2I0YWNhZjctNTNmZS00MGE3LWJmOTUtMWRiNDA1N2E1NmQwIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIngiOjk5OTk5OTk5OSwieSI6MH0.MzyUSQ2W89c-qzn4BVw7wtvJPiPnXq89-AX2P3LWD5TUaBaRy0SVPMBJDWn5vpqT-jxexxrcarSli5R_a0WrCg",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "7b4acaf7-53fe-40a7-bf95-1db4057a56d0",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei"
+      },
+      "shortCode": "7B4A-CAF7"
+    },
+    {
+      "id": "X11",
+      "group": "X11",
+      "description": "Prefix ARB1 seguit d'URL: no \u00e9s URL (no comen\u00e7a per http)",
+      "input": "ARB1.https://x",
+      "code": "BAD_FORMAT",
+      "result": "FORMAT INCORRECTE"
+    }
+  ]
+}
