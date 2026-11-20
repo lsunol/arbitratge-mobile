@@ -1,12 +1,19 @@
-package dev.lluissunol.arbitratge.exam
+package dev.lluissunol.arbitratge.buildtools
 
+import dev.lluissunol.arbitratge.credential.P256
+import dev.lluissunol.arbitratge.exam.BankParseException
+import dev.lluissunol.arbitratge.exam.BankParser
+import dev.lluissunol.arbitratge.exam.BankValidator
+import dev.lluissunol.arbitratge.exam.QuestionStatus
+import dev.lluissunol.arbitratge.exam.ValidationMode
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
-import java.security.KeyFactory
-import java.security.interfaces.ECPrivateKey
-import java.security.spec.PKCS8EncodedKeySpec
+import java.util.Base64
 import kotlin.system.exitProcess
 
 /**
@@ -43,23 +50,42 @@ object BuildTools {
         return json.encodeToString(JsonObject.serializer(), JsonObject(root.filterKeys { it != "canary" }))
     }
 
-    /** Valida kid y clave PKCS#8 P-256; devuelve el kid. No lee ni imprime la clave. */
-    fun checkSealKey(pkcs8: ByteArray, kid: String, release: Boolean): String {
+    /**
+     * Valida kid y clave PKCS#8 con la validación P-256 canónica de `core-credential` (`P256.spkiFromPkcs8`:
+     * curva P-256 exacta, 0 < d < n). En release rechaza además el material de debug/prueba: se compara el
+     * SPKI derivado con [denySpkis], sea cual sea el `kid`. No imprime la clave. Devuelve el kid.
+     */
+    fun checkSealKey(pkcs8: ByteArray, kid: String, release: Boolean, denySpkis: List<ByteArray> = emptyList()): String {
         if (!KID.matches(kid)) throw ToolException("ARB_SEAL_KID fora de patró [a-z0-9]{1,16}")
         if (release && kid in NON_PRODUCTION_KIDS) throw ToolException("kid '$kid' no es pot usar en release")
-        val key = try {
-            KeyFactory.getInstance("EC").generatePrivate(PKCS8EncodedKeySpec(pkcs8)) as? ECPrivateKey
-        } catch (e: Exception) {
-            null
-        }
-        if (key == null || key.params.order.bitLength() != 256 || key.params.curve.field.fieldSize != 256) {
-            throw ToolException("La clau de sello no és una PKCS#8 P-256 vàlida")
+        val spki = P256.spkiFromPkcs8(pkcs8) ?: throw ToolException("La clau de sello no és una PKCS#8 P-256 vàlida")
+        if (release && denySpkis.any { it.contentEquals(spki) }) {
+            throw ToolException("La clau de sello és material de debug/prova (dev/test): no es pot usar en release")
         }
         return kid
     }
 
+    /** SPKI de las claves prohibidas en release: `.der` (PKCS#8) o `test-keys.json` (`keys[].spki|pkcs8`). */
+    fun denySpkis(files: List<File>): List<ByteArray> {
+        val dec = Base64.getUrlDecoder()
+        val out = mutableListOf<ByteArray>()
+        for (f in files) {
+            if (f.name.endsWith(".json")) {
+                val keys = Json.parseToJsonElement(f.readText(Charsets.UTF_8)).jsonObject["keys"]?.jsonArray ?: JsonArray(emptyList())
+                for (k in keys) {
+                    val o = k.jsonObject
+                    o["spki"]?.jsonPrimitive?.content?.let { out += dec.decode(it) }
+                    o["pkcs8"]?.jsonPrimitive?.content?.let { P256.spkiFromPkcs8(dec.decode(it))?.let(out::add) }
+                }
+            } else {
+                P256.spkiFromPkcs8(f.readBytes())?.let(out::add)
+            }
+        }
+        return out
+    }
+
     /**
-     * `pack-bank <in> <out> <debug|release>` · `pack-seal <in.der> <kid> <outDir> <debug|release>`.
+     * `pack-bank <in> <out> <debug|release>` · `pack-seal <in.der> <kid> <outDir> <debug|release> [denyFile…]`.
      * Código de salida 1 con mensaje claro; los mensajes no contienen contenido del banco.
      */
     @JvmStatic
@@ -72,7 +98,7 @@ object BuildTools {
                 }
                 "pack-seal" -> {
                     val bytes = File(args[1]).readBytes()
-                    val kid = checkSealKey(bytes, args[2], args[4] == "release")
+                    val kid = checkSealKey(bytes, args[2], args[4] == "release", denySpkis(args.drop(5).map(::File)))
                     val dir = File(args[3]).apply { mkdirs() }
                     File(dir, "seal-key.der").writeBytes(bytes)
                     File(dir, "kid.txt").writeText(kid, Charsets.US_ASCII)

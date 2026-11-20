@@ -57,7 +57,11 @@ class SessionNotActiveException(message: String) : Exception(message)
  */
 interface SessionStore {
     suspend fun active(): StoredSession?
+    /** Última sesión terminada por ORDEN DE INSERCIÓN (no por hora de pared, que puede cambiarse). */
     suspend fun latestFinished(): StoredSession?
+
+    /** Sesiones `FINISHED` de examen SIN fila `credential`, en orden de inserción (recuperación de emisión). */
+    suspend fun finishedWithoutCredential(): List<StoredSession>
     suspend fun session(id: String): StoredSession?
 
     /** Crea la sesión `IN_PROGRESS`. Falla si ya hay otra activa (unicidad en BD). */

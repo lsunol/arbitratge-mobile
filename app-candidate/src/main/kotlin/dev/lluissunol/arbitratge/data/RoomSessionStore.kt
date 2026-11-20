@@ -9,6 +9,7 @@ import dev.lluissunol.arbitratge.exam.ExamSession
 import dev.lluissunol.arbitratge.exam.ExamSnapshot
 import dev.lluissunol.arbitratge.exam.FinishReason
 import dev.lluissunol.arbitratge.exam.SessionState
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 
@@ -22,10 +23,17 @@ class RoomSessionStore(private val dao: SessionDao) : SessionStore {
             block()
         } catch (e: SQLException) {
             throw StorageException("error d'emmagatzematge", e)
+        } catch (e: SerializationException) { // dades desades il·legibles (corrupció): mateix error recuperable
+            throw StorageException("dades desades il·legibles", e)
+        } catch (e: IllegalArgumentException) {
+            throw StorageException("dades desades il·legibles", e)
         }
 
     override suspend fun active(): StoredSession? = guard { dao.active()?.let { load(it) } }
     override suspend fun latestFinished(): StoredSession? = guard { dao.latestFinished()?.let { load(it) } }
+    override suspend fun finishedWithoutCredential(): List<StoredSession> =
+        guard { dao.finishedWithoutCredential().map { load(it) } }
+
     override suspend fun session(id: String): StoredSession? = guard { dao.session(id)?.let { load(it) } }
 
     override suspend fun create(session: StoredSession) = guard {

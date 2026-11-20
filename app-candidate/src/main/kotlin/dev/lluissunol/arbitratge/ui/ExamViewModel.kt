@@ -88,7 +88,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     // Estado de pantalla de la pregunta (nada de esto es verdad persistida salvo `current`).
     private var current: StoredSession? = null
     private var selected: Set<String> = emptySet()
-    private var pendingTapMs: Long? = null
+    private var pending: PendingTap? = null
+    private val pendingTapMs: Long? get() = pending?.remainingMs
     private var timeHidden = false
     private var dismissedBanner: TimeBanner? = null
     private var dialog: QuestionDialog? = null
@@ -124,9 +125,12 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
                 resumeActive(active)
                 return
             }
-            val finished = deps.store.latestFinished()
-            if (finished != null && mustIssue(finished)) {
-                showResult(finished)
+            // Recuperación de emisión: todas las sesiones aprobadas sin credencial, por orden de inserción
+            // (no por hora de pared). Las antiguas se reintentan en silencio; la más reciente se muestra.
+            val pendings = deps.store.finishedWithoutCredential().filter { mustIssue(it) }
+            if (pendings.isNotEmpty()) {
+                pendings.dropLast(1).forEach { old -> issue(old) }
+                showResult(pendings.last())
                 return
             }
             _stage.value = if (!deps.prefs.welcomeSeen) Stage.Welcome else home()
@@ -145,9 +149,11 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         val rec = ExamClockModel.reconcile(s.clock, deps.clock.monotonicMs(), deps.clock.bootCount(), deps.clock.wallMs())
         if (rec.rebooted) {
             // Reanclaje atómico e idempotente; si no se puede escribir se repetirá (el restante guardado no cambia).
-            try {
-                deps.store.saveClock(s.id, rec.state)
-            } catch (_: StorageException) {
+            // El reanclaje DEBE quedar persistido antes de entrar: si no, un proceso muerto concedería tiempo.
+            val ok = withRetry { deps.store.saveClock(s.id, rec.state) }
+            if (ok.isFailure) {
+                _stage.value = Stage.RecoveryError
+                return
             }
         }
         val sess = s.copy(clock = rec.state)
@@ -251,7 +257,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
 
     private fun resetQuestionState() {
         selected = emptySet()
-        pendingTapMs = null
+        pending = null
         dialog = null
         saving = false
         saveError = null
@@ -335,42 +341,63 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         publishQuestion()
     }
 
-    private fun commit() = op {
-        val s = current ?: return@op
-        if (_stage.value !is Stage.Question) return@op
+    /** Pulsación confirmada, capturada SÍNCRONAMENTE (índice, selección y restante al tocar). */
+    private data class PendingTap(val index: Int, val ids: Set<String>, val remainingMs: Long)
+
+    /**
+     * Captura el tap en el hilo de la UI, antes de esperar el mutex de escritura: un punto de control que
+     * retenga el mutex no puede hacer caducar un tap a tiempo, y un segundo evento (doble toque, evento
+     * obsoleto) se rechaza porque ya hay un tap pendiente o el índice no coincide.
+     */
+    private fun commit() {
+        val s = current ?: return
+        val st = _stage.value as? Stage.Question ?: return
+        if (pending != null || saving || st.index != s.session.currentIndex) return
+        val tap = remainingNow(s)
         dialog = null
-        val idx = s.session.currentIndex
-        var tap = pendingTapMs
-        if (tap == null) {
-            tap = remainingNow(s)
-            if (tap < 0) { // el tiempo ya se había agotado al tocar: la respuesta no cuenta
-                finishTimedOut(away = false)
-                return@op
-            }
-            pendingTapMs = tap
+        afterNoAnswerFinish = false
+        if (tap < 0) { // el tiempo ya se había agotado al tocar: la respuesta no cuenta
+            op { if (_stage.value is Stage.Question) finishTimedOut(away = false) }
+            return
         }
+        pending = PendingTap(st.index, selected, tap)
+        startSave()
+    }
+
+    private fun startSave() {
         saving = true
         saveError = null
         publishQuestion()
+        op { persistPending() }
+    }
+
+    private suspend fun persistPending() {
+        val p = pending ?: return
+        val s = current
+        if (s == null || s.session.currentIndex != p.index) { // obsoleto
+            pending = null
+            saving = false
+            return
+        }
+        val idx = p.index
         val last = idx == s.session.total - 1
-        val ids = selected
         val outcome = try {
-            withRetry { persistAnswer(s, idx, ids, tap, last) }
+            withRetry { persistAnswer(s, idx, p.ids, p.remainingMs, last) }
         } catch (e: SessionNotActiveException) {
             resolve()
-            return@op
+            return
         } catch (e: ExamEngineException) {
             _stage.value = Stage.StateError
-            return@op
+            return
         }
         saving = false
         val result = outcome.getOrNull()
         if (result == null) {
             saveError = if (last) SaveError.RESULT else SaveError.ANSWER
             publishQuestion()
-            return@op
+            return
         }
-        pendingTapMs = null
+        pending = null
         current = result
         if (result.state == SessionState.FINISHED) {
             stopTick()
@@ -405,8 +432,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
 
     /** "Torna-ho a provar" tras un fallo de guardado: reintenta SIN recapturar el tiempo de la pulsación. */
     fun onRetrySave() {
-        if (saveError == null) return
-        commit()
+        if (saveError == null || pending == null || saving) return
+        startSave()
     }
 
     /** "Sortir de l'examen" desde el aviso de fallo de guardado, o "Abandonar": `ABANDONED` solo si se guarda. */
@@ -646,6 +673,9 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         }
     }
 
+    /** Reintento del reanclaje del reloj desde [Stage.RecoveryError]. */
+    fun onRetryRecovery() = op { resolve() }
+
     /** "Començar de nou" / reintento desde el estado ilegible. */
     fun onRecover() = op {
         val active = try {
@@ -674,7 +704,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             is Stage.Credential -> if (st.presentation) onPresentation(false) else onGoHome()
             is Stage.Result -> onGoHome()
             is Stage.TimeUp, is Stage.Grading, Stage.Loading -> Unit
-            is Stage.Home, Stage.Welcome, Stage.BuildError, Stage.StateError -> return false
+            is Stage.Home, Stage.Welcome, Stage.BuildError, Stage.StateError, Stage.RecoveryError -> return false
         }
         return true
     }

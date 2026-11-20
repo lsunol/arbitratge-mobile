@@ -63,7 +63,10 @@ class InMemoryStore : SessionStore {
 
     override suspend fun active() = sessions.values.firstOrNull { it.state == SessionState.IN_PROGRESS }.also { maybeFail(Op.READ) }
     override suspend fun latestFinished() =
-        sessions.values.filter { it.state == SessionState.FINISHED }.maxByOrNull { it.finishedWall ?: 0L }.also { maybeFail(Op.READ) }
+        sessions.values.lastOrNull { it.state == SessionState.FINISHED }.also { maybeFail(Op.READ) }
+    override suspend fun finishedWithoutCredential() =
+        sessions.values.filter { it.state == SessionState.FINISHED && credentials.values.none { c -> c.sessionId == it.id } }
+            .also { maybeFail(Op.READ) }
     override suspend fun session(id: String) = sessions[id].also { maybeFail(Op.READ) }
 
     override suspend fun create(session: StoredSession) {
@@ -85,8 +88,12 @@ class InMemoryStore : SessionStore {
         )
     }
 
+    /** Si no es null, `saveClock` se suspende hasta completarlo (checkpoint lento que retiene el mutex). */
+    var saveClockGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override suspend fun saveClock(sessionId: String, clock: ClockState) {
         maybeFail(Op.SAVE_CLOCK)
+        saveClockGate?.await()
         sessions[sessionId]?.takeIf { it.state == SessionState.IN_PROGRESS }?.let { sessions[sessionId] = it.copy(clock = clock) }
     }
 

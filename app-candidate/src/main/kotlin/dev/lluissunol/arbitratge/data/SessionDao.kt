@@ -25,8 +25,14 @@ abstract class SessionDao {
     @Query("SELECT * FROM session WHERE state = 'IN_PROGRESS' LIMIT 1")
     abstract suspend fun active(): SessionEntity?
 
-    @Query("SELECT * FROM session WHERE state = 'FINISHED' ORDER BY finished_wall DESC, start_wall DESC LIMIT 1")
+    @Query("SELECT * FROM session WHERE state = 'FINISHED' ORDER BY rowid DESC LIMIT 1")
     abstract suspend fun latestFinished(): SessionEntity?
+
+    @Query(
+        "SELECT s.* FROM session s LEFT JOIN credential c ON c.session_id = s.id " +
+            "WHERE s.state = 'FINISHED' AND s.kind = 'EXAM' AND c.cid IS NULL ORDER BY s.rowid",
+    )
+    abstract suspend fun finishedWithoutCredential(): List<SessionEntity>
 
     @Query("SELECT * FROM answer WHERE session_id = :id ORDER BY q_index")
     abstract suspend fun answers(id: String): List<AnswerEntity>
@@ -58,7 +64,7 @@ abstract class SessionDao {
     @Query("SELECT * FROM credential WHERE session_id = :id")
     abstract suspend fun credentialForSession(id: String): CredentialEntity?
 
-    @Query("SELECT c.* FROM credential c JOIN session s ON s.id = c.session_id ORDER BY s.finished_wall DESC LIMIT 1")
+    @Query("SELECT c.* FROM credential c JOIN session s ON s.id = c.session_id ORDER BY s.rowid DESC LIMIT 1")
     abstract suspend fun latestCredential(): CredentialEntity?
 
     // ---- Transacciones: cada una es atómica (03 §4.3, §4.4) ----

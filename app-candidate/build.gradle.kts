@@ -7,10 +7,12 @@ plugins {
 // ---------------------------------------------------------------------------------------------
 // Inyección del banco y de la clave de sello (03 §5.4, §6.4; 05 §4.3.1).
 //
-//  · debug  : `bank-sample/bank-sample.json` (o ARB_BANK_FILE si se define) y la clave pública por
+//  · debug  : SIEMPRE `bank-sample/bank-sample.json` (ARB_BANK_FILE se ignora con aviso) y la clave pública por
 //             diseño `kid=dev` de `src/debug/seal/`.
 //  · release: EXIGE ARB_BANK_FILE, ARB_SEAL_KEY_FILE y ARB_SEAL_KID (variable de entorno o
-//             propiedad Gradle). Sin ellas, o con `sample=true`, la tarea FALLA con un mensaje claro.
+//             propiedad Gradle) y `--no-build-cache` (si no, falla: el banco/clave reales no deben entrar
+//             en la caché de build). Rechaza la clave dev/test de debug y de test-vectors aunque cambie el
+//             kid. Sin ellas, o con `sample=true`, la tarea FALLA con un mensaje claro.
 //
 // Las tareas nunca imprimen texto del banco ni de la clave: solo recuentos, IDs y el `kid`.
 // Se ejecutan con las clases de `core-exam` (BuildTools) y NO se cachean (`DisableCachingByDefault`):
@@ -23,7 +25,7 @@ val buildTools = configurations.create("buildTools") {
 }
 
 dependencies {
-    buildTools(project(":core-exam"))
+    buildTools(project(":build-tools"))
 }
 
 /** Entorno o propiedad Gradle (la propiedad manda). Proveedor compatible con la caché de configuración. */
@@ -97,18 +99,22 @@ androidComponents {
         val isRelease = variant.buildType == "release"
         val cap = variant.name.replaceFirstChar { it.uppercase() }
         val rootDir = rootProject.layout.projectDirectory
+        val buildCacheOn = gradle.startParameter.isBuildCacheEnabled
 
         val packBank = tasks.register<PackBankTask>("pack${cap}Bank") {
             group = "arbitratge"
             description = "Valida y copia el banco a assets/bank.json (${variant.name}), sin `canary`."
             toolClasspath.from(buildTools)
             release.set(isRelease)
+            buildCacheEnabled.set(buildCacheOn)
             if (isRelease) {
                 bankFile.set(layout.file(arbFile("ARB_BANK_FILE")))
             } else {
-                bankFile.set(
-                    layout.file(arbFile("ARB_BANK_FILE").orElse(rootDir.file("bank-sample/bank-sample.json").asFile)),
-                )
+                // Debug SIEMPRE usa bank-sample: ARB_BANK_FILE se ignora (el banco real no entra en APK de debug).
+                bankFile.set(rootDir.file("bank-sample/bank-sample.json"))
+                if (arbInput("ARB_BANK_FILE").isPresent) {
+                    logger.warn("AVÍS: ARB_BANK_FILE s'ignora en debug; es fa servir bank-sample.")
+                }
             }
             outputDir.set(layout.buildDirectory.dir("generated/arbitratge/${variant.name}/bank"))
         }
@@ -119,6 +125,8 @@ androidComponents {
             description = "Valida e incorpora la clave de sello (${variant.name}) como assets/seal/."
             toolClasspath.from(buildTools)
             release.set(isRelease)
+            buildCacheEnabled.set(buildCacheOn)
+            denyFiles.from(rootDir.file("test-vectors/test-keys.json"), layout.projectDirectory.file("src/debug/seal/dev-seal-key.der"))
             if (isRelease) {
                 keyFile.set(layout.file(arbFile("ARB_SEAL_KEY_FILE")))
                 kid.set(arbInput("ARB_SEAL_KID"))

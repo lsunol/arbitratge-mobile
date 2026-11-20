@@ -54,6 +54,7 @@ fun ArbitratgeRoot(vm: ExamViewModel) {
                 if (st.presentation) PresentationScreen(st.credential, onClose = { vm.onPresentation(false) })
                 else CredentialScreen(st.credential, onPresent = { vm.onPresentation(true) }, onHome = vm::onGoHome, onBack = { vm.onBack() })
             Stage.BuildError -> ErrorScreen(stringResource(R.string.err_build), null, null)
+            Stage.RecoveryError -> ErrorScreen(stringResource(R.string.err_recover), stringResource(R.string.btn_retry), vm::onRetryRecovery)
             Stage.StateError -> ErrorScreen(stringResource(R.string.err_state), stringResource(R.string.btn_new), vm::onRecover)
         }
     }

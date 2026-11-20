@@ -83,6 +83,9 @@ sealed interface Stage {
     /** 04 §2.10: banco/ajustes inválidos (build roto). */
     data object BuildError : Stage
 
+    /** El reanclaje del reloj tras un reinicio no se pudo persistir: se reintenta antes de reanudar. */
+    data object RecoveryError : Stage
+
     /** 04 §2.10: estado ilegible. */
     data object StateError : Stage
 }

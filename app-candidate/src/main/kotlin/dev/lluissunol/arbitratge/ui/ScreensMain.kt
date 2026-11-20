@@ -148,6 +148,14 @@ fun RulesScreen(st: Stage.Rules, onChangeName: () -> Unit, onBegin: () -> Unit, 
                 Text(stringResource(R.string.btn_change), style = MaterialTheme.typography.labelLarge)
             }
         }
+        if (isBatteryLow(androidx.compose.ui.platform.LocalContext.current)) {
+            Text(
+                "🔋 " + stringResource(R.string.battery_low),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         if (st.saveError) {
             Text(
                 stringResource(R.string.start_save_error),
@@ -174,4 +182,14 @@ fun ErrorScreen(message: String, buttonLabel: String?, onButton: (() -> Unit)?) 
     } else null) {
         Text(message, style = MaterialTheme.typography.titleMedium)
     }
+}
+
+/** <20 % y sin cargar (04: aviso en la pantalla previa al examen). `BatteryManager` sticky, sin permisos. */
+internal fun isBatteryLow(context: android.content.Context): Boolean {
+    val i = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)) ?: return false
+    val level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+    val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+    val status = i.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
+    val charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL
+    return level >= 0 && scale > 0 && level * 100 / scale < 20 && !charging
 }

@@ -133,6 +133,8 @@
     <string name="err_state">No hem pogut recuperar l\'examen. Pots començar-ne un de nou.</string>
     <string name="btn_new">Començar de nou</string>
     <string name="err_build">Aquesta versió de l\'app té un problema. Descarrega l\'última versió.</string>
+    <string name="err_recover">No hem pogut recuperar el teu examen. Comprova que el mòbil té espai lliure i torna-ho a provar.</string>
+    <string name="battery_low">La bateria està baixa. Carrega el mòbil abans de començar l\'examen.</string>
     <string name="icon_correct">Correcta</string>
     <string name="icon_wrong">Incorrecta</string>
     <string name="option_selected">seleccionada</string>

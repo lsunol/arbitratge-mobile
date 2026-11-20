@@ -504,4 +504,120 @@ class ExamViewModelTest {
         vm.onBack(); settle()
         assertIs<Stage.Result>(vm.stage.value)
     }
+
+    // ------------------------------------------------------------------ P0: captura síncrona del tap
+
+    @Test fun tapBeforeDeadlineSurvivesCheckpointHoldingTheMutex() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        clock.advance(5 * 60_000L - 1_000L) // quedan 1000 ms
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveClockGate = gate
+        vm.onAppStopped(); runCurrent() // punto de control lento: retiene el mutex
+        vm.onNext(); runCurrent() // tap a tiempo, mientras el mutex está ocupado
+        clock.advance(5_000L) // se cruza el plazo antes de que el guardado obtenga el mutex
+        gate.complete(Unit)
+        settle(100)
+        val answers = store.sessions.values.single().session.answers
+        assertEquals(1, answers.size, "la respuesta tocada a tiempo se acepta")
+        assertTrue(answers.single().remainingAtTapMs in 0..1_000L)
+        settle(1000)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+    }
+
+    @Test fun duplicateTapsDoNotCommitNextQuestionWithEmptySelection() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveClockGate = gate
+        vm.onAppStopped(); runCurrent()
+        vm.onNext(); vm.onNext(); vm.onNext() // doble/triple toque con el mutex ocupado
+        vm.onDialogConfirm() // evento obsoleto
+        runCurrent()
+        gate.complete(Unit)
+        settle(100)
+        val sess = store.sessions.values.single()
+        assertEquals(1, sess.session.answers.size, "una sola respuesta")
+        assertEquals(1, vm.q.index)
+        assertTrue(vm.q.selected.isEmpty())
+        assertNull(vm.q.dialog, "la pregunta siguiente conserva su confirmación pendiente")
+    }
+
+    // ------------------------------------------------------------------ P1: recuperación de emisión
+
+    private fun TestScope.secondExam(vm: ExamViewModel, rights: List<Boolean>) {
+        vm.onGoHome(); settle()
+        vm.onStartExam(); settle()
+        vm.onNameChange("Maria Puig Vila"); vm.onNameContinue(); vm.onBeginExam(); settle()
+        playAll(vm, rights)
+    }
+
+    @Test fun passedPendingSessionIsRecoveredAfterNewerExamAndClockChange() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        store.failAlways(Op.INSERT_CREDENTIAL)
+        playAll(vm, listOf(true, true, true, true, true))
+        assertEquals(CredentialPhase.Pending, assertIs<Stage.Result>(vm.stage.value).credential)
+        store.healAll()
+        clock.wall -= 10 * 24 * 3_600_000L // el reloj de pared retrocede: el 2.º examen "termina antes"
+        secondExam(vm, listOf(false, false, false, false, false))
+        assertTrue(store.credentials.isEmpty())
+        vm.viewModelScope.cancel()
+        val vm2 = vmOf(store, clock)
+        settle()
+        val ready = assertIs<CredentialPhase.Ready>(assertIs<Stage.Result>(vm2.stage.value).credential).credential
+        assertEquals("session-1", ready.sessionId)
+        assertEquals(1, store.credentials.size)
+    }
+
+    @Test fun everyPendingPassedSessionIsIssuedOnRelaunch() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        store.failAlways(Op.INSERT_CREDENTIAL)
+        playAll(vm, listOf(true, true, true, true, true))
+        secondExam(vm, listOf(true, true, true, true, true))
+        assertTrue(store.credentials.isEmpty())
+        store.healAll()
+        vm.viewModelScope.cancel()
+        val vm2 = vmOf(store, clock)
+        settle()
+        assertIs<Stage.Result>(vm2.stage.value)
+        assertEquals(setOf("session-1", "session-2"), store.credentials.values.map { it.sessionId }.toSet())
+    }
+
+    // ------------------------------------------------------------------ P1: reanclaje no persistido
+
+    @Test fun rebootReanchorFailureBlocksResumeUntilPersisted() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock(mono = 5_000_000L, boot = 7)
+        val vm = vmOf(store, clock)
+        begin(vm)
+        answer(vm, true)
+        val saved = store.sessions.values.single().clock
+        vm.viewModelScope.cancel()
+        clock.mono = 2_000L; clock.boot = 8
+        store.failAlways(Op.SAVE_CLOCK)
+        val vm2 = vmOf(store, clock)
+        settle(2000)
+        assertEquals(Stage.RecoveryError, vm2.stage.value)
+        // muerte del proceso con el almacén aún fallando: sigue sin entrar y la BD conserva el ancla vieja
+        vm2.viewModelScope.cancel()
+        val vm3 = vmOf(store, clock)
+        settle(2000)
+        assertEquals(Stage.RecoveryError, vm3.stage.value)
+        assertEquals(saved, store.sessions.values.single().clock)
+        store.healAll()
+        vm3.onRetryRecovery(); settle(100)
+        assertEquals(saved.remainingMsSaved, vm3.q.remainingMs)
+        assertEquals(8, store.sessions.values.single().clock.anchorBoot)
+    }
 }

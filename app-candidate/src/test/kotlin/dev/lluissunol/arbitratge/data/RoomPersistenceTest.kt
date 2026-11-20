@@ -163,6 +163,20 @@ class RoomPersistenceTest {
         assertEquals("ARB1.aaa.bbb", store.credentialFor("s1")!!.token)
     }
 
+    @Test fun corruptStoredDataSurfacesAsStorageErrorAndStateErrorScreen() = runBlocking<Unit> {
+        val database = openDb()
+        val store = RoomSessionStore(database.sessionDao())
+        store.create(newSession("s1"))
+        database.openHelper.writableDatabase.execSQL("UPDATE session SET snapshot = '{corrupt'")
+        assertFailsWith<StorageException> { store.active() }
+        Dispatchers.setMain(Dispatchers.Default)
+        val vm = ExamViewModel(TestEnv.deps(RoomSessionStore(database.sessionDao()), FakeClock(), SwitchableIssuing(TestEnv.realIssuing), FakePrefs()))
+        withTimeout(20_000) { vm.stage.first { it == Stage.StateError } }
+        vm.viewModelScope.cancel()
+        database.openHelper.writableDatabase.execSQL("UPDATE session SET snapshot = '{}', state = 'ZZZ'")
+        assertFailsWith<StorageException> { store.session("s1") }
+    }
+
     // ---- muerte del proceso: todo se recompone desde la base de datos ----
 
     @Test fun processDeathRecoveryOverRealDatabase() = runBlocking<Unit> {

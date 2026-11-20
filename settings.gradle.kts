@@ -18,4 +18,5 @@ rootProject.name = "arbitratge-mobile"
 
 include(":core-exam")
 include(":core-credential")
+include(":build-tools")
 include(":app-candidate")
