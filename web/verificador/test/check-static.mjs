@@ -4,6 +4,8 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildManifest } from "../tools/gen-manifest.mjs";
@@ -34,6 +36,13 @@ t("vendor/jsQR.js: procedencia (SHA-256 fijado = README = manifiesto)", () => {
   assert.ok(m, "README sin SHA-256 de 64 hex");
   assert.equal(m[1], actual);
   assert.equal(JSON.parse(read("precache-manifest.json")).files.find((f) => f.path === "vendor/jsQR.js").sha256, actual);
+});
+t("gen-manifest salta directorios y ficheros ocultos", () => {
+  const d = mkdtempSync(join(tmpdir(), "mf-"));
+  mkdirSync(join(d, ".git")); mkdirSync(join(d, "a", ".cache"), { recursive: true });
+  writeFileSync(join(d, "sw.js"), 'const VERSION = "9.9.9";');
+  for (const f of [".git/x.js", "a/.cache/y.js", ".gitattributes", "z.js", "a/ok.js"]) writeFileSync(join(d, f), "x");
+  assert.deepEqual(buildManifest(d).files.map((f) => f.path), ["a/ok.js", "z.js"]);
 });
 t("versión de sw.js = manifiesto", () => {
   assert.equal(/const VERSION = "([^"]+)"/.exec(read("sw.js"))[1], JSON.parse(read("precache-manifest.json")).version);

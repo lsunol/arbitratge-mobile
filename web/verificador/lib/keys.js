@@ -67,17 +67,16 @@ export async function loadDeployedKeys(base = "keys/", fetchFn = fetch, subtle =
   const names = [];
   const discarded = [];
   for (const f of files) {
-    if (typeof f !== "string" || !/^[a-z0-9]{1,16}\.json$/.test(f)) {
-      discarded.push(`${String(f).slice(0, 40)}: nombre de fichero no válido`);
-      continue;
-    }
+    const label = typeof f === "string" ? f.slice(0, 40) : "(entrada que no es texto)";
     try {
+      if (typeof f !== "string" || !/^[a-z0-9]{1,16}\.json$/.test(f)) throw new Error("nombre de fichero no válido");
       const r = await fetchFn(base + f);
       if (!r.ok) throw new Error("HTTP " + r.status);
-      entries.push(await r.json());
+      const entry = await r.json();
+      entries.push(entry);
       names.push(f.slice(0, -5));
     } catch (err) {
-      discarded.push(`${f}: ${err.message}`);
+      discarded.push(`${label}: ${err && typeof err.message === "string" ? err.message : "error"}`);
     }
   }
   const built = await buildTrustedKeys(entries, names, subtle);

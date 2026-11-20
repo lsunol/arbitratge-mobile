@@ -18,6 +18,7 @@ export function buildManifest(root) {
   const files = [];
   const walk = (d) => {
     for (const name of readdirSync(d).sort()) {
+      if (name.startsWith(".")) continue; // ocultos (ficheros y directorios) antes de recorrer
       const p = join(d, name);
       if (statSync(p).isDirectory()) walk(p);
       else {

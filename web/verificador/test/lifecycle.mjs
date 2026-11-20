@@ -8,7 +8,9 @@ import { fileURLToPath } from "node:url";
 import { CameraSession } from "../lib/camera-session.js";
 import { startCamera } from "../lib/qr.js";
 import { checkPrepared } from "../lib/offline.js";
-import { loadDeployedKeys } from "../lib/keys.js";
+import { loadDeployedKeys, buildTrustedKeys } from "../lib/keys.js";
+import { KeyStore, verifyCurrent } from "../lib/key-store.js";
+import { verifyToken } from "../lib/arb1.js";
 
 let n = 0;
 const t = async (name, fn) => {
@@ -183,6 +185,145 @@ await t("claves: lista vacía de producción", async () => {
   const r = await loadDeployedKeys("keys/", fetchWith({ "index.json": { files: [] } }));
   assert.equal(r.keys.size, 0);
   assert.equal(r.discarded.length, 0);
+});
+
+// ---------- cámara: carreras con play() pendiente y <video> compartido
+const tick = () => new Promise((r) => setImmediate(r));
+function controllableVideo() {
+  const v = { srcObject: null, readyState: 0, videoWidth: 0, setAttribute() {}, plays: [] };
+  v.play = () => new Promise((resolve) => v.plays.push(resolve));
+  return v;
+}
+const startOn = (video, m) => ({ signal }) =>
+  startCamera(video, () => {}, { signal, mediaDevices: m.mediaDevices, createCanvas: () => ({ getContext: () => ({}) }) });
+const trackedStream = () => {
+  let stopped = 0;
+  const track = { stop: () => stopped++, getCapabilities: () => ({}) };
+  return { stream: { getTracks: () => [track], getVideoTracks: () => [track] }, stopped: () => stopped };
+};
+
+await t("cámara: cancelar con play() pendiente para el stream YA y no espera a play()", async () => {
+  const m = fakeMedia();
+  const video = controllableVideo();
+  const s = new CameraSession(startOn(video, m));
+  const p = s.begin();
+  const A = trackedStream();
+  m.pending[0].resolve(A.stream);
+  await tick(); // el stream ya está asignado y play() sigue pendiente
+  assert.equal(video.plays.length, 1);
+  assert.equal(video.srcObject, A.stream);
+  s.cancel();
+  assert.equal(A.stopped(), 1, "pistas paradas sin esperar a play()");
+  assert.equal(video.srcObject, null);
+  assert.deepEqual(await p, { status: "stale" }); // play() nunca se resolvió
+});
+await t("cámara: A obsoleto que llega DESPUÉS de B vivo no toca el <video> ni la pista de B", async () => {
+  const m = fakeMedia();
+  const video = controllableVideo();
+  const s = new CameraSession(startOn(video, m));
+  const pA = s.begin();
+  const pB = s.begin(); // cancela A
+  const A = trackedStream();
+  const B = trackedStream();
+  m.pending[1].resolve(B.stream);
+  await tick();
+  video.plays[0]();
+  const rB = await pB;
+  assert.equal(rB.status, "live");
+  m.pending[0].resolve(A.stream); // A llega tarde
+  assert.deepEqual(await pA, { status: "stale" });
+  assert.equal(A.stopped(), 1);
+  assert.equal(B.stopped(), 0, "la pista de B sigue activa");
+  assert.equal(video.srcObject, B.stream, "la vista previa de B sigue");
+  s.cancel();
+  assert.equal(B.stopped(), 1);
+  assert.equal(video.srcObject, null);
+});
+await t("cámara: A con play() pendiente, B empieza; al resolver play() de A no se pisa a B", async () => {
+  const m = fakeMedia();
+  const video = controllableVideo();
+  const s = new CameraSession(startOn(video, m));
+  const pA = s.begin();
+  const A = trackedStream();
+  m.pending[0].resolve(A.stream);
+  await tick(); // A asignado, play pendiente
+  const pB = s.begin(); // cancela A: se libera su stream
+  const B = trackedStream();
+  m.pending[1].resolve(B.stream);
+  await tick();
+  assert.equal(video.srcObject, B.stream);
+  video.plays[0](); // play() de A se resuelve tarde
+  video.plays[1]();
+  assert.deepEqual(await pA, { status: "stale" });
+  assert.equal((await pB).status, "live");
+  assert.equal(video.srcObject, B.stream);
+  assert.equal(B.stopped(), 0);
+  assert.equal(A.stopped(), 1);
+  s.cancel();
+});
+
+// ---------- claves: cargas fuera de orden y verificación en curso
+const casesJson = JSON.parse(readFileSync(join(root, "cases.json"), "utf8")).cases;
+const V01 = casesJson.find((c) => c.id === "V01").input;
+const deferred = () => { let resolve; const promise = new Promise((r) => (resolve = r)); return { promise, resolve }; };
+const keysWithStatus = async (status) => (await buildTrustedKeys([{ ...tk[0], status }])).keys;
+
+await t("KeyStore: una carga antigua que termina tarde no pisa a la nueva", async () => {
+  const gates = [deferred(), deferred()];
+  let call = 0;
+  const store = new KeyStore(async () => gates[call++].promise);
+  const p1 = store.refresh(); // arranque (lento)
+  const p2 = store.refresh(); // controllerchange (más nuevo, rápido)
+  gates[1].resolve({ keys: await keysWithStatus("compromised"), discarded: [] });
+  assert.equal(await p2, true);
+  gates[0].resolve({ keys: await keysWithStatus("active"), discarded: [] });
+  assert.equal(await p1, false); // descartada
+  assert.equal(store.keys.get("test").status, "compromised");
+  assert.equal(store.generation, 1);
+});
+await t("KeyStore: una carga que falla deja la lista vacía (nada se acepta)", async () => {
+  const store = new KeyStore(async () => { throw new Error("red"); });
+  await store.refresh();
+  assert.equal(store.keys.size, 0);
+});
+await t("verificación en curso + cambio de claves => se descarta y se repite (compromised => KID_NOT_ACCEPTED)", async () => {
+  const store = new KeyStore(async () => ({ keys: await keysWithStatus("active"), discarded: [] }));
+  await store.refresh();
+  const gate = deferred();
+  let calls = 0;
+  const slowVerify = async (raw, keys) => {
+    const mine = ++calls;
+    const res = await verifyToken(raw, keys); // se calcula con la lista que tenía al empezar
+    if (mine === 1) await gate.promise; // y se queda «en vuelo»
+    return res;
+  };
+  const p = verifyCurrent(store, V01, slowVerify);
+  await tick();
+  store.load = async () => ({ keys: await keysWithStatus("compromised"), discarded: [] });
+  await store.refresh(); // actualización: la clave pasa a compromised
+  gate.resolve();
+  const res = await p;
+  assert.equal(res.code, "KID_NOT_ACCEPTED");
+  assert.equal(calls, 2);
+});
+await t("verificación: sin cambios devuelve el resultado normal; carga en curso se espera", async () => {
+  const gate = deferred();
+  const store = new KeyStore(async () => { await gate.promise; return { keys: await keysWithStatus("active"), discarded: [] }; });
+  store.refresh();
+  const p = verifyCurrent(store, V01, verifyToken);
+  await tick();
+  gate.resolve();
+  assert.equal((await p).code, "OK");
+});
+await t("claves: entradas del índice que no son texto no vacían la lista", async () => {
+  const evil = { toString: null, valueOf: null };
+  const files = {
+    "index.json": { files: [evil, 7, null, ["a"], "test.json"] },
+    "test.json": tk[0],
+  };
+  const r = await loadDeployedKeys("keys/", fetchWith(files));
+  assert.deepEqual([...r.keys.keys()], ["test"]);
+  assert.equal(r.discarded.length, 4);
 });
 
 if (!process.exitCode) console.log(`lifecycle: ${n} pruebas OK`);

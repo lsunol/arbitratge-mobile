@@ -3,6 +3,7 @@
 // no es de fiar.
 import { verifyToken, FORBIDDEN_NAME_CHARS_RE } from "./lib/arb1.js";
 import { loadDeployedKeys } from "./lib/keys.js";
+import { KeyStore, verifyCurrent } from "./lib/key-store.js";
 import { decodeImageFile, startCamera } from "./lib/qr.js";
 import { checkPrepared, getControllerInfo } from "./lib/offline.js";
 import { CameraSession } from "./lib/camera-session.js";
@@ -11,14 +12,14 @@ import { T, VIEWS, CODE_VIEW } from "./lib/text.js";
 const $ = (id) => document.getElementById(id);
 const host = location.host || location.hostname || "(local)";
 let appVersion = "?";
-let keys = new Map();
 let prepared = { state: "unchecked" };
 let deferredInstall = null;
 let swReg = null;
 let lastResult = null;
 let camera = null;
-let discardedKeys = [];
-let keysPromise = null;
+let lastRaw = null; // solo en memoria, para repetir la comprobación si cambian las claves
+const store = new KeyStore(() => loadDeployedKeys("keys/"));
+store.onChange = onKeysChanged;
 const camSession = new CameraSession(({ signal }) =>
   startCamera($("video"), onCameraFound, { signal, onNoQr: () => { $("cam-hint").textContent = `${T.cam_noqr} ${T.cam_noqr_alt}`; } }));
 let current = null;
@@ -150,8 +151,7 @@ async function onControllerChange() {
     refreshPrepared();
     return;
   }
-  keysPromise = (async () => { await loadVersion(); await loadKeys(); })();
-  await keysPromise;
+  await reloadKeys();
   refreshPrepared();
   const idle = current === "home" || current === "first";
   if (idle) { location.reload(); return; }
@@ -180,18 +180,29 @@ async function registerSw() {
 }
 
 // ---------- claus
-async function loadKeys() {
-  try {
-    const r = await loadDeployedKeys("keys/");
-    keys = r.keys;
-    discardedKeys = r.discarded;
-  } catch {
-    keys = new Map();
-    discardedKeys = ["keys/index.json"];
-  }
-  $("keys-warning").hidden = keys.size > 0;
-  const ids = [...keys.keys()].sort().join(", ") || "cap";
+function paintKeys() {
+  $("keys-warning").hidden = store.keys.size > 0;
+  const ids = [...store.keys.keys()].sort().join(", ") || "cap";
   $("foot-version").textContent = `Versió ${appVersion} · claus: ${ids}`;
+}
+async function reloadKeys() {
+  await loadVersion();
+  await store.refresh();
+}
+// La lista de claves se ha sustituido (p. ej. una clave ahora «compromised»). Lo que se muestre se
+// calculó con la lista anterior: si hay un resultat en pantalla se repite con la nueva y se avisa;
+// si no, se descarta para que «enrere» no pueda mostrar un resultat caducat.
+async function onKeysChanged() {
+  paintKeys();
+  if (lastRaw === null) return;
+  if (current === "result") {
+    const raw = lastRaw;
+    const res = await verifyCurrent(store, raw, verifyToken);
+    if (current === "result" && lastRaw === raw) showResult(res, { replace: true, notice: T.keys_changed });
+  } else {
+    lastResult = null;
+    lastRaw = null;
+  }
 }
 async function loadVersion() {
   try {
@@ -210,7 +221,7 @@ function dl(rows, big) {
 }
 const fmtDate = (iat) => iat.split("-").reverse().join("/");
 
-function showResult(res) {
+function showResult(res, { replace = false, notice = null } = {}) {
   lastResult = res;
   const cv = CODE_VIEW[res.code];
   const view = VIEWS[cv.view];
@@ -222,6 +233,7 @@ function showResult(res) {
   head.setAttribute("aria-label", view.aria);
   const body = $("result-body");
   clear(body);
+  if (notice) body.append(el("p", { class: "notice", role: "status" }, notice));
 
   if (res.code === "OK") {
     const f = res.fields;
@@ -261,7 +273,8 @@ function showResult(res) {
   body.append(el("div", { class: "actions" }, again));
   body.append(el("p", { class: "small addr" }, `Adreça que estàs fent servir: ${host}`));
   body.querySelector("#btn-update-check")?.addEventListener("click", checkUpdate);
-  go("result");
+  if (replace) render("result");
+  else go("result");
 }
 
 function untrustedBlock(members) {
@@ -290,8 +303,10 @@ async function checkUpdate() {
 }
 
 async function process(raw) {
-  await keysPromise; // siempre la lista vigente (se recarga si cambia el worker)
-  const res = await verifyToken(raw, keys);
+  lastRaw = raw;
+  // Siempre con la lista vigente; si cambia durante la comprobación, se descarta y se repite.
+  const res = await verifyCurrent(store, raw, verifyToken);
+  if (lastRaw !== raw) return; // otra comprobación más reciente (o claves cambiadas sin resultat)
   showResult(res);
 }
 
@@ -390,8 +405,8 @@ document.addEventListener("visibilitychange", () => {
 // ---------- sobre
 function fillAbout() {
   $("about-version").textContent = `Versió del verificador: ${appVersion}.`;
-  const ids = [...keys.entries()].map(([k, v]) => `${k} (${v.status === "active" ? "activa" : v.status === "retired" ? "retirada" : "no acceptada"})`);
-  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.` + (discardedKeys.length ? ` ${T.keys_discarded(discardedKeys.length)}` : "");
+  const ids = [...store.keys.entries()].map(([k, v]) => `${k} (${v.status === "active" ? "activa" : v.status === "retired" ? "retirada" : "no acceptada"})`);
+  $("about-keys").textContent = `Claus de confiança: ${ids.join(", ") || "cap"}.` + (store.discarded.length ? ` ${T.keys_discarded(store.discarded.length)}` : "");
 }
 
 // ---------- cableado general
@@ -421,7 +436,7 @@ $("btn-first-ok").addEventListener("click", () => {
 });
 
 // ---------- arranque
-keysPromise = (async () => { await loadVersion(); await loadKeys(); })();
+reloadKeys();
 let seen = false;
 try { seen = localStorage.getItem("firstVisitDone") === "1"; } catch { /* ignore */ }
 const first = !standalone() && !seen;

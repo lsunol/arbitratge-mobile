@@ -99,26 +99,37 @@ export async function startCamera(video, onFound, opts = {}) {
     audio: false,
     video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
   });
+  // Limpieza propia de ESTE arranque, registrada nada más obtener el stream: así una cancelación
+  // mientras video.play() sigue pendiente ya lo para. Solo se vacía el <video> si todavía apunta a
+  // este stream (otro arranque posterior puede estar usándolo).
+  let stopped = false;
+  let timer = null;
   const release = () => {
     for (const tr of stream.getTracks()) tr.stop();
-    video.srcObject = null;
+    if (video.srcObject === stream) video.srcObject = null;
   };
-  // El usuario pudo salir mientras el permiso estaba pendiente: el stream llega tarde.
-  if (signal?.aborted) {
+  function stop() {
+    if (stopped) return;
+    stopped = true;
+    if (timer !== null) clearInterval(timer);
     release();
+  }
+  if (signal?.aborted) {
+    stop();
     throw aborted();
   }
+  signal?.addEventListener("abort", stop, { once: true });
+  const abortSignalled = new Promise((res) => signal?.addEventListener("abort", res, { once: true }));
   video.srcObject = stream;
   video.setAttribute("playsinline", "");
   video.muted = true;
-  await video.play().catch(() => {});
+  await Promise.race([Promise.resolve(video.play()).catch(() => {}), abortSignalled]);
   if (signal?.aborted) {
-    release();
+    stop();
     throw aborted();
   }
   const canvas = createCanvas();
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  let stopped = false;
   let busy = false;
   const t0 = Date.now();
   let warned = false;
@@ -148,14 +159,7 @@ export async function startCamera(video, onFound, opts = {}) {
       busy = false;
     }
   };
-  const timer = setInterval(tick, 200);
-  function stop() {
-    if (stopped) return;
-    stopped = true;
-    clearInterval(timer);
-    release();
-  }
-  signal?.addEventListener("abort", stop, { once: true });
+  timer = setInterval(tick, 200);
   const track = stream.getVideoTracks()[0];
   const canTorch = !!track?.getCapabilities?.().torch;
   let torchOn = false;

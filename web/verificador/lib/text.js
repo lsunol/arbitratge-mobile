@@ -52,6 +52,7 @@ export const T = {
   update_unavailable: "Aquest navegador no permet buscar actualitzacions.", // (nou)
   update_pwa: "Hi ha una versió nova del verificador.",
   update_other_tab: "El verificador s'ha actualitzat en una altra pestanya. Les claus ja s'han tornat a carregar; recarrega la pàgina per fer servir la versió nova.", // (nou)
+  keys_changed: "Les claus del verificador s'han actualitzat i el codi s'ha tornat a comprovar. Mira el resultat de nou.", // (nou)
   keys_discarded: (n) => `Entrades de claus descartades per error: ${n}.`, // (nou)
   // Instal·lació
   install_state_ok: "Preparat: ja pots fer-lo servir sense internet.",
