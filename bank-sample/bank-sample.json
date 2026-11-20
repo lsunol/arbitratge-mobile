@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "bank_version": "0.0.0-sample",
+  "locale": "ca",
+  "sample": true,
+  "canary": "[FICTICI] canary-de-mostra-no-real",
+  "rules": {
+    "exam_version": "sample-1",
+    "num_questions": 5,
+    "time_limit_minutes": 5,
+    "pass_threshold_count": 3,
+    "shuffle_questions": true,
+    "shuffle_options": true,
+    "sequential": true
+  },
+  "questions": [
+    {
+      "id": "sample-0001",
+      "type": "single_choice",
+      "status": "active",
+      "text": "[FICTICI] Quantes potes té un unicorn de proves?",
+      "options": [
+        { "id": "a", "text": "[FICTICI] Quatre (resposta fictícia)" },
+        { "id": "b", "text": "[FICTICI] Set (resposta fictícia)" },
+        { "id": "c", "text": "[FICTICI] Cap, flota (resposta fictícia)" }
+      ],
+      "correct": ["a"],
+      "explanation": "[FICTICI] Text d'exemple; no és cap norma real."
+    },
+    {
+      "id": "sample-0002",
+      "type": "true_false",
+      "status": "active",
+      "text": "[FICTICI] Un núvol de mostra pesa més que una pedra de mostra.",
+      "options": [
+        { "id": "t", "text": "Vertader" },
+        { "id": "f", "text": "Fals" }
+      ],
+      "correct": ["f"]
+    },
+    {
+      "id": "sample-0003",
+      "type": "multiple_choice",
+      "status": "active",
+      "text": "[FICTICI] Quins d'aquests animals imaginaris saben fer la truita de mostra?",
+      "options": [
+        { "id": "a", "text": "[FICTICI] El dragó cuiner" },
+        { "id": "b", "text": "[FICTICI] La tortuga astronauta" },
+        { "id": "c", "text": "[FICTICI] El pop pianista" },
+        { "id": "d", "text": "[FICTICI] El gat de paper" }
+      ],
+      "correct": ["a", "c"],
+      "explanation": "[FICTICI] Resposta d'exemple amb dues opcions correctes.",
+      "ref": "[FICTICI] Art. 0 del reglament imaginari",
+      "tags": ["[FICTICI] mostra"]
+    },
+    {
+      "id": "sample-0004",
+      "type": "single_choice",
+      "status": "active",
+      "text": "[FICTICI] De quin color és el silenci a la lluna de mostra?",
+      "options": [
+        { "id": "a", "text": "[FICTICI] Violeta pastel" },
+        { "id": "b", "text": "[FICTICI] Groc brillant" }
+      ],
+      "correct": ["b"]
+    },
+    {
+      "id": "sample-0005",
+      "type": "true_false",
+      "status": "active",
+      "text": "[FICTICI] Les patates de mostra tenen carnet de conduir.",
+      "options": [
+        { "id": "t", "text": "Vertader" },
+        { "id": "f", "text": "Fals" }
+      ],
+      "correct": ["f"],
+      "explanation": "[FICTICI] Una patata no pot conduir; és un exemple absurd."
+    },
+    {
+      "id": "sample-0006",
+      "type": "multiple_choice",
+      "status": "active",
+      "text": "[FICTICI] Què és imprescindible per inflar un globus de mostra?",
+      "options": [
+        { "id": "a", "text": "[FICTICI] Un sospir de mostra" },
+        { "id": "b", "text": "[FICTICI] Una bomba d'aire imaginària" },
+        { "id": "c", "text": "[FICTICI] Una cullera de sopa" }
+      ],
+      "correct": ["a", "b"]
+    },
+    {
+      "id": "sample-0007",
+      "type": "single_choice",
+      "status": "retired",
+      "text": "[FICTICI] Pregunta retirada d'exemple: quant fan tres gats de mostra?",
+      "options": [
+        { "id": "a", "text": "[FICTICI] Tres miols (resposta fictícia)" },
+        { "id": "b", "text": "[FICTICI] Un ronc (resposta fictícia)" }
+      ],
+      "correct": ["a"]
+    }
+  ]
+}
