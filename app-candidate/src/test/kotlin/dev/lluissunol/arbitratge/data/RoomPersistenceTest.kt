@@ -195,6 +195,25 @@ class RoomPersistenceTest {
         store.create(newSession("s3", "7f3a92c1-4b5d-4e6f-8a9b-000000000003")) // se puede empezar de nuevo
     }
 
+    @Test fun inconsistentActiveSlotRowsDoNotBlockNewSessions() = runBlocking<Unit> {
+        val database = openDb()
+        val store = RoomSessionStore(database.sessionDao())
+        store.create(newSession("s1"))
+        val sql = database.openHelper.writableDatabase
+        sql.execSQL("UPDATE session SET state = 'ZZZ' WHERE id = 's1'") // activa (slot=1) pero estado desconocido
+        assertNull(store.active())
+        store.create(newSession("s2", "7f3a92c1-4b5d-4e6f-8a9b-000000000002")) // antes: violación de unicidad
+        assertEquals("s2", store.active()?.id)
+        fun q(id: String) = sql.query("SELECT state, active_slot FROM session WHERE id = '$id'").use { it.moveToFirst(); it.getString(0) to it.isNull(1) }
+        assertEquals("UNREADABLE" to true, q("s1"))
+        // estado terminal con plaza activa colgada, y la vía de recuperación explícita
+        store.abandon("s2")
+        sql.execSQL("UPDATE session SET active_slot = 1 WHERE id = 's2'")
+        assertEquals(1, store.quarantineUnreadable())
+        store.create(newSession("s3", "7f3a92c1-4b5d-4e6f-8a9b-000000000003"))
+        assertEquals("s3", store.active()?.id)
+    }
+
     // ---- muerte del proceso: todo se recompone desde la base de datos ----
 
     @Test fun processDeathRecoveryOverRealDatabase() = runBlocking<Unit> {

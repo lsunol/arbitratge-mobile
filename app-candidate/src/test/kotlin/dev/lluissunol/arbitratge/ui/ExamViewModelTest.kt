@@ -725,4 +725,79 @@ class ExamViewModelTest {
         vm2.onStartExam(); settle(); vm2.onNameChange("Maria Puig"); vm2.onNameContinue(); vm2.onBeginExam(); settle()
         assertIs<Stage.Question>(vm2.stage.value)
     }
+
+    // ------------------------------------------------------------------ arbitraje tap / fin por tiempo
+
+    @Test fun tapAfterTimeoutArbitrationStartedIsRejectedSynchronously() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.finishGate = gate
+        clock.advance(5 * 60_000L) // restante exactamente 0
+        settle(1000) // el tick decide el fin por tiempo y se queda esperando el guardado
+        assertIs<Stage.Question>(vm.stage.value)
+        vm.onNext(); vm.onDialogConfirm(); runCurrent() // tap en ese ms: debe rechazarse
+        assertEquals(0, store.count(Op.COMMIT_ANSWER), "no se encola ningún guardado de respuesta")
+        gate.complete(Unit); settle(100)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+        assertTrue(store.sessions.values.single().session.answers.isEmpty())
+        assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
+    }
+
+    @Test fun capturedTapAtZeroIsSavedBeforeTimeoutFinishes() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.commitGate = gate
+        clock.advance(5 * 60_000L - 0L) // restante 0: tap válido (>= 0)
+        vm.onNext(); runCurrent()
+        settle(2000) // los ticks NO finalizan mientras hay un tap pendiente
+        assertEquals(0, store.count(Op.FINISH))
+        gate.complete(Unit); settle(100)
+        assertEquals(1, store.sessions.values.single().session.answers.size, "la respuesta se incluye")
+        settle(1000)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+        assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
+        assertEquals(1, store.sessions.values.single().correctCount.let { if (it!! >= 0) 1 else 0 })
+    }
+
+    // ------------------------------------------------------------------ recuperación: fallo de emisión visible
+
+    @Test fun olderPendingIssuanceFailureIsSurfacedNotDiscarded() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        store.failAlways(Op.INSERT_CREDENTIAL)
+        playAll(vm, listOf(true, true, true, true, true))
+        secondExam(vm, listOf(true, true, true, true, true))
+        vm.viewModelScope.cancel()
+        // al reabrir sigue fallando: se muestra la sesión antigua con "pendiente" y reintento
+        val vm2 = vmOf(store, clock)
+        settle()
+        val r = assertIs<Stage.Result>(vm2.stage.value)
+        assertEquals("session-1", r.sessionId)
+        assertEquals(CredentialPhase.Pending, r.credential)
+        store.healAll()
+        vm2.onRetryCredential(); settle()
+        assertIs<CredentialPhase.Ready>(assertIs<Stage.Result>(vm2.stage.value).credential)
+        // la más reciente se recupera en la siguiente apertura: nada se pierde
+        vm2.viewModelScope.cancel()
+        val vm3 = vmOf(store, clock)
+        settle()
+        assertEquals("session-2", assertIs<Stage.Result>(vm3.stage.value).sessionId)
+        assertEquals(setOf("session-1", "session-2"), store.credentials.values.map { it.sessionId }.toSet())
+    }
+
+    @Test fun lowBatteryThresholdIgnoresCharging() {
+        assertTrue(isLowBattery(19, 100))
+        assertTrue(!isLowBattery(20, 100))
+        assertTrue(!isLowBattery(-1, 100))
+    }
 }

@@ -35,7 +35,7 @@ class RoomSessionStore(private val dao: SessionDao) : SessionStore {
         guard { dao.finishedWithoutCredential().map { load(it) } }
 
     override suspend fun quarantineUnreadable(): Int = guard {
-        var n = 0
+        var n = dao.clearInconsistentActive()
         for (id in dao.readableCandidateIds()) {
             val ok = try {
                 dao.session(id)?.let { load(it) }

@@ -75,8 +75,13 @@ abstract class SessionDao {
 
     // ---- Transacciones: cada una es atómica (03 §4.3, §4.4) ----
 
+    /** Filas con plaza activa pero estado desconocido o distinto de IN_PROGRESS: bloquearían toda sesión nueva. */
+    @Query("UPDATE session SET state = 'UNREADABLE', active_slot = NULL WHERE active_slot IS NOT NULL AND state != 'IN_PROGRESS'")
+    abstract suspend fun clearInconsistentActive(): Int
+
     @Transaction
     open suspend fun createTx(s: SessionEntity) {
+        clearInconsistentActive()
         insertSession(s)
     }
 

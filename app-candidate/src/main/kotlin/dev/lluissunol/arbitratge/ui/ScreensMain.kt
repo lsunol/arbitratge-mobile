@@ -184,12 +184,13 @@ fun ErrorScreen(message: String, buttonLabel: String?, onButton: (() -> Unit)?) 
     }
 }
 
-/** <20 % y sin cargar (04: aviso en la pantalla previa al examen). `BatteryManager` sticky, sin permisos. */
+/** <20 % (03 §4.5; aviso en la pantalla previa al examen). `BatteryManager` sticky, sin permisos. */
 internal fun isBatteryLow(context: android.content.Context): Boolean {
     val i = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)) ?: return false
     val level = i.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
     val scale = i.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
-    val status = i.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1)
-    val charging = status == android.os.BatteryManager.BATTERY_STATUS_CHARGING || status == android.os.BatteryManager.BATTERY_STATUS_FULL
-    return level >= 0 && scale > 0 && level * 100 / scale < 20 && !charging
+    return isLowBattery(level, scale)
 }
+
+/** Aviso por debajo del 20 %, esté o no cargando (03 §4.5). */
+internal fun isLowBattery(level: Int, scale: Int): Boolean = level >= 0 && scale > 0 && level * 100 / scale < 20

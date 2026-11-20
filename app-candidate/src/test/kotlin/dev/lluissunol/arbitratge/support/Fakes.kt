@@ -84,8 +84,12 @@ class InMemoryStore : SessionStore {
         sessions[session.id] = session
     }
 
+    var commitGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+    var finishGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, clock: ClockState, finish: Finish?) {
         maybeFail(Op.COMMIT_ANSWER)
+        commitGate?.await()
         val s = sessions[sessionId]?.takeIf { it.state == SessionState.IN_PROGRESS } ?: throw SessionNotActiveException("no activa")
         val existing = s.session.answerFor(answer.index)
         if (existing != null && existing != answer) error("resposta diferent")
@@ -108,6 +112,7 @@ class InMemoryStore : SessionStore {
 
     override suspend fun finish(sessionId: String, clock: ClockState, finish: Finish) {
         maybeFail(Op.FINISH)
+        finishGate?.await()
         val s = sessions[sessionId] ?: throw SessionNotActiveException("inexistent")
         if (s.state == SessionState.FINISHED) return
         if (s.state != SessionState.IN_PROGRESS) throw SessionNotActiveException("no activa")

@@ -88,6 +88,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     // Estado de pantalla de la pregunta (nada de esto es verdad persistida salvo `current`).
     private var current: StoredSession? = null
     private var selected: Set<String> = emptySet()
+    /** Verdadero desde que se decide el fin por tiempo: los taps nuevos se rechazan de forma síncrona. */
+    private var timingOut = false
     private var pending: PendingTap? = null
     private val pendingTapMs: Long? get() = pending?.remainingMs
     private var timeHidden = false
@@ -129,7 +131,14 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             // (no por hora de pared). Las antiguas se reintentan en silencio; la más reciente se muestra.
             val pendings = deps.store.finishedWithoutCredential().filter { mustIssue(it) }
             if (pendings.isNotEmpty()) {
-                pendings.dropLast(1).forEach { old -> issue(old) }
+                // En el primer fallo se para y se muestra ESA sesión (Result con "Encara no s'ha pogut crear la
+                // credencial" + reintento): nunca se descarta un fallo en silencio.
+                for (old in pendings.dropLast(1)) {
+                    if (issue(old) !is CredentialPhase.Ready) {
+                        showResult(old)
+                        return
+                    }
+                }
                 showResult(pendings.last())
                 return
             }
@@ -263,6 +272,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         saveError = null
         afterNoAnswerFinish = false
         dismissedBanner = null
+        timingOut = false
         ticks = 0
     }
 
@@ -354,11 +364,12 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     private fun commit() {
         val s = current ?: return
         val st = _stage.value as? Stage.Question ?: return
-        if (pending != null || saving || st.index != s.session.currentIndex) return
+        if (timingOut || pending != null || saving || st.index != s.session.currentIndex) return
         val tap = remainingNow(s)
         dialog = null
         afterNoAnswerFinish = false
         if (tap < 0) { // el tiempo ya se había agotado al tocar: la respuesta no cuenta
+            timingOut = true
             op { if (_stage.value is Stage.Question) finishTimedOut(away = false) }
             return
         }
@@ -471,11 +482,15 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         val s = current ?: return
         if (_stage.value !is Stage.Question || lock.isLocked) return
         val rem = remainingNow(s)
-        if (ExamClockModel.shouldTimeOut(rem, pendingTapMs)) {
+        if (!timingOut && ExamClockModel.shouldTimeOut(rem, pendingTapMs)) {
+            // Arbitraje: desde este instante (síncrono, mismo hilo que los taps) todo tap nuevo se rechaza.
+            // Un tap ya capturado (`pending`) impide llegar aquí: el fin por tiempo espera a que se guarde.
+            timingOut = true
             // En otra corrutina: finishTimedOut cancela el bucle de ticks (que es quien nos llama).
             viewModelScope.launch {
                 lock.withLock {
-                    if (_stage.value is Stage.Question && current != null) finishTimedOut(away = false)
+                    if (_stage.value is Stage.Question && current != null && pending == null) finishTimedOut(away = false)
+                    else timingOut = false
                 }
             }
             return
@@ -514,6 +529,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
 
     private suspend fun finishTimedOut(away: Boolean) {
         val s = current ?: return
+        timingOut = true
         stopTick()
         val r = ExamEngine.grade(s.session, s.clock.limitMs)
         val c = deps.clock
