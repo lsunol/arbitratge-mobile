@@ -53,6 +53,7 @@ fun HomeScreen(
     onStart: () -> Unit,
     onShowCredential: () -> Unit,
     onReviewLast: () -> Unit,
+    onRetryPending: () -> Unit = {},
 ) {
     ScreenScaffold(title = stringResource(R.string.app_name), bottom = {
         if (st.credential != null) {
@@ -78,6 +79,23 @@ fun HomeScreen(
             }
         } else if (st.last == null) {
             Body(stringResource(R.string.home_empty))
+        }
+        st.pending?.let { p ->
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (p.count > 0) Body(androidx.compose.ui.res.pluralStringResource(R.plurals.pending_cards, p.count, p.count))
+                    else Body(stringResource(R.string.pending_read_error))
+                    if (p.error && p.count > 0) {
+                        Text(
+                            stringResource(R.string.pending_error),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                    }
+                    SecondaryButton(stringResource(R.string.btn_retry), onRetryPending)
+                }
+            }
         }
         val last = st.last
         if (last != null) {

@@ -127,22 +127,17 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
                 resumeActive(active)
                 return
             }
-            // Recuperación de emisión: todas las sesiones aprobadas sin credencial, por orden de inserción
-            // (no por hora de pared). Las antiguas se reintentan en silencio; la más reciente se muestra.
-            val pendings = deps.store.finishedWithoutCredential().filter { mustIssue(it) }
-            if (pendings.isNotEmpty()) {
-                // En el primer fallo se para y se muestra ESA sesión (Result con "Encara no s'ha pogut crear la
-                // credencial" + reintento): nunca se descarta un fallo en silencio.
-                for (old in pendings.dropLast(1)) {
-                    if (issue(old) !is CredentialPhase.Ready) {
-                        showResult(old)
-                        return
-                    }
-                }
-                showResult(pendings.last())
-                return
+            // Recuperación (03 §4.3): SOLO la sesión aprobada más reciente sin credencial es "el resultado actual"
+            // y dirige la navegación (Result(Passed) + emisión automática). Las demás se procesan en segundo plano.
+            val newest = try {
+                deps.store.finishedWithoutCredential().lastOrNull { mustIssue(it) }
+            } catch (e: StorageException) {
+                null // el fallo de lectura solo se refleja en la tarjeta de Home
             }
-            _stage.value = if (!deps.prefs.welcomeSeen) Stage.Welcome else home()
+            if (newest != null) showResult(newest)
+            else _stage.value = if (!deps.prefs.welcomeSeen) Stage.Welcome else home()
+            backgroundIssuePass()
+            return
         } catch (e: StorageException) {
             _stage.value = Stage.StateError
         }
@@ -183,7 +178,49 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         val last = deps.store.latestFinished()?.let {
             LastResult(it.id, it.correctCount ?: 0, it.session.total, it.correctCount?.let { c -> c >= it.session.snapshot.rules.passThresholdCount } == true)
         }
-        return Stage.Home(summary, deps.store.latestCredential(), last)
+        return Stage.Home(summary, deps.store.latestCredential(), last, pendingCard())
+    }
+
+    /** Tarjeta de Home: el recuento sale SIEMPRE de la BD (nada puede quedar descolgado). */
+    private suspend fun pendingCard(): PendingIssuance? {
+        val count = try {
+            deps.store.finishedWithoutCredential().count { mustIssue(it) }
+        } catch (e: StorageException) {
+            return PendingIssuance(0, error = true)
+        }
+        return if (count == 0) null else PendingIssuance(count, error = retryFailed)
+    }
+
+    /** Se pidió "Tornar-ho a provar" y aún quedan pendientes. */
+    private var retryFailed = false
+
+    /**
+     * Pasada en segundo plano, idempotente: intenta emitir las sesiones aprobadas sin credencial (salvo la que
+     * muestra el Result actual). NUNCA cambia de pantalla: solo refresca la tarjeta si el Stage es Home.
+     * Un fallo de una sesión no detiene las demás; los fallos son silenciosos pero siguen contando en la BD.
+     */
+    private suspend fun backgroundIssuePass() {
+        val currentId = (_stage.value as? Stage.Result)?.sessionId
+        try {
+            for (p in deps.store.finishedWithoutCredential().filter { it.id != currentId && mustIssue(it) }) issue(p)
+        } catch (e: StorageException) {
+            // reflejado en la tarjeta (pendingCard lo vuelve a leer)
+        }
+        if (_stage.value is Stage.Home) {
+            _stage.value = try {
+                home()
+            } catch (e: StorageException) {
+                return
+            }
+        }
+    }
+
+    /** "Tornar-ho a provar" de la tarjeta de Home. */
+    fun onRetryPending() = op {
+        backgroundIssuePass()
+        val home = _stage.value as? Stage.Home ?: return@op
+        retryFailed = home.pending != null
+        _stage.value = home.copy(pending = home.pending?.copy(error = retryFailed))
     }
 
     // ------------------------------------------------------------------ C0–C3
@@ -602,7 +639,9 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
                 !needs -> _stage.value = Stage.Result(s.id, result, null)
                 else -> {
                     _stage.value = Stage.Result(s.id, result, CredentialPhase.Issuing)
-                    _stage.value = Stage.Result(s.id, result, issue(s))
+                    val phase = issue(s)
+                    _stage.value = Stage.Result(s.id, result, phase)
+                    if (phase is CredentialPhase.Ready) backgroundIssuePass() // tras una emisión correcta
                 }
             }
         } catch (e: StorageException) {
@@ -644,22 +683,6 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             null
         } ?: return@op
         showResult(s)
-        // Reintento con éxito: se sigue con el resto de la cola de emisiones pendientes sin esperar a otra apertura.
-        if ((_stage.value as? Stage.Result)?.credential is CredentialPhase.Ready) drainIssuanceQueue(excludeId = s.id)
-    }
-
-    /** Emite las demás sesiones aprobadas sin credencial; en el primer fallo muestra esa sesión (reintento). */
-    private suspend fun drainIssuanceQueue(excludeId: String) {
-        try {
-            for (p in deps.store.finishedWithoutCredential().filter { it.id != excludeId && mustIssue(it) }) {
-                if (issue(p) !is CredentialPhase.Ready) {
-                    showResult(p)
-                    return
-                }
-            }
-        } catch (e: StorageException) {
-            // se reintentará en la siguiente apertura
-        }
     }
 
     // ------------------------------------------------------------------ C10, C11

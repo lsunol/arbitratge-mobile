@@ -790,26 +790,85 @@ class ExamViewModelTest {
 
     // ------------------------------------------------------------------ recuperación: fallo de emisión visible
 
-    @Test fun olderPendingIssuanceFailureIsSurfacedNotDiscarded() = testBody {
-        val store = InMemoryStore()
-        val clock = FakeClock()
-        val vm = vmOf(store, clock)
+    /** Tres exámenes aprobados cuya emisión falla: quedan 3 pendientes en la BD; se termina en Home. */
+    private fun TestScope.threePending(store: InMemoryStore, vm: ExamViewModel) {
         begin(vm)
         store.failAlways(Op.INSERT_CREDENTIAL)
         playAll(vm, listOf(true, true, true, true, true))
         secondExam(vm, listOf(true, true, true, true, true))
+        secondExam(vm, listOf(true, true, true, true, true))
+        store.healAll()
+        vm.onGoHome(); settle()
+    }
+
+    @Test fun backgroundPassNeverLosesPendingAfterTransientFailureInTheMiddle() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        threePending(store, vm)
+        val home = assertIs<Stage.Home>(vm.stage.value)
+        assertEquals(PendingIssuance(3, error = false), home.pending, "recuento desde la BD")
+        // fallo transitorio SOLO en la sesión del medio
+        store.failInsertForSession += "session-2"
+        vm.onRetryPending(); settle()
+        assertEquals(setOf("session-1", "session-3"), store.credentials.values.map { it.sessionId }.toSet())
+        val after = assertIs<Stage.Home>(vm.stage.value)
+        assertEquals(PendingIssuance(1, error = true), after.pending, "queda la del medio, con texto de error")
+        store.failInsertForSession.clear()
+        vm.onRetryPending(); settle()
+        assertEquals(3, store.credentials.size)
+        assertNull(assertIs<Stage.Home>(vm.stage.value).pending, "tarjeta fuera")
+    }
+
+    @Test fun backgroundPassOnStartIssuesOlderOnesWithoutChangingScreen() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        threePending(store, vm)
         vm.viewModelScope.cancel()
-        // al reabrir sigue fallando: se muestra la sesión antigua con "pendiente" y reintento
         val vm2 = vmOf(store, clock)
         settle()
+        // el más reciente es "el resultado actual" y dirige la navegación; los demás, en segundo plano
         val r = assertIs<Stage.Result>(vm2.stage.value)
-        assertEquals("session-1", r.sessionId)
-        assertEquals(CredentialPhase.Pending, r.credential)
+        assertEquals("session-3", r.sessionId)
+        assertIs<CredentialPhase.Ready>(r.credential)
+        assertEquals(3, store.credentials.size)
+    }
+
+    @Test fun backgroundPassNeverReplacesAnOpenCredentialScreen() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        playAll(vm, listOf(true, true, true, true, true)) // 1.ª credencial emitida
+        store.failAlways(Op.INSERT_CREDENTIAL)
+        secondExam(vm, listOf(true, true, true, true, true))
         store.healAll()
-        vm2.onRetryCredential(); settle()
-        // tras el reintento con éxito se sigue con la cola, sin otra apertura
-        assertIs<CredentialPhase.Ready>(assertIs<Stage.Result>(vm2.stage.value).credential)
-        assertEquals(setOf("session-1", "session-2"), store.credentials.values.map { it.sessionId }.toSet())
+        vm.onGoHome(); settle()
+        val home = assertIs<Stage.Home>(vm.stage.value)
+        assertEquals(1, home.pending?.count)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.insertGate = gate
+        vm.onRetryPending(); runCurrent() // la pasada queda esperando el guardado
+        vm.onOpenCredential(home.credential!!)
+        gate.complete(Unit); settle()
+        assertIs<Stage.Credential>(vm.stage.value)
+        assertEquals(2, store.credentials.size, "se emitió en segundo plano")
+    }
+
+    @Test fun queueReadFailureIsReflectedOnlyInTheHomeCard() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        threePending(store, vm)
+        vm.viewModelScope.cancel()
+        store.failAlways(Op.READ_PENDING)
+        val vm2 = vmOf(store, clock)
+        settle()
+        val home = assertIs<Stage.Home>(vm2.stage.value) // no StateError ni Result
+        assertEquals(PendingIssuance(0, error = true), home.pending)
+        store.healAll()
+        vm2.onRetryPending(); settle()
+        assertEquals(3, store.credentials.size)
+        assertNull(assertIs<Stage.Home>(vm2.stage.value).pending)
     }
 
     @Test fun lowBatteryThresholdIgnoresCharging() {

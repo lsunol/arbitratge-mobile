@@ -24,6 +24,7 @@ fun ArbitratgeRoot(vm: ExamViewModel) {
                 st,
                 onStart = vm::onStartExam,
                 onShowCredential = { st.credential?.let(vm::onOpenCredential) },
+                onRetryPending = vm::onRetryPending,
                 onReviewLast = { st.last?.let { vm.onReview(it.sessionId, fromResult = false) } },
             )
             is Stage.Name -> NameScreen(st, vm::onNameChange, vm::onNameContinue, onBack = { vm.onBack() })

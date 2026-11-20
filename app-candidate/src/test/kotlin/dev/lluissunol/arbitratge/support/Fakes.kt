@@ -36,7 +36,7 @@ class FakeClock(var mono: Long = 1_000_000L, var wall: Long = 1_800_000_000_000L
 
 class FakePrefs(override var welcomeSeen: Boolean = true) : WelcomePrefs
 
-enum class Op { CREATE, COMMIT_ANSWER, SAVE_CLOCK, FINISH, ABANDON, INSERT_CREDENTIAL, READ }
+enum class Op { CREATE, COMMIT_ANSWER, SAVE_CLOCK, FINISH, ABANDON, INSERT_CREDENTIAL, READ, READ_PENDING }
 
 /**
  * Almacén en memoria con la misma semántica transaccional que Room (cada operación es atómica: o se aplica
@@ -75,7 +75,7 @@ class InMemoryStore : SessionStore {
     }
     override suspend fun finishedWithoutCredential() =
         sessions.values.filter { it.state == SessionState.FINISHED && credentials.values.none { c -> c.sessionId == it.id } }
-            .also { maybeFail(Op.READ); failIfCorrupt() }
+            .also { maybeFail(Op.READ_PENDING); failIfCorrupt() }
     override suspend fun session(id: String) = sessions[id].also { maybeFail(Op.READ) }
 
     override suspend fun create(session: StoredSession) {
@@ -130,8 +130,14 @@ class InMemoryStore : SessionStore {
     override suspend fun credentialFor(sessionId: String) = credentials.values.firstOrNull { it.sessionId == sessionId }
     override suspend fun latestCredential() = credentials.values.lastOrNull()
 
+    /** Sesiones cuyo insert de credencial falla (fallo transitorio "en medio" de la cola). */
+    val failInsertForSession = mutableSetOf<String>()
+    var insertGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override suspend fun insertCredential(credential: StoredCredential): StoredCredential {
         maybeFail(Op.INSERT_CREDENTIAL)
+        insertGate?.await()
+        if (credential.sessionId in failInsertForSession) throw StorageException("fallo inyectado en la sesión")
         credentials.values.firstOrNull { it.sessionId == credential.sessionId }?.let { return it }
         credentials[credential.cid] = credential
         return credential

@@ -6,6 +6,9 @@ import dev.lluissunol.arbitratge.exam.SessionQuestion
 
 data class RulesSummary(val questions: Int, val minutes: Int, val threshold: Int)
 
+/** [count] pendientes de crear; [error] = fallo de lectura o el último reintento no bastó. */
+data class PendingIssuance(val count: Int, val error: Boolean)
+
 data class LastResult(val sessionId: String, val correct: Int, val total: Int, val passed: Boolean)
 
 enum class NameProblem { EMPTY, TOO_LONG, INVALID_CHARS }
@@ -35,7 +38,13 @@ sealed interface Stage {
     data object Welcome : Stage
 
     /** C0. */
-    data class Home(val rules: RulesSummary, val credential: StoredCredential?, val last: LastResult?) : Stage
+    data class Home(
+        val rules: RulesSummary,
+        val credential: StoredCredential?,
+        val last: LastResult?,
+        /** Tarjeta no bloqueante de credenciales pendientes (recuento desde la BD). */
+        val pending: PendingIssuance? = null,
+    ) : Stage
 
     /** C2. */
     data class Name(val draft: String, val problem: NameProblem?) : Stage

@@ -139,4 +139,11 @@
     <string name="icon_wrong">Incorrecta</string>
     <string name="option_selected">seleccionada</string>
     <string name="option_not_selected">no seleccionada</string>
+    <!-- NOVA: credencials pendents de crear (cua en segon pla) -->
+    <plurals name="pending_cards">
+        <item quantity="one">Tens %1$d credencial pendent de crear.</item>
+        <item quantity="other">Tens %1$d credencials pendents de crear.</item>
+    </plurals>
+    <string name="pending_error">Encara no s\'ha pogut crear. Torna-ho a provar una mica més tard.</string>
+    <string name="pending_read_error">No s\'han pogut comprovar les credencials pendents. Torna-ho a provar.</string>
 </resources>
