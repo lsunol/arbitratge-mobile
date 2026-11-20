@@ -209,9 +209,28 @@ class RoomPersistenceTest {
         // estado terminal con plaza activa colgada, y la vía de recuperación explícita
         store.abandon("s2")
         sql.execSQL("UPDATE session SET active_slot = 1 WHERE id = 's2'")
-        assertEquals(1, store.quarantineUnreadable())
+        assertEquals(0, store.quarantineUnreadable(), "un estado terminal conocido no se pone en cuarentena")
+        assertEquals("ABANDONED" to true, q("s2"))
         store.create(newSession("s3", "7f3a92c1-4b5d-4e6f-8a9b-000000000003"))
         assertEquals("s3", store.active()?.id)
+    }
+
+    @Test fun finishedApprovedSessionWithDanglingSlotStillAppearsForIssuance() = runBlocking<Unit> {
+        val database = openDb()
+        val store = RoomSessionStore(database.sessionDao())
+        val s = newSession("s1")
+        store.create(s)
+        s.session.snapshot.questions.forEachIndexed { i, q ->
+            store.commitAnswer(
+                "s1", AnswerRecord(i, q.correctIds, 100_000), ClockState(300_000, 100_000, 5, null, 6),
+                if (i == s.session.total - 1) Finish(FinishReason.COMPLETED, s.session.total, 99) else null,
+            )
+        }
+        database.openHelper.writableDatabase.execSQL("UPDATE session SET active_slot = 1 WHERE id = 's1'")
+        store.create(newSession("s2", "7f3a92c1-4b5d-4e6f-8a9b-000000000002")) // no queda bloqueado
+        val pending = store.finishedWithoutCredential()
+        assertEquals(listOf("s1"), pending.map { it.id })
+        assertEquals(SessionState.FINISHED, pending.single().state)
     }
 
     // ---- muerte del proceso: todo se recompone desde la base de datos ----

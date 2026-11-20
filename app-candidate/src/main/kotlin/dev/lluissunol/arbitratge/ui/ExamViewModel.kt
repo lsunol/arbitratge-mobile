@@ -174,7 +174,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
                 val finish = Finish(FinishReason.COMPLETED, r.correct, deps.clock.wallMs())
                 persistFinish(sess, sess.clock, finish) ?: return
             }
-            ExamClockModel.isExpired(ExamClockModel.remaining(sess.clock, deps.clock.monotonicMs())) -> finishTimedOut(away = true)
+            ExamClockModel.shouldTimeOut(ExamClockModel.remaining(sess.clock, deps.clock.monotonicMs())) -> finishTimedOut(away = true)
             else -> enterQuestion()
         }
     }
@@ -644,6 +644,22 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             null
         } ?: return@op
         showResult(s)
+        // Reintento con éxito: se sigue con el resto de la cola de emisiones pendientes sin esperar a otra apertura.
+        if ((_stage.value as? Stage.Result)?.credential is CredentialPhase.Ready) drainIssuanceQueue(excludeId = s.id)
+    }
+
+    /** Emite las demás sesiones aprobadas sin credencial; en el primer fallo muestra esa sesión (reintento). */
+    private suspend fun drainIssuanceQueue(excludeId: String) {
+        try {
+            for (p in deps.store.finishedWithoutCredential().filter { it.id != excludeId && mustIssue(it) }) {
+                if (issue(p) !is CredentialPhase.Ready) {
+                    showResult(p)
+                    return
+                }
+            }
+        } catch (e: StorageException) {
+            // se reintentará en la siguiente apertura
+        }
     }
 
     // ------------------------------------------------------------------ C10, C11

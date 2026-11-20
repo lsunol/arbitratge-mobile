@@ -76,8 +76,25 @@ abstract class SessionDao {
     // ---- Transacciones: cada una es atómica (03 §4.3, §4.4) ----
 
     /** Filas con plaza activa pero estado desconocido o distinto de IN_PROGRESS: bloquearían toda sesión nueva. */
-    @Query("UPDATE session SET state = 'UNREADABLE', active_slot = NULL WHERE active_slot IS NOT NULL AND state != 'IN_PROGRESS'")
-    abstract suspend fun clearInconsistentActive(): Int
+    @Query("UPDATE session SET active_slot = NULL WHERE active_slot IS NOT NULL AND state IN ('FINISHED', 'ABANDONED', 'UNREADABLE')")
+    abstract suspend fun clearStaleSlotOfTerminal(): Int
+
+    @Query(
+        "UPDATE session SET state = 'UNREADABLE', active_slot = NULL WHERE active_slot IS NOT NULL " +
+            "AND state NOT IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED', 'UNREADABLE')",
+    )
+    abstract suspend fun quarantineUnknownActive(): Int
+
+    /**
+     * Plaza activa colgada: en estados terminales conocidos solo se libera la plaza (una sesión FINISHED
+     * aprobada debe seguir apareciendo en la recuperación de emisión); los estados desconocidos se ponen en
+     * cuarentena. Devuelve cuántas filas se pusieron en cuarentena.
+     */
+    @Transaction
+    open suspend fun clearInconsistentActive(): Int {
+        clearStaleSlotOfTerminal()
+        return quarantineUnknownActive()
+    }
 
     @Transaction
     open suspend fun createTx(s: SessionEntity) {

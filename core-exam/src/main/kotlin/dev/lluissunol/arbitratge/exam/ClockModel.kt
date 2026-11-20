@@ -73,9 +73,11 @@ object ExamClockModel {
     fun tapAccepted(remainingAtTapMs: Long): Boolean = remainingAtTapMs >= 0
 
     /**
-     * Fin por tiempo (§4.3): restante <= 0 y no hay respuesta pendiente de guardar tocada con restante >= 0.
+     * Fin por tiempo (§4.3): restante < 0 (ESTRICTO: con exactamente 0 todavía no hay arbitraje, de modo que
+     * todo tap con restante >= 0 es válido y todo tap posterior al arbitraje tiene restante < 0) y no hay
+     * respuesta pendiente de guardar tocada con restante >= 0.
      * [pendingTapRemainingMs]: restante al tocar de la respuesta aún sin guardar, o null.
      */
     fun shouldTimeOut(remainingMs: Long, pendingTapRemainingMs: Long? = null): Boolean =
-        isExpired(remainingMs) && !(pendingTapRemainingMs != null && tapAccepted(pendingTapRemainingMs))
+        remainingMs < 0 && !(pendingTapRemainingMs != null && tapAccepted(pendingTapRemainingMs))
 }

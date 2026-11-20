@@ -123,6 +123,8 @@ class ClockAndStateTest {
         val s = ExamEngine.start(TestBanks.bank(), TestBanks.rules(), SeededRng(1))
         assertFailsWith<ExamEngineException> { ExamEngine.answer(s, 0, listOf("a"), remaining) }
         assertFalse(ExamClockModel.shouldTimeOut(1)) // aún queda tiempo
+        assertFalse(ExamClockModel.shouldTimeOut(0), "con exactamente 0 aún no hay arbitraje")
+        assertTrue(ExamClockModel.shouldTimeOut(-1))
     }
 
     @Test fun wallAnchorIsAlwaysSet() {

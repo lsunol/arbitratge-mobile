@@ -336,6 +336,7 @@ class ExamViewModelTest {
         vm.onRetrySave(); settle(100)
         assertEquals(1, store.sessions.values.single().session.answers.size)
         assertEquals(1, vm.q.index) // se guardó y recién entonces el tick finalizará por tiempo
+        clock.advance(1) // el punto de control deja el restante en 0; un ms después es < 0
         settle(1000)
         assertIs<Stage.TimeUp>(vm.stage.value)
     }
@@ -524,6 +525,7 @@ class ExamViewModelTest {
         val answers = store.sessions.values.single().session.answers
         assertEquals(1, answers.size, "la respuesta tocada a tiempo se acepta")
         assertTrue(answers.single().remainingAtTapMs in 0..1_000L)
+        clock.advance(1)
         settle(1000)
         assertIs<Stage.TimeUp>(vm.stage.value)
     }
@@ -736,14 +738,32 @@ class ExamViewModelTest {
         vm.q.question.correctIds.forEach(vm::onSelect)
         val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
         store.finishGate = gate
-        clock.advance(5 * 60_000L) // restante exactamente 0
+        clock.advance(5 * 60_000L + 1) // restante -1 ms: arbitraje estricto
         settle(1000) // el tick decide el fin por tiempo y se queda esperando el guardado
         assertIs<Stage.Question>(vm.stage.value)
-        vm.onNext(); vm.onDialogConfirm(); runCurrent() // tap en ese ms: debe rechazarse
+        vm.onNext(); vm.onDialogConfirm(); runCurrent() // tap a -1 ms tras el arbitraje: debe rechazarse
         assertEquals(0, store.count(Op.COMMIT_ANSWER), "no se encola ningún guardado de respuesta")
         gate.complete(Unit); settle(100)
         assertIs<Stage.TimeUp>(vm.stage.value)
         assertTrue(store.sessions.values.single().session.answers.isEmpty())
+        assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
+    }
+
+    @Test fun tapAtExactlyZeroRemainingIsAccepted() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        vm.q.question.correctIds.forEach(vm::onSelect)
+        clock.advance(5 * 60_000L) // restante exactamente 0: sin arbitraje
+        settle(1000)
+        assertIs<Stage.Question>(vm.stage.value)
+        assertEquals(0, store.count(Op.FINISH))
+        vm.onNext(); settle(100)
+        val a = store.sessions.values.single().session.answers.single()
+        assertEquals(0L, a.remainingAtTapMs)
+        clock.advance(1); settle(1000) // ahora sí: -1 ms
+        assertIs<Stage.TimeUp>(vm.stage.value)
         assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
     }
 
@@ -761,6 +781,7 @@ class ExamViewModelTest {
         assertEquals(0, store.count(Op.FINISH))
         gate.complete(Unit); settle(100)
         assertEquals(1, store.sessions.values.single().session.answers.size, "la respuesta se incluye")
+        clock.advance(1)
         settle(1000)
         assertIs<Stage.TimeUp>(vm.stage.value)
         assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
@@ -786,12 +807,8 @@ class ExamViewModelTest {
         assertEquals(CredentialPhase.Pending, r.credential)
         store.healAll()
         vm2.onRetryCredential(); settle()
+        // tras el reintento con éxito se sigue con la cola, sin otra apertura
         assertIs<CredentialPhase.Ready>(assertIs<Stage.Result>(vm2.stage.value).credential)
-        // la más reciente se recupera en la siguiente apertura: nada se pierde
-        vm2.viewModelScope.cancel()
-        val vm3 = vmOf(store, clock)
-        settle()
-        assertEquals("session-2", assertIs<Stage.Result>(vm3.stage.value).sessionId)
         assertEquals(setOf("session-1", "session-2"), store.credentials.values.map { it.sessionId }.toSet())
     }
 
