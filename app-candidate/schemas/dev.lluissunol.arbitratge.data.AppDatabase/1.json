@@ -1,0 +1,300 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "0ae1d245755359c679fc994f52d7b8bf",
+    "entities": [
+      {
+        "tableName": "session",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `state` TEXT NOT NULL, `active_slot` INTEGER, `cid` TEXT NOT NULL, `candidate_name` TEXT NOT NULL, `bank_version` TEXT NOT NULL, `exam_version` TEXT NOT NULL, `rules` TEXT NOT NULL, `snapshot` TEXT NOT NULL, `current_index` INTEGER NOT NULL, `limit_ms` INTEGER NOT NULL, `remaining_ms_saved` INTEGER NOT NULL, `anchor_mono` INTEGER NOT NULL, `anchor_boot` INTEGER, `anchor_wall_ms` INTEGER NOT NULL, `start_wall` INTEGER NOT NULL, `finished_wall` INTEGER, `finish_reason` TEXT, `correct_count` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activeSlot",
+            "columnName": "active_slot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cid",
+            "columnName": "cid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "candidateName",
+            "columnName": "candidate_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bankVersion",
+            "columnName": "bank_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "examVersion",
+            "columnName": "exam_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rules",
+            "columnName": "rules",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshot",
+            "columnName": "snapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentIndex",
+            "columnName": "current_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "limitMs",
+            "columnName": "limit_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remainingMsSaved",
+            "columnName": "remaining_ms_saved",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "anchorMono",
+            "columnName": "anchor_mono",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "anchorBoot",
+            "columnName": "anchor_boot",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "anchorWallMs",
+            "columnName": "anchor_wall_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startWall",
+            "columnName": "start_wall",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "finishedWall",
+            "columnName": "finished_wall",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "finishReason",
+            "columnName": "finish_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "correctCount",
+            "columnName": "correct_count",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_session_active_slot",
+            "unique": true,
+            "columnNames": [
+              "active_slot"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_session_active_slot` ON `${TABLE_NAME}` (`active_slot`)"
+          },
+          {
+            "name": "index_session_state_finished_wall",
+            "unique": false,
+            "columnNames": [
+              "state",
+              "finished_wall"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_session_state_finished_wall` ON `${TABLE_NAME}` (`state`, `finished_wall`)"
+          }
+        ]
+      },
+      {
+        "tableName": "answer",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`session_id` TEXT NOT NULL, `q_index` INTEGER NOT NULL, `selected_ids` TEXT NOT NULL, `remaining_at_tap_ms` INTEGER NOT NULL, PRIMARY KEY(`session_id`, `q_index`), FOREIGN KEY(`session_id`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "sessionId",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "qIndex",
+            "columnName": "q_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "selectedIds",
+            "columnName": "selected_ids",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remainingAtTapMs",
+            "columnName": "remaining_at_tap_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "session_id",
+            "q_index"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "session_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "credential",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`cid` TEXT NOT NULL, `session_id` TEXT NOT NULL, `token` TEXT NOT NULL, `name` TEXT NOT NULL, `iat` TEXT NOT NULL, `kid` TEXT NOT NULL, `exv` TEXT NOT NULL, `bv` TEXT, `pdf_exported` INTEGER NOT NULL, PRIMARY KEY(`cid`), FOREIGN KEY(`session_id`) REFERENCES `session`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "cid",
+            "columnName": "cid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "session_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "token",
+            "columnName": "token",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iat",
+            "columnName": "iat",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kid",
+            "columnName": "kid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exv",
+            "columnName": "exv",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bv",
+            "columnName": "bv",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pdfExported",
+            "columnName": "pdf_exported",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "cid"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_credential_session_id",
+            "unique": true,
+            "columnNames": [
+              "session_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_credential_session_id` ON `${TABLE_NAME}` (`session_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "session",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "session_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0ae1d245755359c679fc994f52d7b8bf')"
+    ]
+  }
+}

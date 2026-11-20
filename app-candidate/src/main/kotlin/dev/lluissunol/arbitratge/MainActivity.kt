@@ -4,27 +4,45 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import dev.lluissunol.arbitratge.ui.ArbitratgeRoot
+import dev.lluissunol.arbitratge.ui.ExamViewModel
+import dev.lluissunol.arbitratge.ui.UiEvent
+import kotlinx.coroutines.launch
 
+/** Única Activity (03 §4.1): estado en BD + `StateFlow`; la rotación recrea la Activity sin perder nada. */
 class MainActivity : ComponentActivity() {
+    private val vm: ExamViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                ExamViewModel((application as ArbitratgeApp).container.examDeps()) as T
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent {
-            MaterialTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
-                    Box(Modifier.padding(padding)) {
-                        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-                    }
-                }
+        setContent { ArbitratgeRoot(vm) }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                vm.events.collect { if (it == UiEvent.LeaveApp) finish() }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        vm.onAppStarted()
+    }
+
+    override fun onStop() {
+        vm.onAppStopped()
+        super.onStop()
     }
 }

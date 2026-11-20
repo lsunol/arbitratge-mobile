@@ -52,3 +52,6 @@ SHA256SUMS.txt
 *.log
 *.tmp
 *.bak
+
+# Kotlin
+.kotlin/
