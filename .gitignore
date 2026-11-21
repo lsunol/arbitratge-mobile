@@ -1,4 +1,5 @@
 # Sistema / IDE
+.pi/subagents/
 .DS_Store
 Thumbs.db
 .idea/
