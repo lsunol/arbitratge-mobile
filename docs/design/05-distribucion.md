@@ -618,7 +618,7 @@ Sin cambios en el proyecto base. El DNS de `futbolbotons.cat` lo gestiona el usu
 ```
 _site/
 ├─ index.html                 descarga (única página de entrada)
-├─ privacitat.html            aviso de privacidad
+├─ styles.css, brand/, fonts/ landing (Atkinson autoalojada, OFL)
 ├─ latest.json                versión actual (§6.5)
 ├─ verificador/
 │  ├─ index.html              PWA
@@ -638,9 +638,9 @@ en Pages), SBOM, `test-vectors/` con tokens de prueba (se usan en CI, no en prod
 
 ### 6.3 Web de descarga: un único HTML simple
 
-- **Un solo `index.html`**, sin JavaScript y con CSS en línea. Cabecera `Content-Security-Policy`
-  como `<meta>`: `default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none';
-  form-action 'none'; object-src 'none'` (no hay scripts, así que no hace falta `script-src`). Pages no
+- **Un solo `index.html`** (+ `styles.css`, `brand/`, `fonts/` propios), sin JavaScript. Cabecera `Content-Security-Policy`
+  como `<meta>`: `default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none';
+  form-action 'none'; object-src 'none'` (no hay scripts, así que no hace falta `script-src`; el verificador tiene su CSP propia, §6.7). Pages no
   permite cabeceras propias (`frame-ancestors` no se puede fijar con meta; aceptable sin secretos) [PV].
 - **Contenido en catalán**, texto grande, pasos numerados (04 define el detalle visual):
   1. Botón "Descarrega l'app (APK)" → **URL versionada** de Releases (`…/releases/download/vX.Y.Z/…`, §6.4), cuyo SHA-256 y huella son los estampados. El alias `latest` no es el botón principal (I5).
@@ -651,10 +651,13 @@ en Pages), SBOM, `test-vectors/` con tokens de prueba (se usan en CI, no en prod
   4. Enlace a la **versión** (`versionName`, fecha) y a notas de versión.
   5. Enlace al **verificador** (`/verificador/`) y advertencia de [ADR-0001]: "Aquesta marca ajuda a
      detectar canvis casuals; no és una prova contra un dispositiu modificat o una clau extreta."
-  6. Enlace a `privacitat.html` (catalán; qué datos se guardan, que no hay servidor, cómo borrarlos).
+  6. Aviso de privacidad en un `<details>` del mismo HTML (decisión: sin `privacitat.html`; qué datos se guardan, que no hay servidor). Contacto del club pendiente.
   7. Contacto del club (decisión del usuario).
-- **Plantilla**: el valor `{{APK_SHA256}}` y `{{CERT_SHA256}}` se rellenan en `pages.yml` desde la
-  última release; si faltan, la página no muestra el enlace de descarga (fallo cerrado).
+- **Plantilla** (implementada): marcadores `__VERSION__`, `__APK_URL__`, `__SHA256__`, `__HOST__` (de `web/CNAME`) y bloques opcionales `<!--CERT-->` (`__CERT_SHA256__`), `<!--PUBLISHED-->` (`__PUBLISHED__`) y `<!--NOTES-->` (`__RELEASE_NOTES_URL__`), que estampa `node scripts/stamp-web.mjs --preview|--production --version X.Y.Z --version-code N --apk-url … --sha256 … [--cert-sha256 …] [--published YYYY-MM-DD] [--release-notes-url …]` hacia `_site/`.
+  - `--production` **exige** cert, fecha, `--bank-version` (emitido como `bank_version` en `latest.json`), notas, `--release-metadata` (generado por `scripts/fetch-release-metadata.mjs`: release publicada, no borrador/prerelease, tag, asset, URL y SHA-256 descargado ligados a los argumentos) y una lista de claves de producción no vacía y válida (SPKI base64url canónico) **idéntica byte a byte a `trusted-keys/`** (mismo conjunto de ficheros y mismos bytes; la correspondencia con la clave de firma de la release es otra puerta, G2/G3) (`verificador/keys`, solo claves públicas ES256). `--preview` (hoy, sin release firmada ni claves) admite que falten; lo que falta **no se publica**, nunca se inventa.
+  - Solo versión final `X.Y.Z`; `versionCode` debe cumplir la fórmula de §7.1; el APK debe ser exactamente `https://github.com/lsunol/arbitratge-mobile/releases/download/vX.Y.Z/<fichero>.apk` (el repositorio real es `origin`; si se traslada a `cfbbarcelona`, cambiar `RELEASE_REPO` en el script y este documento).
+  - Falla si queda un marcador, falta el verificador o el precache está desactualizado. Lista blanca explícita de ficheros (verificador fichero a fichero; un `questions.json` o `lib/extra.js` se rechaza), sin enlaces simbólicos; la salida solo puede ser `<repo>/_site` (vacío o con la marca `.arbitratge-web-stamp`) o un directorio nuevo bajo el temporal del sistema, sin enlaces/uniones.
+  - Estampado fuera de la web: el CI debe además comprobar HTTP 200 del APK (§4.4). No hay página «descàrrega no disponible»: ante un fallo no se despliega.
 
 ### 6.4 Enlaces estables
 
@@ -691,6 +694,7 @@ del propio dominio (más cómodo, más tráfico y dos fuentes que mantener).
 ```
 
 - `versionCode` según la fórmula de §7.1 (`1.3.0` → 103009). Solo describe versiones finales; las RC no aparecen.
+- Campos opcionales añadidos por `stamp-web`: `release_notes_url` (enlace a la release; la landing lo muestra). `minSupportedVersionCode` **no lo emite aún** el script (los fijará el pipeline de release cuando existan).
 - **Público y sin datos sensibles**. No contiene URL del APK: la app abre `download_page` (fija en
   el código), así un `latest.json` manipulado no redirige a otro binario. El instalador de Android
   rechaza un APK con otra firma (límite real, 02/rev. completa §B).

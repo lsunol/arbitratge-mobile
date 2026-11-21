@@ -63,3 +63,6 @@ SHA256SUMS.txt
 
 # Kotlin
 .kotlin/
+
+# Salida de scripts/stamp-web.mjs (artefacto de Pages)
+/_site/

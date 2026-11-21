@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "app": "candidate",
+  "versionName": "__VERSION__",
+  "versionCode": "__VERSION_CODE__",
+  "apk_sha256": "__SHA256__",
+  "download_page": "https://__HOST__/"
+}
