@@ -38,7 +38,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import android.content.Context
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.focusable
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
@@ -197,9 +201,19 @@ private fun QuestionTopBar(st: Stage.Question, a: QuestionActions) {
                 .padding(horizontal = ArbDimens.gutter).padding(top = ArbDimens.s8, bottom = ArbDimens.s8),
             verticalArrangement = Arrangement.spacedBy(ArbDimens.s4),
         ) {
-            // Al cambiar de pregunta el foco va a la cabecera (TalkBack lee «Pregunta N de M. Tipus. Estat», 04 §8.2).
+            // Al cambiar de pregunta (04 §8.2): 1) el foco de ENTRADA va a la cabecera (FocusRequester: en Compose no hay
+            // API pública para el foco de accesibilidad; TalkBack suele seguir al foco de entrada) y 2) con TalkBack
+            // activo se emite además un anuncio explícito «Pregunta N de M. Tipus. Estat». [PV] comprobar en dispositivo
+            // real con TalkBack que no se lee dos veces y que el foco acaba en la cabecera.
             val focus = remember { FocusRequester() }
-            LaunchedEffect(st.index) { focus.requestFocus() }
+            val view = LocalView.current
+            val spoken by rememberUpdatedState(a11y)
+            LaunchedEffect(st.index) {
+                focus.requestFocus()
+                val am = view.context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+                @Suppress("DEPRECATION")
+                if (am != null && am.isEnabled && am.isTouchExplorationEnabled) view.announceForAccessibility(spoken)
+            }
             val label: @Composable (Modifier) -> Unit = { m ->
                 Text(
                     stringResource(R.string.progress, st.index + 1, st.total),

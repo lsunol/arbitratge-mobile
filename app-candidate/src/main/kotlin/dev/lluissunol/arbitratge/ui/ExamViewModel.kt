@@ -447,6 +447,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         if (!canNavigate() || index !in 0 until s.session.total) return
         if (index == position && !overviewOpen) return
         persistPosition(index) // primero se guarda la posición (best effort) y luego se cambia de pantalla
+        if (!canNavigate()) return // algo cambió mientras se guardaba (diálogo, fallo, fin por tiempo): no se pinta
         position = index
         selected = selectionOf(current ?: s, index)
         overviewOpen = false
@@ -456,6 +457,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     private suspend fun openOverview() {
         if (!canNavigate() || overviewOpen) return
         persistPosition(position)
+        if (!canNavigate()) return
         overviewOpen = true
         publish()
     }
@@ -880,11 +882,11 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     fun onBack(): Boolean {
         when (val st = _stage.value) {
             is Stage.Question -> {
-                if (st.saveError != null || st.saving) return true
+                if (st.saveError != null || st.saving || navigating) return true // Atrás se consume durante un guardado/navegación
                 if (st.dialog != null) onDialogDismiss() else { dialog = QuestionDialog.EXIT; publish() }
             }
             is Stage.Overview -> {
-                if (st.saveError != null || st.finishing) return true
+                if (st.saveError != null || st.finishing || navigating) return true
                 if (st.dialog != null) onDialogDismiss() else onBackToQuestion()
             }
             is Stage.Name -> onGoHome()

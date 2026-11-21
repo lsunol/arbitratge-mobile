@@ -364,7 +364,7 @@ fun BrandMark(size: Dp, modifier: Modifier = Modifier, contentDescription: Strin
         val c = Offset(this.size.width / 2, this.size.height / 2)
         drawCircle(BrandColors.Pitch, radius = 32f * u, center = c)
         if (onPitch) drawCircle(BrandColors.Chalk, radius = 31f * u, center = c, style = Stroke(2f * u))
-        val edge = 32f * 0.86f * u // la línia arriba a la vora del disc
+        val edge = 32f * u // la línia de mig camp arriba a la VORA del disc (no al 86 %); només cercle i botó s'escalen
         drawLine(BrandColors.Chalk, Offset(c.x, c.y - edge), Offset(c.x, c.y - 19f * k), strokeWidth = 3f * k)
         drawLine(BrandColors.Chalk, Offset(c.x, c.y + 19f * k), Offset(c.x, c.y + edge), strokeWidth = 3f * k)
         drawCircle(BrandColors.Chalk, radius = 19f * k, center = c, style = Stroke(3f * k))

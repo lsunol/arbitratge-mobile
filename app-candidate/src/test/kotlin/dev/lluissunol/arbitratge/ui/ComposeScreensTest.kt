@@ -460,6 +460,24 @@ class ComposeScreensTest {
         rule.onNodeWithContentDescription("Pregunta 4 de 5. Una resposta. Sense resposta").assertExists()
     }
 
+    @Test fun withTalkBackOnAnExplicitAnnouncementIsSentWhenTheQuestionChanges() {
+        val am = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            .getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+        val shadow = org.robolectric.Shadows.shadowOf(am)
+        shadow.setEnabled(true)
+        shadow.setTouchExplorationEnabled(true)
+        val base = questionState(QuestionType.SINGLE_CHOICE, index = 0)
+        var st by androidx.compose.runtime.mutableStateOf(base)
+        rule.setContent { Scaled(1f) { QuestionScreen(st, QuestionActions()) } }
+        rule.waitForIdle()
+        st = base.copy(index = 3)
+        rule.waitForIdle()
+        val texts = shadow.sentAccessibilityEvents
+            .filter { it.eventType == android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT }
+            .map { it.text.joinToString(" ") }
+        assertTrue(texts.any { it.contains("Pregunta 4 de 5. Una resposta. Sense resposta") }, "anuncis: $texts")
+    }
+
     @Test fun savedStateComesOnlyFromTheCommittedSelection() {
         val q = questionState(QuestionType.SINGLE_CHOICE)
         val id = q.question.options.first().id

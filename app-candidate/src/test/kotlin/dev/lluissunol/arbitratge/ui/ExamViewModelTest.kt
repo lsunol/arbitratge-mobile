@@ -1216,6 +1216,51 @@ class ExamViewModelTest {
         assertEquals(setOf(id), vm.q.committed, "lo confirmado sigue siendo lo anterior")
     }
 
+    @Test fun backIsConsumedWhileThePositionIsBeingSavedAndNoDialogOpens() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveProgressGate = gate
+        vm.onNext(); runCurrent()
+        assertTrue(vm.onBack(), "Atrás se consume")
+        runCurrent()
+        gate.complete(Unit); settle(100)
+        assertEquals(1, vm.q.index)
+        assertNull(vm.q.dialog, "no se abre «Sortir» sobre la pregunta nueva")
+        // igual abriendo el resumen
+        val gate2 = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveProgressGate = gate2
+        vm.onOpenOverview(); runCurrent()
+        assertTrue(vm.onBack()); runCurrent()
+        gate2.complete(Unit); settle(100)
+        val ov = assertIs<Stage.Overview>(vm.stage.value)
+        assertNull(ov.dialog)
+    }
+
+    @Test fun lateTapWhileTheTimelySaveIsStillInFlightHitsThePendingBranch() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val ids = vm.q.question.options.map { it.id }
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.commitGate = gate
+        vm.onSelect(ids[0]); runCurrent() // guardado a tiempo EN VUELO (sin SaveError)
+        assertTrue(vm.q.saving)
+        assertNull(vm.q.saveError)
+        clock.advance(10 * 60_000L)
+        vm.onSelect(ids[1]); runCurrent() // toque tardío con el guardado a tiempo aún en vuelo: se ignora
+        assertEquals(setOf(ids[0]), vm.q.selected)
+        assertEquals(0, store.count(Op.FINISH), "el fin por tiempo no se encola")
+        gate.complete(Unit); settle(100)
+        assertIs<Stage.Question>(vm.stage.value)
+        assertEquals(listOf(ids[0]), store.sessions.values.single().session.answers.single().selectedIds)
+        clock.advance(1); settle(1000)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+    }
+
     @Test fun lowBatteryThresholdIgnoresCharging() {
         assertTrue(isLowBattery(19, 100))
         assertTrue(!isLowBattery(20, 100))
