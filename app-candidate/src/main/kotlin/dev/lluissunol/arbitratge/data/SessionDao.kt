@@ -13,8 +13,9 @@ abstract class SessionDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     abstract suspend fun insertSession(s: SessionEntity)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
-    abstract suspend fun insertAnswer(a: AnswerEntity): Long
+    /** UPSERT por (session_id, q_index): navegación libre, la respuesta se puede sustituir o vaciar. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertAnswer(a: AnswerEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertCredentialIgnore(c: CredentialEntity): Long
@@ -105,21 +106,23 @@ abstract class SessionDao {
     @Transaction
     open suspend fun commitAnswerTx(
         a: AnswerEntity,
-        nextIndex: Int,
+        currentIndex: Int,
         remaining: Long,
         mono: Long,
         boot: Int?,
         wall: Long,
-        finish: FinishRow?,
     ) {
         val current = session(a.sessionId) ?: throw SessionNotActiveException("sessió inexistent")
         if (current.state != "IN_PROGRESS") throw SessionNotActiveException("sessió no activa: ${current.state}")
-        if (insertAnswer(a) == -1L) {
-            val existing = answer(a.sessionId, a.qIndex)
-            if (existing != a) throw IllegalStateException("resposta ja desada amb altre contingut: ${a.qIndex}")
-        }
-        updateProgress(a.sessionId, nextIndex, remaining, mono, boot, wall)
-        if (finish != null) markFinished(a.sessionId, finish.reason, finish.correct, finish.finishedWall)
+        upsertAnswer(a)
+        updateProgress(a.sessionId, currentIndex, remaining, mono, boot, wall)
+    }
+
+    @Transaction
+    open suspend fun saveProgressTx(id: String, currentIndex: Int, remaining: Long, mono: Long, boot: Int?, wall: Long) {
+        val current = session(id) ?: throw SessionNotActiveException("sessió inexistent")
+        if (current.state != "IN_PROGRESS") throw SessionNotActiveException("sessió no activa: ${current.state}")
+        updateProgress(id, currentIndex, remaining, mono, boot, wall)
     }
 
     @Transaction

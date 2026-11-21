@@ -74,17 +74,36 @@ class ExamViewModelTest {
     private fun wrongPick(q: Stage.Question): Set<String> =
         setOf(q.question.options.first { it.id !in q.question.correctIds }.id)
 
-    /** Responde la pregunta actual (bien o mal) y confirma si es la última. */
+    /** Responde la pregunta actual (bien o mal) y pulsa «Següent» (en la última abre el resumen: NO finaliza). */
     private fun TestScope.answer(vm: ExamViewModel, right: Boolean) {
         val q = vm.q
         val ids = if (right) q.question.correctIds.toSet() else wrongPick(q)
         ids.forEach(vm::onSelect)
         vm.onNext(); settle(50)
-        if (q.isLast) { vm.onDialogConfirm(); settle(50) }
         settle()
     }
 
-    private fun TestScope.playAll(vm: ExamViewModel, rights: List<Boolean>) = rights.forEach { answer(vm, it) }
+    /** «Finalitzar l'examen» del resumen + confirmación. */
+    private fun TestScope.finishExam(vm: ExamViewModel) {
+        vm.onFinishRequested(); settle(50)
+        vm.onDialogConfirm(); settle(2000)
+    }
+
+    private fun TestScope.playSome(vm: ExamViewModel, rights: List<Boolean>) = rights.forEach { answer(vm, it) }
+
+    /** Responde todas las preguntas y, desde el resumen, finaliza con confirmación. */
+    private fun TestScope.playAll(vm: ExamViewModel, rights: List<Boolean>) {
+        playSome(vm, rights)
+        assertIs<Stage.Overview>(vm.stage.value)
+        finishExam(vm)
+    }
+
+    private val ExamViewModel.ov get() = stage.value as Stage.Overview
+
+    /** Avanza con «Següent» hasta una pregunta del tipo dado. */
+    private fun TestScope.goToType(vm: ExamViewModel, type: QuestionType) {
+        while (vm.q.question.type != type) { vm.onNext(); settle(50) }
+    }
 
     // ------------------------------------------------------------------ flujo completo
 
@@ -171,52 +190,57 @@ class ExamViewModelTest {
 
     // ------------------------------------------------------------------ persistencia (B3)
 
-    @Test fun answerSaveFailureKeepsUserOnQuestionWithSelection() = testBody {
+    @Test fun answerSaveFailureKeepsSelectionVisibleAndBlocksNavigation() = testBody {
         val store = InMemoryStore()
         val vm = vmOf(store, FakeClock())
         begin(vm)
         val first = vm.q
         val pick = first.question.correctIds.toSet()
-        pick.forEach(vm::onSelect)
+        first.question.options.first { it.id in pick }.id.let(vm::onSelect)
         store.failAlways(Op.COMMIT_ANSWER)
-        vm.onNext(); settle(1000)
+        settle(1000)
         val st = vm.q
         assertEquals(SaveError.ANSWER, st.saveError)
-        assertEquals(0, st.index, "no se avanza")
-        assertEquals(pick, st.selected, "la selección sigue visible")
+        assertEquals(0, st.index, "no se navega")
+        assertEquals(setOf(first.question.options.first { it.id in pick }.id), st.selected, "la selección sigue visible")
         assertTrue(store.sessions.values.single().session.answers.isEmpty(), "nada guardado")
         assertEquals(ExamViewModel.RETRIES, store.count(Op.COMMIT_ANSWER), "reintentos automáticos acotados")
-        // la selección queda fijada mientras no se guarde
+        // ni Següent, ni Anterior, ni el resumen, ni una selección nueva mientras no se guarde (B3)
+        vm.onNext(); vm.onPrevious(); vm.onOpenOverview(); vm.onGoToQuestion(3)
         vm.onSelect(first.question.options.first { it.id !in pick }.id)
-        assertEquals(pick, vm.q.selected)
-        // reintento manual con el almacén sano: avanza, sin duplicar filas
+        settle(100)
+        assertEquals(0, vm.q.index)
+        assertEquals(st.selected, vm.q.selected)
+        assertEquals(0, store.count(Op.SAVE_PROGRESS), "ni siquiera la posición se guarda")
+        // reintento manual con el almacén sano: se guarda (sin duplicar filas) y entonces sí se puede navegar
         store.healAll()
         vm.onRetrySave(); settle()
-        val after = vm.q
-        assertEquals(1, after.index)
-        assertNull(after.saveError)
+        assertNull(vm.q.saveError)
         assertEquals(1, store.sessions.values.single().session.answers.size)
+        assertEquals(0, vm.q.index)
+        vm.onNext(); settle()
+        assertEquals(1, vm.q.index)
     }
-
-    @Test fun lastAnswerSaveFailureDoesNotGradeNorIssue() = testBody {
+    @Test fun finishSaveFailureIsUnambiguousAndKeepsAnswersThenRetries() = testBody {
         val store = InMemoryStore()
         val vm = vmOf(store, FakeClock())
         begin(vm)
-        playAll(vm, listOf(true, true, true, true))
-        store.failAlways(Op.COMMIT_ANSWER)
-        val q = vm.q
-        q.question.correctIds.forEach(vm::onSelect)
-        vm.onNext(); settle(50)
-        vm.onDialogConfirm(); settle(2000)
-        assertEquals(SaveError.RESULT, vm.q.saveError)
+        playSome(vm, listOf(true, true, true, true, true))
+        store.failAlways(Op.FINISH)
+        finishExam(vm)
+        val ov = assertIs<Stage.Overview>(vm.stage.value)
+        assertEquals(SaveError.RESULT, ov.saveError, "aviso inequívoco de que NO se ha finalizado")
+        assertTrue(!ov.finishing)
         assertEquals(SessionState.IN_PROGRESS, store.sessions.values.single().state)
+        assertEquals(5, store.sessions.values.single().session.answeredCount, "las respuestas siguen desadas")
         assertTrue(store.credentials.isEmpty())
+        vm.onGoToQuestion(0); vm.onNext(); settle(50)
+        assertIs<Stage.Overview>(vm.stage.value) // la navegación sigue bloqueada tras el fallo
         store.healAll()
         vm.onRetrySave(); settle(2000)
         assertIs<Stage.Result>(vm.stage.value)
         assertEquals(1, store.credentials.size)
     }
-
     @Test fun startFailureStaysOnRulesWithRetry() = testBody {
         val store = InMemoryStore()
         val vm = vmOf(store, FakeClock())
@@ -239,7 +263,7 @@ class ExamViewModelTest {
         begin(vm)
         vm.onSelect(vm.q.question.options.first().id)
         store.failAlways(Op.COMMIT_ANSWER)
-        vm.onNext(); settle(2000)
+        settle(2000)
         store.failAlways(Op.ABANDON)
         vm.onAbandon(); settle(2000)
         assertIs<Stage.Question>(vm.stage.value) // ni abandona ni cambia de estado
@@ -250,21 +274,25 @@ class ExamViewModelTest {
         assertEquals(SessionState.ABANDONED, store.sessions.values.single().state)
         assertTrue(store.credentials.isEmpty())
     }
-
-    @Test fun noAnswerNeedsConfirmationAndCountsAsFailure() = testBody {
+    @Test fun nextWithoutAnswerNavigatesWithoutDialogAndCountsAsFailure() = testBody {
         val store = InMemoryStore()
         val vm = vmOf(store, FakeClock())
         begin(vm)
         vm.onNext(); settle(50)
-        assertEquals(QuestionDialog.NO_ANSWER, vm.q.dialog)
-        assertTrue(store.sessions.values.single().session.answers.isEmpty())
-        vm.onDialogDismiss()
+        assertEquals(1, vm.q.index, "avanza sin diálogo «No has marcat cap resposta»")
         assertNull(vm.q.dialog)
-        vm.onNext(); vm.onDialogConfirm(); settle()
-        assertEquals(1, vm.q.index)
-        assertEquals(emptyList(), store.sessions.values.single().session.answers.single().selectedIds)
+        assertTrue(store.sessions.values.single().session.answers.isEmpty(), "no se inventa ninguna respuesta")
+        assertEquals(1, store.sessions.values.single().currentIndex, "la posición sí se guarda")
+        assertEquals(0, vm.q.answeredCount)
+        // en la última, «Revisar i finalitzar» abre el resumen y no finaliza
+        repeat(4) { vm.onNext(); settle(50) }
+        assertIs<Stage.Overview>(vm.stage.value)
+        assertEquals(5, vm.ov.unanswered)
+        finishExam(vm)
+        val r = assertIs<Stage.Result>(vm.stage.value)
+        assertEquals(5, r.result.unanswered)
+        assertTrue(!r.result.passed)
     }
-
     @Test fun backAsksToExitInsteadOfGoingBack() = testBody {
         val vm = vmOf(InMemoryStore(), FakeClock())
         begin(vm)
@@ -290,7 +318,6 @@ class ExamViewModelTest {
                 vm.onSelect(ids[0])
             } else assertEquals(setOf(ids[1]), vm.q.selected)
             vm.onNext(); settle(50)
-            if (q.isLast) { vm.onDialogConfirm() }
             settle()
         }
         assertTrue(sawMultiple)
@@ -327,7 +354,7 @@ class ExamViewModelTest {
         begin(vm)
         vm.q.question.correctIds.forEach(vm::onSelect)
         store.failAlways(Op.COMMIT_ANSWER)
-        vm.onNext(); settle(1000)
+        settle(1000)
         assertEquals(SaveError.ANSWER, vm.q.saveError)
         clock.advance(10 * 60_000L) // se agota mientras el guardado falla
         settle(2000)
@@ -335,24 +362,21 @@ class ExamViewModelTest {
         store.healAll()
         vm.onRetrySave(); settle(100)
         assertEquals(1, store.sessions.values.single().session.answers.size)
-        assertEquals(1, vm.q.index) // se guardó y recién entonces el tick finalizará por tiempo
         clock.advance(1) // el punto de control deja el restante en 0; un ms después es < 0
         settle(1000)
         assertIs<Stage.TimeUp>(vm.stage.value)
     }
-
     @Test fun tapAfterExpiryIsRejectedAndTimesOut() = testBody {
         val store = InMemoryStore()
         val clock = FakeClock()
         val vm = vmOf(store, clock)
         begin(vm)
-        vm.q.question.correctIds.forEach(vm::onSelect)
         clock.advance(6 * 60_000L)
-        vm.onNext(); settle(50) // antes de que llegue el tick
+        vm.q.question.correctIds.forEach(vm::onSelect) // antes de que llegue el tick
+        settle(50)
         assertIs<Stage.TimeUp>(vm.stage.value)
         assertTrue(store.sessions.values.single().session.answers.isEmpty())
     }
-
     @Test fun timeoutFinishFailureShowsGradingErrorAndRetries() = testBody {
         val store = InMemoryStore()
         val clock = FakeClock()
@@ -514,11 +538,10 @@ class ExamViewModelTest {
         val vm = vmOf(store, clock)
         begin(vm)
         clock.advance(5 * 60_000L - 1_000L) // quedan 1000 ms
-        vm.q.question.correctIds.forEach(vm::onSelect)
         val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
         store.saveClockGate = gate
         vm.onAppStopped(); runCurrent() // punto de control lento: retiene el mutex
-        vm.onNext(); runCurrent() // tap a tiempo, mientras el mutex está ocupado
+        vm.q.question.correctIds.forEach(vm::onSelect); runCurrent() // tap a tiempo, mientras el mutex está ocupado
         clock.advance(5_000L) // se cruza el plazo antes de que el guardado obtenga el mutex
         gate.complete(Unit)
         settle(100)
@@ -529,27 +552,28 @@ class ExamViewModelTest {
         settle(1000)
         assertIs<Stage.TimeUp>(vm.stage.value)
     }
-
-    @Test fun duplicateTapsDoNotCommitNextQuestionWithEmptySelection() = testBody {
+    @Test fun rapidTapsCoalesceAndTheLastSelectionWins() = testBody {
         val store = InMemoryStore()
         val vm = vmOf(store, FakeClock())
         begin(vm)
-        vm.q.question.correctIds.forEach(vm::onSelect)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val idx = vm.q.index
+        val ids = vm.q.question.options.map { it.id }
         val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
         store.saveClockGate = gate
-        vm.onAppStopped(); runCurrent()
-        vm.onNext(); vm.onNext(); vm.onNext() // doble/triple toque con el mutex ocupado
-        vm.onDialogConfirm() // evento obsoleto
+        vm.onAppStopped(); runCurrent() // el mutex está ocupado: los toques se acumulan
+        vm.onSelect(ids[0]); vm.onSelect(ids[1]); vm.onSelect(ids[0]); vm.onSelect(ids[1])
         runCurrent()
+        assertEquals(setOf(ids[1]), vm.q.selected, "la pantalla refleja el último toque al instante")
         gate.complete(Unit)
         settle(100)
-        val sess = store.sessions.values.single()
-        assertEquals(1, sess.session.answers.size, "una sola respuesta")
-        assertEquals(1, vm.q.index)
-        assertTrue(vm.q.selected.isEmpty())
-        assertNull(vm.q.dialog, "la pregunta siguiente conserva su confirmación pendiente")
+        val answers = store.sessions.values.single().session.answers
+        assertEquals(1, answers.size, "una sola fila por pregunta")
+        assertEquals(listOf(ids[1]), answers.single().selectedIds)
+        assertEquals(1, store.count(Op.COMMIT_ANSWER), "los toques intermedios se fusionan en un solo guardado")
+        assertEquals(idx, vm.q.index)
+        assertNull(vm.q.dialog)
     }
-
     // ------------------------------------------------------------------ P1: recuperación de emisión
 
     private fun TestScope.secondExam(vm: ExamViewModel, rights: List<Boolean>) {
@@ -673,10 +697,20 @@ class ExamViewModelTest {
         // con fallo de guardado Atrás se consume sin hacer nada
         vm.q.question.correctIds.forEach(vm::onSelect)
         store.failAlways(Op.COMMIT_ANSWER)
-        vm.onNext(); settle(2000)
+        settle(2000)
         assertTrue(vm.onBack()); assertEquals(SaveError.ANSWER, vm.q.saveError)
         store.healAll(); vm.onRetrySave(); settle(100)
-        playAll(vm, listOf(true, true, true, true))
+        vm.onNext(); settle(50)
+        playSome(vm, listOf(true, true, true, true))
+        // Overview: Atrás vuelve a la pregunta de origen (no abre «Sortir»); con diálogo, lo cierra primero
+        assertIs<Stage.Overview>(vm.stage.value)
+        vm.onFinishRequested(); settle(50)
+        assertEquals(QuestionDialog.FINISH, vm.ov.dialog)
+        assertTrue(vm.onBack()); assertNull(vm.ov.dialog)
+        assertTrue(vm.onBack()); settle(50)
+        assertEquals(4, vm.q.index)
+        vm.onOpenOverview(); settle(50)
+        vm.onFinishRequested(); settle(50); vm.onDialogConfirm(); settle(2000)
         // Result → Credential → Atrás → Result → Home
         val res = assertIs<Stage.Result>(vm.stage.value)
         vm.onOpenCredential((res.credential as CredentialPhase.Ready).credential, fromResult = true)
@@ -696,7 +730,6 @@ class ExamViewModelTest {
         assertTrue(vm.onBack()); assertNull(assertIs<Stage.Review>(vm.stage.value).openIndex)
         assertTrue(vm.onBack()); settle(); assertIs<Stage.Home>(vm.stage.value)
     }
-
     @Test fun backOnTimeUpAndGradingDoesNothing() = testBody {
         val clock = FakeClock()
         val vm = vmOf(InMemoryStore(), clock)
@@ -735,48 +768,43 @@ class ExamViewModelTest {
         val clock = FakeClock()
         val vm = vmOf(store, clock)
         begin(vm)
-        vm.q.question.correctIds.forEach(vm::onSelect)
         val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
         store.finishGate = gate
         clock.advance(5 * 60_000L + 1) // restante -1 ms: arbitraje estricto
         settle(1000) // el tick decide el fin por tiempo y se queda esperando el guardado
         assertIs<Stage.Question>(vm.stage.value)
-        vm.onNext(); vm.onDialogConfirm(); runCurrent() // tap a -1 ms tras el arbitraje: debe rechazarse
+        vm.q.question.correctIds.forEach(vm::onSelect); vm.onNext(); runCurrent() // tap a -1 ms tras el arbitraje: rechazado
         assertEquals(0, store.count(Op.COMMIT_ANSWER), "no se encola ningún guardado de respuesta")
         gate.complete(Unit); settle(100)
         assertIs<Stage.TimeUp>(vm.stage.value)
         assertTrue(store.sessions.values.single().session.answers.isEmpty())
         assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
     }
-
     @Test fun tapAtExactlyZeroRemainingIsAccepted() = testBody {
         val store = InMemoryStore()
         val clock = FakeClock()
         val vm = vmOf(store, clock)
         begin(vm)
-        vm.q.question.correctIds.forEach(vm::onSelect)
         clock.advance(5 * 60_000L) // restante exactamente 0: sin arbitraje
+        vm.q.question.correctIds.forEach(vm::onSelect)
         settle(1000)
         assertIs<Stage.Question>(vm.stage.value)
         assertEquals(0, store.count(Op.FINISH))
-        vm.onNext(); settle(100)
         val a = store.sessions.values.single().session.answers.single()
         assertEquals(0L, a.remainingAtTapMs)
         clock.advance(1); settle(1000) // ahora sí: -1 ms
         assertIs<Stage.TimeUp>(vm.stage.value)
         assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
     }
-
     @Test fun capturedTapAtZeroIsSavedBeforeTimeoutFinishes() = testBody {
         val store = InMemoryStore()
         val clock = FakeClock()
         val vm = vmOf(store, clock)
         begin(vm)
-        vm.q.question.correctIds.forEach(vm::onSelect)
         val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
         store.commitGate = gate
-        clock.advance(5 * 60_000L - 0L) // restante 0: tap válido (>= 0)
-        vm.onNext(); runCurrent()
+        clock.advance(5 * 60_000L) // restante 0: tap válido (>= 0)
+        vm.q.question.correctIds.forEach(vm::onSelect); runCurrent()
         settle(2000) // los ticks NO finalizan mientras hay un tap pendiente
         assertEquals(0, store.count(Op.FINISH))
         gate.complete(Unit); settle(100)
@@ -787,7 +815,6 @@ class ExamViewModelTest {
         assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
         assertEquals(1, store.sessions.values.single().correctCount.let { if (it!! >= 0) 1 else 0 })
     }
-
     // ------------------------------------------------------------------ recuperación: fallo de emisión visible
 
     /** Tres exámenes aprobados cuya emisión falla: quedan 3 pendientes en la BD; se termina en Home. */
@@ -869,6 +896,324 @@ class ExamViewModelTest {
         vm2.onRetryPending(); settle()
         assertEquals(3, store.credentials.size)
         assertNull(assertIs<Stage.Home>(vm2.stage.value).pending)
+    }
+
+    // ------------------------------------------------------------------ navegación libre (decisión 2026-11-20)
+
+    @Test fun replacingAnAnswerPersistsTheLastOneAndGradingUsesIt() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val idx = vm.q.index
+        val q = vm.q.question
+        val wrong = q.options.first { it.id !in q.correctIds }.id
+        val right = q.correctIds.single()
+        vm.onSelect(wrong); settle(50)
+        assertEquals(listOf(wrong), store.sessions.values.single().session.answerFor(idx)!!.selectedIds)
+        vm.onNext(); settle(50)
+        vm.onPrevious(); settle(50)
+        assertEquals(idx, vm.q.index)
+        assertEquals(setOf(wrong), vm.q.selected, "al volver se ve lo guardado")
+        vm.onSelect(right); settle(50) // sustituye
+        val stored = store.sessions.values.single().session
+        assertEquals(listOf(right), stored.answerFor(idx)!!.selectedIds)
+        assertEquals(1, stored.answers.count { it.index == idx }, "una sola fila por (sesión, pregunta)")
+        assertEquals(1, vm.q.answeredCount)
+        // la corrección usa la última respuesta
+        vm.onOpenOverview(); settle(50)
+        finishExam(vm)
+        val r = assertIs<Stage.Result>(vm.stage.value)
+        assertEquals(1, r.result.correct)
+        assertEquals(4, r.result.unanswered)
+    }
+
+    @Test fun clearingAMultipleChoiceAnswerLeavesItUnansweredAndSaved() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        goToType(vm, QuestionType.MULTIPLE_CHOICE)
+        val idx = vm.q.index
+        val ids = vm.q.question.options.map { it.id }
+        vm.onSelect(ids[0]); vm.onSelect(ids[1]); settle(50)
+        assertEquals(2, vm.q.selected.size)
+        assertEquals(1, vm.q.answeredCount)
+        vm.onSelect(ids[0]); vm.onSelect(ids[1]); settle(50) // desmarcar hasta vaciar: permitido, sin diálogo
+        assertTrue(vm.q.selected.isEmpty())
+        assertNull(vm.q.dialog)
+        assertEquals(0, vm.q.answeredCount)
+        val rec = store.sessions.values.single().session.answerFor(idx)!!
+        assertTrue(rec.selectedIds.isEmpty(), "la selección vacía también se persiste")
+        assertEquals(0, store.sessions.values.single().session.answeredCount)
+        // vaciar no impide navegar
+        vm.onNext(); settle(50)
+        assertTrue(vm.stage.value.let { (it is Stage.Question && it.index == idx + 1) || it is Stage.Overview })
+    }
+
+    @Test fun sameSelectionAgainIsIdempotentAndDoesNotWrite() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val id = vm.q.question.options.first().id
+        vm.onSelect(id); settle(50)
+        val writes = store.count(Op.COMMIT_ANSWER)
+        vm.onSelect(id); settle(50) // el radio ya marcado: sin efecto
+        assertEquals(writes, store.count(Op.COMMIT_ANSWER))
+        // Anterior/Següent repetidos no escriben respuestas; solo la posición
+        vm.onNext(); settle(50); vm.onPrevious(); settle(50); vm.onNext(); settle(50)
+        assertEquals(writes, store.count(Op.COMMIT_ANSWER))
+        assertEquals(1, store.sessions.values.single().session.answers.size)
+    }
+
+    @Test fun jumpingToThePreviousQuestionPersistsThePosition() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        assertTrue(!vm.q.canGoBack)
+        answer(vm, true); answer(vm, false); answer(vm, true)
+        assertEquals(3, vm.q.index)
+        assertEquals(3, store.sessions.values.single().currentIndex)
+        vm.onPrevious(); settle(50)
+        assertEquals(2, vm.q.index)
+        assertEquals(2, store.sessions.values.single().currentIndex)
+        assertTrue(vm.q.selected.isNotEmpty(), "vuelve con su respuesta guardada")
+        vm.onGoToQuestion(0); settle(50)
+        assertEquals(0, vm.q.index)
+        assertEquals(0, store.sessions.values.single().currentIndex)
+        vm.onPrevious(); settle(50) // en la primera no hay anterior
+        assertEquals(0, vm.q.index)
+    }
+
+    @Test fun answeringTheLastQuestionDoesNotFinishTheExam() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        playSome(vm, listOf(true, true, true, true))
+        assertTrue(vm.q.isLast)
+        val ids = vm.q.question.correctIds
+        ids.forEach(vm::onSelect); settle(1000)
+        assertIs<Stage.Question>(vm.stage.value)
+        assertEquals(5, store.sessions.values.single().session.answeredCount)
+        assertEquals(SessionState.IN_PROGRESS, store.sessions.values.single().state)
+        assertEquals(0, store.count(Op.FINISH))
+        vm.onNext(); settle(50) // «Revisar i finalitzar»
+        assertIs<Stage.Overview>(vm.stage.value)
+        assertEquals(SessionState.IN_PROGRESS, store.sessions.values.single().state, "el resumen no finaliza")
+        assertEquals(0, store.count(Op.FINISH))
+        assertTrue(store.credentials.isEmpty())
+    }
+
+    @Test fun finishingWithUnansweredShowsTheCountAndRequiresConfirmation() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        playSome(vm, listOf(true, true)) // 2 respondidas; vamos al resumen
+        vm.onOpenOverview(); settle(50)
+        val ov = assertIs<Stage.Overview>(vm.stage.value)
+        assertEquals(3, ov.unanswered)
+        assertEquals(2, ov.answeredCount)
+        assertEquals(2, ov.firstUnanswered)
+        assertEquals(2, ov.current)
+        vm.onFinishRequested(); settle(50)
+        assertEquals(QuestionDialog.FINISH, vm.ov.dialog)
+        assertEquals(3, vm.ov.unanswered)
+        assertEquals(SessionState.IN_PROGRESS, store.sessions.values.single().state, "nada termina sin confirmar")
+        vm.onDialogDismiss(); settle(50) // «Tornar a l'examen»
+        assertNull(vm.ov.dialog)
+        assertEquals(0, store.count(Op.FINISH))
+        vm.onFinishRequested(); vm.onDialogConfirm(); settle(2000)
+        val r = assertIs<Stage.Result>(vm.stage.value)
+        assertEquals(3, r.result.unanswered)
+        assertEquals(2, r.result.correct)
+        val fin = store.sessions.values.single()
+        assertEquals(SessionState.FINISHED, fin.state)
+        assertEquals(FinishReason.COMPLETED, fin.finishReason)
+        assertEquals(2, fin.correctCount)
+    }
+
+    @Test fun overviewListsStatesAndTappingARowGoesThereAfterSelectionIsSaved() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        answer(vm, true); vm.onNext(); settle(50) // 0 respondida, 1 vacía (saltada), estamos en 2
+        vm.onOpenOverview(); settle(50)
+        var ov = vm.ov
+        assertEquals(listOf(true, false, false, false, false), ov.items.map { it.answered })
+        assertEquals(2, ov.current, "la pregunta de origen")
+        assertEquals(1, ov.firstUnanswered)
+        vm.onGoToFirstUnanswered(); settle(50)
+        assertEquals(1, vm.q.index)
+        assertEquals(1, store.sessions.values.single().currentIndex)
+        // una selección en vuelo se guarda antes de navegar (FIFO): se ve respondida en el resumen
+        vm.onSelect(vm.q.question.options.first().id)
+        vm.onOpenOverview(); settle(50)
+        ov = vm.ov
+        assertTrue(ov.items[1].answered)
+        vm.onGoToQuestion(4); settle(50)
+        assertEquals(4, vm.q.index)
+        // Atrás desde el resumen vuelve a la pregunta de origen
+        vm.onOpenOverview(); settle(50)
+        assertTrue(vm.onBack()); settle(50)
+        assertEquals(4, vm.q.index)
+    }
+
+    @Test fun overviewIsBlockedWhileTheSelectionFailsToSave() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        vm.onSelect(vm.q.question.options.first().id)
+        store.failAlways(Op.COMMIT_ANSWER)
+        settle(2000)
+        vm.onOpenOverview(); settle(50)
+        assertIs<Stage.Question>(vm.stage.value)
+        assertEquals(SaveError.ANSWER, vm.q.saveError)
+    }
+
+    @Test fun clockAndTimeoutKeepRunningOnTheOverview() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        answer(vm, true)
+        vm.onOpenOverview(); settle(50)
+        val before = vm.ov.remainingMs
+        clock.advance(60_000L); settle(1000)
+        assertTrue(vm.ov.remainingMs <= before - 59_000L, "el reloj corre en el resumen")
+        clock.advance(4 * 60_000L + 5_000L); settle(1000) // se agota en el resumen
+        val up = assertIs<Stage.TimeUp>(vm.stage.value)
+        assertEquals(1, up.answered)
+        assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
+    }
+
+    @Test fun resumeReturnsToTheLastVisitedQuestionWithAnswersRestored() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        answer(vm, true); answer(vm, false); answer(vm, true)
+        vm.onGoToQuestion(1); settle(50) // visita hacia atrás: la posición es la última visitada, no la primera sin responder
+        vm.viewModelScope.cancel()
+        clock.advance(10_000)
+        val vm2 = vmOf(store, clock)
+        settle()
+        assertEquals(1, vm2.q.index)
+        assertTrue(vm2.q.selected.isNotEmpty(), "respuesta restaurada")
+        assertEquals(3, vm2.q.answeredCount)
+    }
+
+    @Test fun finishWhileTimeExpiredCountsAsTimeout() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        answer(vm, true)
+        vm.onOpenOverview(); settle(50)
+        vm.onFinishRequested(); settle(50)
+        clock.advance(6 * 60_000L)
+        vm.onDialogConfirm(); settle(50) // el tiempo se agotó antes de confirmar
+        assertIs<Stage.TimeUp>(vm.stage.value)
+        assertEquals(FinishReason.TIMED_OUT, store.sessions.values.single().finishReason)
+    }
+
+    // ------------------------------------------------------------------ carreras de navegación / arbitraje
+
+    @Test fun tapsAreRejectedWhileThePositionIsBeingSavedAndNothingLeaksToTheNextQuestion() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        val first = vm.q.question
+        first.options.first().id.let(vm::onSelect); settle(50) // guardada
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveProgressGate = gate
+        val commits = store.count(Op.COMMIT_ANSWER)
+        vm.onNext(); runCurrent() // la navegación se suspende en saveProgress
+        // el toque llega con la navegación en curso: se rechaza de forma síncrona (no se acepta en la pregunta vieja)
+        vm.q.question.options.last().id.let(vm::onSelect)
+        vm.onNext(); vm.onPrevious(); vm.onOpenOverview(); vm.onGoToQuestion(3) // y ninguna otra navegación se cuela
+        runCurrent()
+        gate.complete(Unit); settle(100)
+        assertEquals(1, vm.q.index)
+        assertTrue(vm.q.selected.isEmpty(), "la pregunta nueva no hereda ni pierde nada")
+        assertEquals(commits, store.count(Op.COMMIT_ANSWER), "no hubo ningún guardado fantasma")
+        assertEquals(listOf(first.options.first().id), store.sessions.values.single().session.answerFor(0)!!.selectedIds)
+        assertEquals(1, store.sessions.values.single().currentIndex)
+        assertEquals(1, store.count(Op.SAVE_PROGRESS))
+    }
+
+    @Test fun aTapJustBeforeNavigationIsPersistedFirstThenTheScreenChanges() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        val id = vm.q.question.options.first().id
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveProgressGate = gate
+        vm.onSelect(id); vm.onNext(); runCurrent() // selección en cola y navegación inmediatamente después
+        assertEquals(listOf(id), store.sessions.values.single().session.answerFor(0)!!.selectedIds, "se guardó ANTES de navegar")
+        gate.complete(Unit); settle(100)
+        assertEquals(1, vm.q.index)
+    }
+
+    @Test fun openingTheOverviewRejectsTapsWhileSavingThePosition() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.saveProgressGate = gate
+        vm.onOpenOverview(); runCurrent()
+        vm.q.question.options.first().id.let(vm::onSelect); runCurrent()
+        gate.complete(Unit); settle(100)
+        assertIs<Stage.Overview>(vm.stage.value)
+        assertEquals(0, store.count(Op.COMMIT_ANSWER))
+        assertTrue(store.sessions.values.single().session.answers.isEmpty())
+    }
+
+    @Test fun lateTapDuringFailingTimelySaveIsIgnoredAndTimeoutWaits() = testBody {
+        val store = InMemoryStore()
+        val clock = FakeClock()
+        val vm = vmOf(store, clock)
+        begin(vm)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val ids = vm.q.question.options.map { it.id }
+        vm.onSelect(ids[0])
+        store.failAlways(Op.COMMIT_ANSWER)
+        settle(1000)
+        assertEquals(SaveError.ANSWER, vm.q.saveError)
+        clock.advance(10 * 60_000L) // plazo vencido con un guardado a tiempo fallando
+        vm.onSelect(ids[1]) // toque tardío: se ignora; el reintento a tiempo se conserva
+        settle(2000)
+        assertIs<Stage.Question>(vm.stage.value, "el fin por tiempo espera")
+        assertEquals(setOf(ids[0]), vm.q.selected)
+        assertEquals(0, store.count(Op.FINISH))
+        store.healAll()
+        vm.onRetrySave(); settle(100)
+        assertEquals(listOf(ids[0]), store.sessions.values.single().session.answers.single().selectedIds, "se guardó la selección a tiempo")
+        clock.advance(1); settle(1000)
+        assertIs<Stage.TimeUp>(vm.stage.value)
+    }
+
+    @Test fun committedStateLagsTheVisibleSelectionUntilTheSaveIsConfirmed() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        goToType(vm, QuestionType.SINGLE_CHOICE)
+        val id = vm.q.question.options.first().id
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        store.commitGate = gate
+        vm.onSelect(id); runCurrent()
+        assertEquals(setOf(id), vm.q.selected)
+        assertTrue(vm.q.committed.isEmpty(), "todavía no confirmado")
+        assertTrue(vm.q.saving)
+        gate.complete(Unit); settle(100)
+        assertEquals(setOf(id), vm.q.committed)
+        assertTrue(!vm.q.saving)
+        // con fallo: nunca figura como guardada
+        store.commitGate = null
+        store.failAlways(Op.COMMIT_ANSWER)
+        val other = vm.q.question.options.last().id
+        vm.onSelect(other); settle(1000)
+        assertEquals(SaveError.ANSWER, vm.q.saveError)
+        assertEquals(setOf(id), vm.q.committed, "lo confirmado sigue siendo lo anterior")
     }
 
     @Test fun lowBatteryThresholdIgnoresCharging() {

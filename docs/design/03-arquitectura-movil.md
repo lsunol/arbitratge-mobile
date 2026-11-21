@@ -120,7 +120,7 @@
 
 ### 1.3 Heredado de 01 y 02 que condiciona esta arquitectura
 
-- 01 §3: examen secuencial por defecto, persistencia tras cada respuesta, comportamiento
+- 01 §3: examen de navegación libre (decisión 2026-11-20; antes secuencial), persistencia tras cada selección, comportamiento
   definido ante cierre/reinicio/cambio de hora; resultado con **fallos y detalle**; fecha "del
   dispositivo"; sin `FLAG_SECURE`.
 - 01 §4.1: credencial con nombre, `credential_id`, fecha, `exam_version`, aprobado (nota
@@ -334,9 +334,12 @@ QuestionResult { questionId, text, options(en el orden mostrado), selectedIds, c
 ```
  [Home] → [Briefing] → [Identifying: nombre] → [Ready: nombre confirmado] → [InProgress(0)]
 
- [InProgress(i)] ── respuesta i GUARDADA, i<N-1 ──► [InProgress(i+1)]
- [InProgress(*)] ── última respuesta GUARDADA ─────► [Finished(Completed)]
- [InProgress(*)] ── tiempo agotado (y nada pendiente) ► [Finished(TimedOut)]
+ [InProgress(i)] ── SaveAnswer(i): selección GUARDADA (upsert) ► [InProgress(i)]      (cada toque)
+ [InProgress(i)] ── Anterior / Següent / fila del resumen ──► [InProgress(j)], j ∈ [0, N)
+                    (solo con la selección de `i` ya guardada; `current_index` = j, última visitada)
+ [InProgress(*)] ── "Revisar i finalitzar" ──► [Overview]  (mismo estado persistido; reloj activo)
+ [Overview]      ── "Finalitzar" CONFIRMADO ──► [Finished(Completed)]
+ [InProgress(*)/Overview] ── tiempo agotado (y nada pendiente) ► [Finished(TimedOut)]
  [InProgress(*)] ── abandonar (confirmado Y guardado) ► [Abandoned] → [Home]
 
  [Finished] (FINISHED + correct_count escritos en UNA transacción)
@@ -355,8 +358,10 @@ estado de pantalla.
 | Transición | Guardia | Efecto (transacción **antes** de pintar el nuevo estado) |
 |---|---|---|
 | `Ready → InProgress(0)` ("Començar ara") | nombre válido según `02` §3.7.5.1 (§6.1) y **confirmado por el usuario en `Ready`** (C3 de 04, con "Canviar" que vuelve a `Identifying`) | Crea sesión: `session_id`, **`cid` (UUID) ya generado**, `bank_version`, `exam_version`, reglas (validadas, §5.3), **instantánea de las N preguntas con su orden barajado**, **`candidate_name` (congelado e inmutable desde aquí)**, reloj inicial (§8.2: `remaining_ms_saved = limit_ms`, `anchor_mono`, `anchor_boot`), `start_wall`. **El intento queda iniciado.** |
-| `InProgress(i) → InProgress(i+1)` ("Següent") | `remainingAtTap ≥ 0` e `i == actual` | **Una sola transacción:** fila `answer(session, i, ids, remaining_at_tap)` (clave única `(session, i)` ⇒ idempotente) + `current_index = i+1` + punto de control del reloj (§8.2). La UI avanza **solo tras el *commit*** |
-| `InProgress(N−1) → Finished(Completed)` | igual | **Una sola transacción:** `answer` + `state = FINISHED` + `finish_reason` + `correct_count` (calculado por `grade` desde la instantánea) |
+| `SaveAnswer(i)` (cada selección: radio, casilla, V/F; también vaciar una múltiple) | `remainingAtTap ≥ 0`, cualquier `i ∈ [0, N)`; el último toque gana (los toques acumulados se fusionan) | **Una sola transacción:** **UPSERT** de `answer(session, i, ids, remaining_at_tap)` (clave `(session, i)`; `ids` vacío = sin respuesta) + `current_index = i` + punto de control del reloj (§8.2). Idempotente. La selección se da por confirmada **solo tras el *commit*** |
+| `InProgress(i) → InProgress(j)` ("Anterior", "Següent", fila del resumen) | selección de `i` ya guardada (sin guardado en vuelo ni fallo pendiente) | `current_index = j` (**última pregunta visitada**) + punto de control del reloj; se guarda antes de pintar. Un fallo al guardar **solo la posición** no bloquea (el dato es secundario); un fallo al guardar la **selección** bloquea toda navegación y muestra el diálogo modal «No s'ha pogut desar» (reintento / salir), con la selección visible |
+| `InProgress(*) → Overview` ("Revisar i finalitzar", "Veure-les totes") | igual que la navegación | Sin cambio de estado persistido salvo la posición; el reloj y los avisos siguen activos |
+| `Overview → Finished(Completed)` ("Finalitzar l'examen" + confirmación con el nº de preguntas sin respuesta) | confirmación explícita; selección guardada; `remainingAtTap ≥ 0` (si no, cuenta como fin por tiempo) | **Una sola transacción:** `state = FINISHED` + `finish_reason = COMPLETED` + `correct_count` (calculado por `grade` desde la instantánea) + reloj. **Responder la última pregunta NO finaliza.** Un fallo deja el resumen con el diálogo «No s'ha pogut finalitzar» (las respuestas siguen guardadas) |
 | `InProgress → Finished(TimedOut)` | `remaining ≤ 0` (en el tick, al guardar y al reanudar) **y no hay respuesta pendiente de guardar con `remaining_at_tap ≥ 0`** | **Una sola transacción:** `state = FINISHED(TimedOut)` + `correct_count`. `finished_wall` es solo informativo |
 | `InProgress → Abandoned` | el usuario confirma "Abandonar" | `state = ABANDONED` (terminal), sin resultado ni credencial. Si no se puede guardar, se sigue en `InProgress` con aviso |
 | `Finished → Result` | estado `FINISHED` **ya persistido** | Solo lectura: se muestra lo guardado (`correct_count`; ítems recalculados de `snapshot + answers`) |
@@ -404,8 +409,11 @@ organizador, y usa exactamente ese nombre [S].
 - **Solo se emite credencial en `Finished` con `correct_count ≥ umbral` persistido**: no hay
   credencial en suspenso, abandono, tiempo agotado sin aprobar ni con error de persistencia
   (tests en §11).
-- **Navegación**: secuencial sin retroceso por defecto (01 §1.3). El motor lo parametriza
-  (`sequential` en las reglas): relajarlo por fin pedagógico no cambia la arquitectura.
+- **Navegación**: **libre** (decisión del usuario, 2026-11-20; sustituye el «secuencial sin retroceso»
+  de 01 §1.3). `ExamEngine.answer` acepta cualquier índice y sustituye la respuesta (upsert); una
+  selección vacía equivale a «sin respuesta». El campo `sequential` de las reglas del banco
+  (esquema 1) queda **obsoleto**: se lee por compatibilidad y se ignora (ya no existe
+  `SEQUENTIAL_REQUIRED`; `OUT_OF_ORDER` y `ALREADY_ANSWERED` se eliminaron del motor).
 - **Modo práctica** (01 pregunta 5): la sesión tiene `kind = EXAM | PRACTICE`; `PRACTICE` no
   emite credencial. No se construye hasta que se decida; el campo cuesta nada.
 
@@ -415,8 +423,8 @@ Almacenamiento privado de la app, sin permisos. **Room/SQLite** (tres tablas):
 
 | Tabla | Contenido |
 |---|---|
-| `session` | `id`, `kind`, `state`, `cid` (reservado al empezar), `candidate_name` (congelado al crear la sesión; inmutable), `bank_version`, `exam_version`, `rules` (JSON), `snapshot` (JSON de las N preguntas **incluyendo respuestas y explicaciones**, con orden barajado), `current_index`, **reloj:** `limit_ms`, `remaining_ms_saved`, `anchor_mono`, `anchor_boot` (§8.2); informativos: `start_wall`, `finished_wall`; `finish_reason`, `correct_count` |
-| `answer` | `session_id`, `q_index`, `selected_ids`, `remaining_at_tap_ms` (PK `(session_id, q_index)`) |
+| `session` | `id`, `kind`, `state`, `cid` (reservado al empezar), `candidate_name` (congelado al crear la sesión; inmutable), `bank_version`, `exam_version`, `rules` (JSON), `snapshot` (JSON de las N preguntas **incluyendo respuestas y explicaciones**, con orden barajado), `current_index` (**última pregunta visitada**; ya no «primera sin responder»), **reloj:** `limit_ms`, `remaining_ms_saved`, `anchor_mono`, `anchor_boot` (§8.2); informativos: `start_wall`, `finished_wall`; `finish_reason`, `correct_count` |
+| `answer` | `session_id`, `q_index`, `selected_ids` (vacío = sin respuesta), `remaining_at_tap_ms` del **último cambio** (PK `(session_id, q_index)`; **UPSERT**, no `IGNORE`) |
 | `credential` | `cid`, `session_id`, `token` (texto exacto del QR), `name`, `iat` (texto `AAAA-MM-DD`, `02` §3.7.5), `kid`, `exv`, `bv`, `pdf_exported` |
 
 - **La instantánea de preguntas va en la sesión** (≈20–40 KB): el examen y su feedback no
@@ -1088,6 +1096,12 @@ tapar el campo ni el botón); botón principal siempre visible sobre la barra de
   (`FINISHED` + `correct_count`) y al insertar la credencial: comprobar que **no se avanza, no
   se corrige y no se emite**, que la selección sigue visible, que el reintento funciona sin
   duplicar filas, y que `Abandonar` no deja la sesión en un estado inconsistente.
+- **Navegación libre (2026-11-20)**: sustituir o vaciar una respuesta (el recuento y la
+  corrección usan la última); saltar a una pregunta anterior y persistir `current_index` como
+  última visitada; responder la última **no** finaliza; finalizar con preguntas sin respuesta
+  (recuento en la confirmación); un fallo al guardar la selección **bloquea** la navegación y
+  mantiene la selección visible; Anterior/Següent idempotentes; el reloj y el tiempo agotado
+  siguen activos en el resumen; reanudar en la última pregunta visitada con sus respuestas.
 - **Emisión**: tests que impiden credencial en **suspenso, abandono, tiempo agotado sin
   aprobar y error de persistencia**; recuperación "aprobado sin credencial" → reintento de emisión
   automático e idempotente (mismo `cid`, mismo nombre); nombre inmutable desde `Ready → InProgress`.
@@ -1178,8 +1192,8 @@ revocación en fase 2, repo público y verificación optativa.)*
    ¿Y tiempo ampliado como ajuste visible de la app (§8.5), sin organizador obligatorio?
 8. **Backup de la credencial**: ¿basta el PDF/imagen exportado (`allowBackup=false`) o se quiere
    restauración automática al cambiar de móvil?
-9. **Contenido editorial**: ¿se muestran siempre las acertadas además de las falladas? ¿Navegación
-   sin retroceso o con revisión? ¿Modo práctica sin credencial? (01 preguntas 4–5.)
+9. **Contenido editorial**: ¿se muestran siempre las acertadas además de las falladas? ~~¿Navegación
+   sin retroceso o con revisión?~~ (**resuelto 2026-11-20: navegación libre**.) ¿Modo práctica sin credencial? (01 preguntas 4–5.)
 10. **Conciliación del banco** con la BD de producción antes de migrar, y **qué hacer con las 75
     preguntas ya públicas** en el repo base (¿se retira el fichero, sabiendo que el historial
     persiste?).

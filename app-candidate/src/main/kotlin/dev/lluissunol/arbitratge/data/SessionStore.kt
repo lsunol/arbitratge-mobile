@@ -29,7 +29,7 @@ data class StoredSession(
     val examVersion: String get() = session.snapshot.examVersion
 }
 
-/** Cierre de sesión: se escribe en la MISMA transacción que la última respuesta o el fin por tiempo. */
+/** Cierre de sesión: "Finalitzar" confirmado o fin por tiempo. */
 data class Finish(val reason: FinishReason, val correctCount: Int, val finishedWall: Long)
 
 data class StoredCredential(
@@ -74,15 +74,19 @@ interface SessionStore {
     suspend fun create(session: StoredSession)
 
     /**
-     * Una transacción: respuesta (idempotente por `(session, i)`) + `current_index` + punto de control del
-     * reloj [clock] y, si [finish] != null, `FINISHED` + motivo + `correct_count`.
+     * Una transacción: UPSERT de la respuesta por `(session, i)` (navegación libre: se puede sustituir o vaciar,
+     * `selectedIds` vacío = sin respuesta) + `current_index` = [currentIndex] (última pregunta visitada) + punto de
+     * control del reloj [clock]. Idempotente. NO cierra la sesión: solo [finish] lo hace.
      */
-    suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, clock: ClockState, finish: Finish?)
+    suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, currentIndex: Int, clock: ClockState)
+
+    /** Solo la posición (última pregunta visitada) y el reloj; idempotente. Falla si la sesión no está `IN_PROGRESS`. */
+    suspend fun saveProgress(sessionId: String, currentIndex: Int, clock: ClockState)
 
     /** Punto de control o reanclaje del reloj (solo si `IN_PROGRESS`). Idempotente. */
     suspend fun saveClock(sessionId: String, clock: ClockState)
 
-    /** Fin por tiempo (o cierre) sin respuesta nueva. Idempotente si ya está `FINISHED`. */
+    /** Fin explícito o por tiempo (una transacción con el reloj). Idempotente si ya está `FINISHED`. */
     suspend fun finish(sessionId: String, clock: ClockState, finish: Finish)
 
     /** `ABANDONED` (terminal). Idempotente. */

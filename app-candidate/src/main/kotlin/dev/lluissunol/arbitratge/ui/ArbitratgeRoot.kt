@@ -29,16 +29,14 @@ fun ArbitratgeRoot(vm: ExamViewModel) {
             )
             is Stage.Name -> NameScreen(st, vm::onNameChange, vm::onNameContinue, onBack = { vm.onBack() })
             is Stage.Rules -> RulesScreen(st, vm::onChangeName, vm::onBeginExam, onBack = { vm.onBack() })
-            is Stage.Question -> QuestionScreen(
+            is Stage.Question -> QuestionScreen(st, questionActions(vm))
+            is Stage.Overview -> OverviewScreen(
                 st,
-                onSelect = vm::onSelect,
-                onNext = vm::onNext,
-                onToggleTime = vm::onToggleTimeHidden,
-                onDismissBanner = vm::onDismissBanner,
-                onDialogConfirm = vm::onDialogConfirm,
-                onDialogDismiss = vm::onDialogDismiss,
-                onRetrySave = vm::onRetrySave,
-                onAbandon = vm::onAbandon,
+                questionActions(vm),
+                onBack = { vm.onBack() },
+                onGoTo = vm::onGoToQuestion,
+                onFirstUnanswered = vm::onGoToFirstUnanswered,
+                onFinish = vm::onFinishRequested,
             )
             is Stage.TimeUp -> TimeUpScreen(st, vm::onSeeResult)
             is Stage.Grading -> GradingScreen(st, vm::onRetryGrading, vm::onAbandon)
@@ -60,3 +58,16 @@ fun ArbitratgeRoot(vm: ExamViewModel) {
         }
     }
 }
+
+private fun questionActions(vm: ExamViewModel) = QuestionActions(
+    onSelect = vm::onSelect,
+    onPrevious = vm::onPrevious,
+    onNext = vm::onNext,
+    onOverview = vm::onOpenOverview,
+    onToggleTime = vm::onToggleTimeHidden,
+    onDismissBanner = vm::onDismissBanner,
+    onDialogConfirm = vm::onDialogConfirm,
+    onDialogDismiss = vm::onDialogDismiss,
+    onRetrySave = vm::onRetrySave,
+    onAbandon = vm::onAbandon,
+)

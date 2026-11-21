@@ -29,6 +29,7 @@ data class ExamRules(
     @SerialName("pass_threshold_count") val passThresholdCount: Int,
     @SerialName("shuffle_questions") val shuffleQuestions: Boolean = true,
     @SerialName("shuffle_options") val shuffleOptions: Boolean = true,
+    /** Obsoleto: la navegación es libre (decisión 2026-11-20). Se lee por compatibilidad con el esquema 1 y se ignora. */
     val sequential: Boolean = true,
 ) {
     val limitMs: Long get() = timeLimitMinutes * 60_000L

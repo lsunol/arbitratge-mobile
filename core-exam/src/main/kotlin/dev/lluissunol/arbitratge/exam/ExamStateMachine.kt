@@ -29,8 +29,10 @@ sealed interface ExamEvent {
     data object ChangeName : ExamEvent
     /** Sesión creada y persistida ("Començar ara"). */
     data object SessionStarted : ExamEvent
-    /** Respuesta `index` persistida; `total` = N. Si era la última, el resultado ya está persistido. */
-    data class AnswerCommitted(val index: Int, val total: Int) : ExamEvent
+    /** Navegación libre: la selección de la pregunta actual ya está persistida y se pasa a la pregunta `to` (0 until total). */
+    data class Navigated(val to: Int, val total: Int) : ExamEvent
+    /** "Finalitzar" confirmado: FINISHED(COMPLETED) + correct_count ya persistidos. Nunca se emite al responder la última. */
+    data object FinishConfirmed : ExamEvent
     /** FINISHED(TimedOut) + correct_count persistidos. */
     data object TimedOut : ExamEvent
     /** ABANDONED persistido tras confirmación. */
@@ -57,12 +59,8 @@ object ExamStateMachine {
                 else -> null
             }
             is ExamPhase.InProgress -> when (event) {
-                is ExamEvent.AnswerCommitted -> when {
-                    event.index != phase.index -> null
-                    event.index < event.total - 1 -> ExamPhase.InProgress(event.index + 1)
-                    event.index == event.total - 1 -> ExamPhase.Finished(FinishReason.COMPLETED)
-                    else -> null
-                }
+                is ExamEvent.Navigated -> if (event.to in 0 until event.total) ExamPhase.InProgress(event.to) else null
+                is ExamEvent.FinishConfirmed -> ExamPhase.Finished(FinishReason.COMPLETED)
                 is ExamEvent.TimedOut -> ExamPhase.Finished(FinishReason.TIMED_OUT)
                 is ExamEvent.AbandonCommitted -> ExamPhase.Abandoned
                 else -> null
@@ -90,6 +88,5 @@ object ExamStateMachine {
         !isPractice && !credentialExists && state == SessionState.FINISHED &&
             (finishReason == FinishReason.COMPLETED || finishReason == FinishReason.TIMED_OUT) && correctCount != null && correctCount >= threshold
 
-    /** Tras guardar una respuesta: ¿avanza o termina? */
     fun isLastQuestion(index: Int, total: Int): Boolean = index == total - 1
 }

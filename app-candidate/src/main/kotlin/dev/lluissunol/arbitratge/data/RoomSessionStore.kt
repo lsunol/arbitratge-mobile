@@ -57,18 +57,21 @@ class RoomSessionStore(private val dao: SessionDao) : SessionStore {
         dao.createTx(session.toEntity())
     }
 
-    override suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, clock: ClockState, finish: Finish?) = guard {
+    override suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, currentIndex: Int, clock: ClockState) = guard {
         dao.commitAnswerTx(
             a = AnswerEntity(
                 sessionId, answer.index, ExamJson.encodeToString(idsSerializer, answer.selectedIds), answer.remainingAtTapMs,
             ),
-            nextIndex = answer.index + 1,
+            currentIndex = currentIndex,
             remaining = clock.remainingMsSaved,
             mono = clock.anchorMono,
             boot = clock.anchorBoot,
             wall = clock.anchorWallMs,
-            finish = finish?.let { FinishRow(it.reason.name, it.correctCount, it.finishedWall) },
         )
+    }
+
+    override suspend fun saveProgress(sessionId: String, currentIndex: Int, clock: ClockState) = guard {
+        dao.saveProgressTx(sessionId, currentIndex, clock.remainingMsSaved, clock.anchorMono, clock.anchorBoot, clock.anchorWallMs)
     }
 
     override suspend fun saveClock(sessionId: String, clock: ClockState) = guard {

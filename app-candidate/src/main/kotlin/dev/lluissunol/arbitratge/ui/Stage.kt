@@ -15,10 +15,14 @@ enum class NameProblem { EMPTY, TOO_LONG, INVALID_CHARS }
 
 enum class TimeBanner { FIVE_MIN, ONE_MIN }
 
-enum class QuestionDialog { EXIT, NO_ANSWER, FINISH }
+/** EXIT: "Vols sortir?" (Atrás del sistema). FINISH: confirmación final (solo desde el resumen). */
+enum class QuestionDialog { EXIT, FINISH }
 
-/** Qué no se ha podido desar (03 §4.3 "Fallos de persistencia"). */
+/** Qué no se ha podido desar (03 §4.3 "Fallos de persistencia"): la selección o el cierre del examen. */
 enum class SaveError { ANSWER, RESULT }
+
+/** Fila del resumen de preguntas (C4b): enunciado + si tiene respuesta guardada. */
+data class OverviewItem(val index: Int, val text: String, val answered: Boolean)
 
 /** Estado de la credencial dentro de C8 (04 §2.7, §2.10). */
 sealed interface CredentialPhase {
@@ -52,22 +56,46 @@ sealed interface Stage {
     /** C3. [nom] ya normalizado (NameRules) y mostrado para confirmar. */
     data class Rules(val nom: String, val summary: RulesSummary, val starting: Boolean, val saveError: Boolean) : Stage
 
-    /** C4 con los diálogos C5. */
+    /** C4 con los diálogos C5. Navegación libre: [answered] = índices con respuesta (incluye la selección visible). */
     data class Question(
         val index: Int,
         val total: Int,
         val question: SessionQuestion,
         val selected: Set<String>,
+        val answered: Set<Int>,
         val remainingMs: Long,
         val timeHidden: Boolean,
         val banner: TimeBanner?,
         val dialog: QuestionDialog?,
+        /** Hay una selección sin confirmar como guardada (guardado en vuelo). */
         val saving: Boolean,
         val saveError: SaveError?,
         /** Umbral de tiempo cruzado (independiente de si el aviso se ha descartado); null si no aplica. */
         val level: TimeBanner? = null,
+        /** Selección CONFIRMADA como guardada (la «Resposta desada» solo se anuncia desde aquí, no desde [selected]). */
+        val committed: Set<String> = selected,
     ) : Stage {
         val isLast: Boolean get() = index == total - 1
+        val canGoBack: Boolean get() = index > 0
+        val answeredCount: Int get() = answered.size
+    }
+
+    /** C4b: resumen de preguntas. El reloj y los avisos siguen activos aquí. [current] = última pregunta visitada. */
+    data class Overview(
+        val items: List<OverviewItem>,
+        val current: Int,
+        val remainingMs: Long,
+        val timeHidden: Boolean,
+        val banner: TimeBanner?,
+        val dialog: QuestionDialog?,
+        val saveError: SaveError?,
+        val finishing: Boolean = false,
+        val level: TimeBanner? = null,
+    ) : Stage {
+        val total: Int get() = items.size
+        val unanswered: Int get() = items.count { !it.answered }
+        val answeredCount: Int get() = total - unanswered
+        val firstUnanswered: Int? get() = items.firstOrNull { !it.answered }?.index
     }
 
     /** C6. */

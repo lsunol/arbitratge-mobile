@@ -84,16 +84,43 @@ class ExamEngineTest {
         assertFailsWith<ExamEngineException> { ExamEngine.start(broken, b.rules, SeededRng(1)) }
     }
 
-    @Test fun answerSequentialRules() {
+    @Test fun answerIsFreeNavigationReplaceableAndIdempotent() {
         val s = start()
-        assertEquals(0, s.currentIndex)
-        val e1 = assertFailsWith<ExamEngineException> { ExamEngine.answer(s, 1, listOf("a"), 100) }
-        assertEquals(EngineError.OUT_OF_ORDER, e1.error)
-        val s1 = ExamEngine.answer(s, 0, listOf("a"), 100)
-        assertEquals(1, s1.currentIndex)
-        assertSame(s1, ExamEngine.answer(s1, 0, listOf("a"), 100)) // idempotente
-        assertEquals(EngineError.ALREADY_ANSWERED, assertFailsWith<ExamEngineException> { ExamEngine.answer(s1, 0, listOf("b"), 100) }.error)
-        assertEquals(EngineError.INDEX_OUT_OF_RANGE, assertFailsWith<ExamEngineException> { ExamEngine.answer(s1, 9, listOf("a"), 100) }.error)
+        assertEquals(0, s.answeredCount)
+        // cualquier índice, sin orden
+        val s2 = ExamEngine.answer(s, 2, listOf("a"), 100)
+        assertEquals(setOf(2), s2.answeredIndices)
+        val s0 = ExamEngine.answer(s2, 0, listOf("a"), 90)
+        assertEquals(listOf(0, 2), s0.answers.map { it.index }, "orden estable por índice")
+        assertSame(s0, ExamEngine.answer(s0, 0, listOf("a"), 90)) // idempotente
+        // sustituir: la corrección usa la ÚLTIMA respuesta
+        val replaced = ExamEngine.answer(s0, 0, listOf("b"), 80)
+        assertEquals(listOf("b"), replaced.answerFor(0)!!.selectedIds)
+        assertEquals(80, replaced.answerFor(0)!!.remainingAtTapMs)
+        assertEquals(2, replaced.answers.size, "una sola fila por pregunta")
+        assertEquals(EngineError.INDEX_OUT_OF_RANGE, assertFailsWith<ExamEngineException> { ExamEngine.answer(s0, 9, listOf("a"), 100) }.error)
+        assertEquals(EngineError.INDEX_OUT_OF_RANGE, assertFailsWith<ExamEngineException> { ExamEngine.answer(s0, -1, listOf("a"), 100) }.error)
+    }
+
+    @Test fun clearingAnAnswerLeavesItUnansweredAndGradesAsFailure() {
+        val s = answerCorrect(start(), 3)
+        assertEquals(3, ExamEngine.grade(s, 0L).correct)
+        val cleared = ExamEngine.answer(s, 1, emptyList(), 50)
+        assertEquals(setOf(0, 2), cleared.answeredIndices)
+        assertEquals(1, cleared.firstUnanswered)
+        assertEquals(1, cleared.unansweredCount)
+        val r = ExamEngine.grade(cleared, 0L)
+        assertEquals(2, r.correct); assertEquals(0, r.wrong); assertEquals(1, r.unanswered)
+        assertTrue(r.items[1].selectedIds.isEmpty() && !r.items[1].isCorrect)
+        // volver a responder la misma pregunta
+        assertEquals(3, ExamEngine.grade(ExamEngine.answer(cleared, 1, listOf("a"), 40), 0L).correct)
+    }
+
+    @Test fun lastAnswerDoesNotCompleteAnything() {
+        val s = answerCorrect(start(), 3)
+        assertEquals(3, s.answeredCount)
+        assertEquals(null, s.firstUnanswered)
+        assertEquals(ExamPhase.InProgress(2), ExamStateMachine.next(ExamPhase.InProgress(0), ExamEvent.Navigated(2, 3)))
     }
 
     @Test fun answerRejectsNegativeRemainingAcceptsZero() {
@@ -110,9 +137,10 @@ class ExamEngineTest {
         assertEquals(EngineError.INVALID_SELECTION, err(listOf("a", "a")))
     }
 
-    @Test fun startRejectsNonSequentialRules() {
-        val e = assertFailsWith<ExamEngineException> { start(bank(5, rules().copy(sequential = false))) }
-        assertEquals(EngineError.INVALID_RULES, e.error)
+    @Test fun legacySequentialFlagIsIgnored() {
+        // `sequential` quedó obsoleto: ni true ni false cambian la navegación ni invalidan el banco.
+        val s = start(bank(5, rules().copy(sequential = false)))
+        assertEquals(1, ExamEngine.answer(s, 2, listOf("a"), 10).answers.size)
     }
 
     @Test fun gradeExactSetNoPartialCredit() {

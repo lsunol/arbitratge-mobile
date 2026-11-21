@@ -36,7 +36,7 @@ class FakeClock(var mono: Long = 1_000_000L, var wall: Long = 1_800_000_000_000L
 
 class FakePrefs(override var welcomeSeen: Boolean = true) : WelcomePrefs
 
-enum class Op { CREATE, COMMIT_ANSWER, SAVE_CLOCK, FINISH, ABANDON, INSERT_CREDENTIAL, READ, READ_PENDING }
+enum class Op { CREATE, COMMIT_ANSWER, SAVE_PROGRESS, SAVE_CLOCK, FINISH, ABANDON, INSERT_CREDENTIAL, READ, READ_PENDING }
 
 /**
  * Almacén en memoria con la misma semántica transaccional que Room (cada operación es atómica: o se aplica
@@ -87,18 +87,23 @@ class InMemoryStore : SessionStore {
     var commitGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
     var finishGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
 
-    override suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, clock: ClockState, finish: Finish?) {
+    override suspend fun commitAnswer(sessionId: String, answer: AnswerRecord, currentIndex: Int, clock: ClockState) {
         maybeFail(Op.COMMIT_ANSWER)
         commitGate?.await()
         val s = sessions[sessionId]?.takeIf { it.state == SessionState.IN_PROGRESS } ?: throw SessionNotActiveException("no activa")
-        val existing = s.session.answerFor(answer.index)
-        if (existing != null && existing != answer) error("resposta diferent")
-        val answers = if (existing != null) s.session.answers else s.session.answers + answer
-        sessions[sessionId] = s.copy(
-            session = s.session.copy(answers = answers), currentIndex = answer.index + 1, clock = clock,
-            state = if (finish != null) SessionState.FINISHED else s.state,
-            finishReason = finish?.reason, correctCount = finish?.correctCount, finishedWall = finish?.finishedWall,
-        )
+        // UPSERT por (session, index): la respuesta se puede sustituir o vaciar.
+        val answers = (s.session.answers.filter { it.index != answer.index } + answer).sortedBy { it.index }
+        sessions[sessionId] = s.copy(session = s.session.copy(answers = answers), currentIndex = currentIndex, clock = clock)
+    }
+
+    /** Si no es null, `saveProgress` se suspende hasta completarlo (guardado de posición lento). */
+    var saveProgressGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
+    override suspend fun saveProgress(sessionId: String, currentIndex: Int, clock: ClockState) {
+        maybeFail(Op.SAVE_PROGRESS)
+        saveProgressGate?.await()
+        val s = sessions[sessionId]?.takeIf { it.state == SessionState.IN_PROGRESS } ?: throw SessionNotActiveException("no activa")
+        sessions[sessionId] = s.copy(currentIndex = currentIndex, clock = clock)
     }
 
     /** Si no es null, `saveClock` se suspende hasta completarlo (checkpoint lento que retiene el mutex). */

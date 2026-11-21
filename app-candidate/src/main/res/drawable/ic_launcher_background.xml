@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Identitat provisional d'Arbitratge Mobile — pendent d'aprovació de CFBB -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M0,0H108V108H0Z" android:fillColor="#0F3D26"/>
+    <path android:pathData="M54,0V108" android:strokeColor="#F2F5F3" android:strokeWidth="3.6"/>
+</vector>

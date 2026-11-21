@@ -16,6 +16,7 @@ import dev.lluissunol.arbitratge.support.SwitchableIssuing
 import dev.lluissunol.arbitratge.support.TestEnv
 import dev.lluissunol.arbitratge.ui.CredentialPhase
 import dev.lluissunol.arbitratge.ui.ExamViewModel
+import dev.lluissunol.arbitratge.ui.QuestionDialog
 import dev.lluissunol.arbitratge.ui.Stage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -95,22 +96,44 @@ class RoomPersistenceTest {
         assertEquals("s3", store.active()?.id)
     }
 
-    @Test fun commitAnswerIsOneTransactionAndIdempotent() = runBlocking<Unit> {
+    @Test fun commitAnswerIsOneTransactionIdempotentAndUpserts() = runBlocking<Unit> {
         val store = RoomSessionStore(openDb().sessionDao())
         val s = newSession("s1")
         store.create(s)
         val q0 = s.session.snapshot.questions[0]
         val ans = AnswerRecord(0, listOf(q0.options.first().id), 200_000)
         val clock = ClockState(300_000, 200_000, 50_000, 9, 1_800_000_100_000L)
-        store.commitAnswer("s1", ans, clock, null)
-        store.commitAnswer("s1", ans, clock, null) // doble toque/reintento: misma fila
+        store.commitAnswer("s1", ans, 0, clock)
+        store.commitAnswer("s1", ans, 0, clock) // doble toque/reintento: misma fila
         val back = store.session("s1")!!
         assertEquals(listOf(ans), back.session.answers)
-        assertEquals(1, back.currentIndex)
+        assertEquals(0, back.currentIndex, "current_index = última pregunta visitada, no index+1")
         assertEquals(clock, back.clock)
-        // respuesta distinta para el mismo (session, q_index): rechazada, el original no cambia
-        assertFailsWith<IllegalStateException> { store.commitAnswer("s1", ans.copy(selectedIds = emptyList()), clock, null) }
-        assertEquals(listOf(ans), store.session("s1")!!.session.answers)
+        // navegación libre: una respuesta distinta para el mismo (session, q_index) SUSTITUYE a la anterior
+        val replaced = ans.copy(selectedIds = listOf(q0.options.last().id), remainingAtTapMs = 150_000)
+        store.commitAnswer("s1", replaced, 3, clock)
+        assertEquals(listOf(replaced), store.session("s1")!!.session.answers)
+        assertEquals(3, store.session("s1")!!.currentIndex)
+        // y se puede vaciar (selección vacía = sin respuesta), sin duplicar filas
+        val cleared = replaced.copy(selectedIds = emptyList(), remainingAtTapMs = 100_000)
+        store.commitAnswer("s1", cleared, 0, clock)
+        assertEquals(listOf(cleared), store.session("s1")!!.session.answers)
+        assertEquals(0, store.session("s1")!!.session.answeredCount)
+    }
+
+    @Test fun saveProgressPersistsPositionAndClockOnlyWhileActive() = runBlocking<Unit> {
+        val store = RoomSessionStore(openDb().sessionDao())
+        store.create(newSession("s1"))
+        val clock = ClockState(300_000, 250_000, 60_000, 9, 1_800_000_200_000L)
+        store.saveProgress("s1", 4, clock)
+        store.saveProgress("s1", 4, clock) // idempotente
+        val back = store.session("s1")!!
+        assertEquals(4, back.currentIndex)
+        assertEquals(clock, back.clock)
+        assertTrue(back.session.answers.isEmpty())
+        store.finish("s1", ClockState(300_000, 0, 5, null, 6), Finish(FinishReason.TIMED_OUT, 0, 7))
+        assertFailsWith<SessionNotActiveException> { store.saveProgress("s1", 1, clock) }
+        assertEquals(4, store.session("s1")!!.currentIndex)
     }
 
     @Test fun commitOnInactiveSessionWritesNothing() = runBlocking<Unit> {
@@ -118,28 +141,27 @@ class RoomPersistenceTest {
         store.create(newSession("s1"))
         store.finish("s1", ClockState(300_000, 0, 5, null, 6), Finish(FinishReason.TIMED_OUT, 0, 7))
         val ans = AnswerRecord(0, listOf("a"), 10)
-        assertFailsWith<SessionNotActiveException> { store.commitAnswer("s1", ans, ClockState(300_000, 1, 5, null, 6), null) }
+        assertFailsWith<SessionNotActiveException> { store.commitAnswer("s1", ans, 0, ClockState(300_000, 1, 5, null, 6)) }
         assertTrue(store.session("s1")!!.session.answers.isEmpty(), "la transacción revierte: ninguna fila de respuesta")
-        assertFailsWith<SessionNotActiveException> { store.commitAnswer("nope", ans, ClockState(300_000, 1, 5, null, 6), null) }
+        assertFailsWith<SessionNotActiveException> { store.commitAnswer("nope", ans, 0, ClockState(300_000, 1, 5, null, 6)) }
     }
 
-    @Test fun lastAnswerFinishesInTheSameTransaction() = runBlocking<Unit> {
+    @Test fun answeringEverythingDoesNotFinishOnlyExplicitFinishDoes() = runBlocking<Unit> {
         val store = RoomSessionStore(openDb().sessionDao())
         val s = newSession("s1")
         store.create(s)
         s.session.snapshot.questions.forEachIndexed { i, q ->
-            val last = i == s.session.total - 1
-            store.commitAnswer(
-                "s1", AnswerRecord(i, q.correctIds, 100_000), ClockState(300_000, 100_000, 5, null, 6),
-                if (last) Finish(FinishReason.COMPLETED, s.session.total, 99) else null,
-            )
+            store.commitAnswer("s1", AnswerRecord(i, q.correctIds, 100_000), i, ClockState(300_000, 100_000, 5, null, 6))
         }
+        val mid = store.session("s1")!!
+        assertEquals(SessionState.IN_PROGRESS, mid.state, "responder la última NO finaliza")
+        assertEquals(s.session.total - 1, mid.currentIndex)
+        assertEquals(s.session.total, mid.session.answeredCount)
+        store.finish("s1", ClockState(300_000, 100_000, 5, null, 6), Finish(FinishReason.COMPLETED, s.session.total, 99))
         val back = store.session("s1")!!
         assertEquals(SessionState.FINISHED, back.state)
         assertEquals(FinishReason.COMPLETED, back.finishReason)
         assertEquals(s.session.total, back.correctCount)
-        assertNull(store.active())
-        assertEquals("s1", store.latestFinished()?.id)
     }
 
     @Test fun abandonAndFinishAreIdempotentAndTerminal() = runBlocking<Unit> {
@@ -221,11 +243,9 @@ class RoomPersistenceTest {
         val s = newSession("s1")
         store.create(s)
         s.session.snapshot.questions.forEachIndexed { i, q ->
-            store.commitAnswer(
-                "s1", AnswerRecord(i, q.correctIds, 100_000), ClockState(300_000, 100_000, 5, null, 6),
-                if (i == s.session.total - 1) Finish(FinishReason.COMPLETED, s.session.total, 99) else null,
-            )
+            store.commitAnswer("s1", AnswerRecord(i, q.correctIds, 100_000), i, ClockState(300_000, 100_000, 5, null, 6))
         }
+        store.finish("s1", ClockState(300_000, 100_000, 5, null, 6), Finish(FinishReason.COMPLETED, s.session.total, 99))
         database.openHelper.writableDatabase.execSQL("UPDATE session SET active_slot = 1 WHERE id = 's1'")
         store.create(newSession("s2", "7f3a92c1-4b5d-4e6f-8a9b-000000000002")) // no queda bloqueado
         val pending = store.finishedWithoutCredential()
@@ -266,14 +286,18 @@ class RoomPersistenceTest {
         q = await(Stage.Question::class.java)
         assertEquals(2, q.index)
         assertEquals(2, store2.active()!!.session.answers.size)
-        // termina el examen
+        // termina el examen: responder la última NO finaliza; se pasa por el resumen y se confirma
         repeat(3) {
             val cur = vm.stage.value as Stage.Question
             cur.question.correctIds.forEach(vm::onSelect)
             vm.onNext()
-            if (cur.isLast) { withTimeout(20_000) { vm.stage.first { (it as? Stage.Question)?.dialog != null } }; vm.onDialogConfirm() }
+            if (cur.isLast) withTimeout(20_000) { vm.stage.first { it is Stage.Overview } }
             else withTimeout(20_000) { vm.stage.first { it is Stage.Question && it.index == cur.index + 1 } }
         }
+        assertEquals(SessionState.IN_PROGRESS, store2.active()!!.state)
+        vm.onFinishRequested()
+        withTimeout(20_000) { vm.stage.first { (it as? Stage.Overview)?.dialog == QuestionDialog.FINISH } }
+        vm.onDialogConfirm()
         val result = await(Stage.Result::class.java)
         val phase = withTimeout(20_000) { (vm.stage.first { it is Stage.Result && it.credential is CredentialPhase.Ready } as Stage.Result).credential }
         val token = (phase as CredentialPhase.Ready).credential.token

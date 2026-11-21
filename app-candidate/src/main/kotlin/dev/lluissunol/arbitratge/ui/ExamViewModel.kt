@@ -85,19 +85,27 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     private var bank: Bank? = null
     private var summary = RulesSummary(0, 0, 0)
 
-    // Estado de pantalla de la pregunta (nada de esto es verdad persistida salvo `current`).
+    // Estado de pantalla del examen (nada de esto es verdad persistida salvo `current`).
     private var current: StoredSession? = null
+    /** Última pregunta visitada (se persiste como `current_index`). */
+    private var position = 0
+    private var overviewOpen = false
     private var selected: Set<String> = emptySet()
     /** Verdadero desde que se decide el fin por tiempo: los taps nuevos se rechazan de forma síncrona. */
     private var timingOut = false
+    /** Última selección tocada y aún no confirmada como guardada (el último toque gana). */
     private var pending: PendingTap? = null
-    private val pendingTapMs: Long? get() = pending?.remainingMs
+    /** Restante capturado al confirmar "Finalitzar" (se reutiliza en el reintento: no se recaptura). */
+    private var finishTap: Long? = null
+    private val pendingTapMs: Long? get() = pending?.remainingMs ?: finishTap
     private var timeHidden = false
     private var dismissedBanner: TimeBanner? = null
+    private var shownBanner: TimeBanner? = null
     private var dialog: QuestionDialog? = null
-    private var saving = false
     private var saveError: SaveError? = null
-    private var afterNoAnswerFinish = false
+    private var finishing = false
+    /** Navegación en curso (se marca de forma SÍNCRONA antes de guardar la posición): no se aceptan toques ni más navegación. */
+    private var navigating = false
 
     private var nameDraft = ""
     private var confirmedNom: String? = null
@@ -162,16 +170,8 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         }
         val sess = s.copy(clock = rec.state)
         current = sess
-        when {
-            sess.session.isComplete -> {
-                // Estado improbable (la última respuesta cierra la sesión en la misma transacción): se cierra.
-                val r = ExamEngine.grade(sess.session, ExamClockModel.elapsedMs(sess.clock, deps.clock.monotonicMs()))
-                val finish = Finish(FinishReason.COMPLETED, r.correct, deps.clock.wallMs())
-                persistFinish(sess, sess.clock, finish) ?: return
-            }
-            ExamClockModel.shouldTimeOut(ExamClockModel.remaining(sess.clock, deps.clock.monotonicMs())) -> finishTimedOut(away = true)
-            else -> enterQuestion()
-        }
+        if (ExamClockModel.shouldTimeOut(ExamClockModel.remaining(sess.clock, deps.clock.monotonicMs()))) finishTimedOut(away = true)
+        else enterQuestion(sess.currentIndex)
     }
 
     private suspend fun home(): Stage.Home {
@@ -290,35 +290,45 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             return@op
         }
         current = stored
-        enterQuestion()
+        enterQuestion(0)
     }
 
-    // ------------------------------------------------------------------ C4
+    // ------------------------------------------------------------------ C4 / C4b (navegación libre)
 
-    private fun enterQuestion() {
+    private fun enterQuestion(index: Int) {
         resetQuestionState()
-        publishQuestion()
+        val s = current ?: return
+        position = index.coerceIn(0, s.session.total - 1)
+        selected = selectionOf(s, position)
+        publish()
         startTick()
     }
 
     private fun resetQuestionState() {
         selected = emptySet()
         pending = null
+        finishTap = null
         dialog = null
-        saving = false
         saveError = null
-        afterNoAnswerFinish = false
+        finishing = false
+        navigating = false
+        overviewOpen = false
         dismissedBanner = null
+        shownBanner = null
         timingOut = false
         ticks = 0
     }
 
+    private fun selectionOf(s: StoredSession, index: Int): Set<String> = s.session.answerFor(index)?.selectedIds?.toSet().orEmpty()
+
     private fun remainingNow(s: StoredSession): Long = ExamClockModel.remaining(s.clock, deps.clock.monotonicMs())
 
-    private fun publishQuestion() {
+    private fun isExamStage(): Boolean = _stage.value.let { it is Stage.Question || it is Stage.Overview }
+
+    private fun publish() {
         val s = current ?: return
-        val idx = s.session.currentIndex
-        val q = s.session.snapshot.questions.getOrNull(idx) ?: return
+        val total = s.session.total
+        val q = s.session.snapshot.questions.getOrNull(position) ?: return
         val rem = remainingNow(s).coerceAtLeast(0L)
         // Un umbral solo avisa si el límite lo supera (04 §2.4): con 5 min de límite no hay aviso de 5 min al empezar.
         val limit = s.clock.limitMs
@@ -329,53 +339,159 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         }
         val d = dismissedBanner
         val banner = level?.takeIf { d == null || it.ordinal > d.ordinal }
-        _stage.value = Stage.Question(idx, s.session.total, q, selected, rem, timeHidden, banner, dialog, saving, saveError, level)
+        shownBanner = banner
+        // Las respuestas contadas incluyen la selección visible (aunque su guardado esté en vuelo).
+        val persisted = s.session.answeredIndices
+        val answered = if (selected.isEmpty()) persisted - position else persisted + position
+        _stage.value = if (overviewOpen) {
+            Stage.Overview(
+                items = s.session.snapshot.questions.mapIndexed { i, sq -> OverviewItem(i, sq.text, i in answered) },
+                current = position, remainingMs = rem, timeHidden = timeHidden, banner = banner,
+                dialog = dialog, saveError = saveError, finishing = finishing, level = level,
+            )
+        } else {
+            Stage.Question(
+                position, total, q, selected, answered, rem, timeHidden, banner, dialog,
+                saving = pending != null && saveError == null, saveError = saveError, level = level,
+                committed = selectionOf(s, position),
+            )
+        }
     }
 
+    /**
+     * Selección (radio o casilla): se guarda al INSTANTE (upsert). Se acepta aunque haya un guardado en vuelo (el último
+     * toque gana). El restante se captura síncronamente al tocar (arbitraje con el fin por tiempo, 03 §4.3).
+     */
     fun onSelect(optionId: String) {
         val st = _stage.value as? Stage.Question ?: return
-        if (saving || pendingTapMs != null) return // tras tocar "Següent" la selección queda fijada (B3)
+        val s = current ?: return
+        if (timingOut || navigating || st.saveError != null || st.dialog != null || finishing) return
         if (optionId !in st.question.options.map { it.id }) return
-        selected = if (st.question.type == QuestionType.MULTIPLE_CHOICE) {
+        val next = if (st.question.type == QuestionType.MULTIPLE_CHOICE) {
             if (optionId in selected) selected - optionId else selected + optionId
         } else setOf(optionId)
-        publishQuestion()
+        if (next == selected) return
+        val tap = remainingNow(s)
+        if (tap < 0) { // el tiempo ya se había agotado al tocar: la respuesta no cuenta
+            // Mismo arbitraje que el tick: con un guardado pendiente tocado A TIEMPO (en vuelo o fallido) el toque tardío
+            // se ignora, se conserva el reintento y el fin por tiempo espera a que se resuelva.
+            if (pending != null) return
+            timingOut = true
+            op {
+                if (pending != null) timingOut = false // llegó un guardado pendiente a tiempo: el fin espera
+                else if (isExamStage()) finishTimedOut(away = false)
+            }
+            return
+        }
+        selected = next
+        pending = PendingTap(position, next, tap)
+        publish()
+        op { persistPending() }
     }
 
     fun onToggleTimeHidden() {
         timeHidden = !timeHidden
-        publishQuestion()
+        publish()
     }
 
     fun onDismissBanner() {
-        val st = _stage.value as? Stage.Question ?: return
-        dismissedBanner = st.banner
-        publishQuestion()
+        if (!isExamStage()) return
+        dismissedBanner = shownBanner
+        publish()
     }
 
-    /** "Següent" / "Finalitzar l'examen". */
-    fun onNext() {
-        val st = _stage.value as? Stage.Question ?: return
-        if (saving || st.dialog != null) return
-        when {
-            selected.isEmpty() -> { dialog = QuestionDialog.NO_ANSWER; afterNoAnswerFinish = st.isLast }
-            st.isLast -> dialog = QuestionDialog.FINISH
-            else -> { commit(); return }
+    /**
+     * Arranca una navegación: se marca [navigating] de forma SÍNCRONA (antes de cualquier suspensión) para que ningún
+     * toque ni otra navegación se cuele mientras se guarda la posición. La selección pendiente ya está en cola (FIFO del
+     * mutex) y se guarda ANTES; si falla, [canNavigate] la bloquea y se muestra el diálogo de error.
+     */
+    private fun nav(block: suspend () -> Unit) {
+        if (navigating || timingOut || finishing || saveError != null || dialog != null || !isExamStage()) return
+        navigating = true
+        viewModelScope.launch {
+            lock.withLock {
+                try {
+                    block()
+                } finally {
+                    navigating = false
+                    if (isExamStage()) publish()
+                }
+            }
         }
-        publishQuestion()
     }
 
-    /** "Continuar igualment" (C5-b) o "Finalitzar" (C5-c). */
+    /** Botones ← Anterior / Següent → (en la última: "Revisar i finalitzar" = resumen). */
+    fun onPrevious() = nav { if (position > 0) goTo(position - 1) }
+
+    fun onNext() = nav { if (position < (current?.session?.total ?: 0) - 1) goTo(position + 1) else openOverview() }
+
+    /** "Veure-les totes" y "Revisar i finalitzar". */
+    fun onOpenOverview() = nav { openOverview() }
+
+    /** Fila del resumen / "Anar a la primera sense resposta". */
+    fun onGoToQuestion(index: Int) = nav { goTo(index) }
+
+    fun onGoToFirstUnanswered() = nav {
+        (_stage.value as? Stage.Overview)?.firstUnanswered?.let { goTo(it) }
+    }
+
+    /** ← del resumen: vuelve a la pregunta de origen. */
+    fun onBackToQuestion() = nav { goTo(position) }
+
+    /** No se navega con una selección sin guardar, un fallo de guardado, un diálogo o el cierre en curso (B3). */
+    private fun canNavigate(): Boolean =
+        isExamStage() && !timingOut && pending == null && saveError == null && !finishing && dialog == null
+
+    private suspend fun goTo(index: Int) {
+        val s = current ?: return
+        if (!canNavigate() || index !in 0 until s.session.total) return
+        if (index == position && !overviewOpen) return
+        persistPosition(index) // primero se guarda la posición (best effort) y luego se cambia de pantalla
+        position = index
+        selected = selectionOf(current ?: s, index)
+        overviewOpen = false
+        publish()
+    }
+
+    private suspend fun openOverview() {
+        if (!canNavigate() || overviewOpen) return
+        persistPosition(position)
+        overviewOpen = true
+        publish()
+    }
+
+    /**
+     * La selección ya está guardada (cada toque se guarda); la posición (última pregunta visitada) es un dato
+     * secundario: se guarda ANTES de cambiar de pantalla, pero un fallo de almacenamiento no bloquea la navegación.
+     */
+    private suspend fun persistPosition(target: Int) {
+        val s = current ?: return
+        if (s.state != SessionState.IN_PROGRESS) return
+        val c = deps.clock
+        val next = ExamClockModel.checkpoint(s.clock, c.monotonicMs(), c.bootCount(), c.wallMs())
+        try {
+            deps.store.saveProgress(s.id, target, next)
+            current = s.copy(currentIndex = target, clock = next)
+        } catch (_: StorageException) {
+        } catch (_: SessionNotActiveException) {
+            resolve()
+        }
+    }
+
+    /** "Finalitzar l'examen" (resumen): abre la confirmación con el recuento de preguntas sin respuesta. */
+    fun onFinishRequested() {
+        val st = _stage.value as? Stage.Overview ?: return
+        if (st.saveError != null || st.dialog != null || finishing || navigating || pending != null) return
+        dialog = QuestionDialog.FINISH
+        publish()
+    }
+
     fun onDialogConfirm() {
         when (dialog) {
-            QuestionDialog.NO_ANSWER -> if (afterNoAnswerFinish) {
-                dialog = QuestionDialog.FINISH
-                publishQuestion()
-            } else commit()
-            QuestionDialog.FINISH -> commit()
+            QuestionDialog.FINISH -> startFinish()
             QuestionDialog.EXIT -> {
                 dialog = null
-                publishQuestion()
+                publish()
                 checkpointNow()
                 _events.trySend(UiEvent.LeaveApp)
             }
@@ -383,56 +499,76 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         }
     }
 
-    /** Botón seguro de los diálogos: "Marcar una resposta" / "Revisar" / "Continuar". */
+    /** Botón seguro de los diálogos: "Tornar a l'examen" / "Continuar l'examen". */
     fun onDialogDismiss() {
         dialog = null
-        afterNoAnswerFinish = false
-        publishQuestion()
+        publish()
     }
 
-    /** Pulsación confirmada, capturada SÍNCRONAMENTE (índice, selección y restante al tocar). */
-    private data class PendingTap(val index: Int, val ids: Set<String>, val remainingMs: Long)
-
-    /**
-     * Captura el tap en el hilo de la UI, antes de esperar el mutex de escritura: un punto de control que
-     * retenga el mutex no puede hacer caducar un tap a tiempo, y un segundo evento (doble toque, evento
-     * obsoleto) se rechaza porque ya hay un tap pendiente o el índice no coincide.
-     */
-    private fun commit() {
+    private fun startFinish() {
+        val st = _stage.value as? Stage.Overview ?: return
         val s = current ?: return
-        val st = _stage.value as? Stage.Question ?: return
-        if (timingOut || pending != null || saving || st.index != s.session.currentIndex) return
+        if (st.saveError != null || finishing || navigating || pending != null || timingOut) return
         val tap = remainingNow(s)
         dialog = null
-        afterNoAnswerFinish = false
-        if (tap < 0) { // el tiempo ya se había agotado al tocar: la respuesta no cuenta
+        if (tap < 0) { // se agotó el tiempo antes de confirmar: cuenta como fin por tiempo
             timingOut = true
-            op { if (_stage.value is Stage.Question) finishTimedOut(away = false) }
+            op { if (isExamStage()) finishTimedOut(away = false) }
             return
         }
-        pending = PendingTap(st.index, selected, tap)
-        startSave()
+        finishTap = tap
+        finishing = true
+        publish()
+        op { doFinish() }
     }
 
-    private fun startSave() {
-        saving = true
-        saveError = null
-        publishQuestion()
-        op { persistPending() }
+    /** FINISHED(COMPLETED) + correct_count en UNA transacción, tras la confirmación explícita. */
+    private suspend fun doFinish() {
+        val s = current ?: return
+        val tap = finishTap ?: return
+        val c = deps.clock
+        val limit = s.clock.limitMs
+        val wall = c.wallMs()
+        val clock = ClockState(limit, tap.coerceIn(0L, limit), c.monotonicMs(), c.bootCount(), wall)
+        val r = ExamEngine.grade(s.session, limit - clock.remainingMsSaved)
+        val finish = Finish(FinishReason.COMPLETED, r.correct, wall)
+        val outcome = try {
+            withRetry { deps.store.finish(s.id, clock, finish) }
+        } catch (e: SessionNotActiveException) {
+            resolve()
+            return
+        }
+        if (outcome.isFailure) {
+            finishing = false
+            saveError = SaveError.RESULT
+            publish()
+            return
+        }
+        stopTick()
+        finishing = false
+        finishTap = null
+        val done = s.copy(
+            state = SessionState.FINISHED, clock = clock, finishReason = finish.reason,
+            correctCount = finish.correctCount, finishedWall = finish.finishedWall,
+        )
+        current = done
+        gradingThenResult(done)
     }
 
+    /** Selección tocada y su restante al tocar. */
+    private data class PendingTap(val index: Int, val ids: Set<String>, val remainingMs: Long)
+
+    /** Guarda la ÚLTIMA selección pendiente (los toques intermedios se fusionan). Los fallos dejan `pending` intacto. */
     private suspend fun persistPending() {
         val p = pending ?: return
+        if (saveError != null) return
         val s = current
-        if (s == null || s.session.currentIndex != p.index) { // obsoleto
+        if (s == null || p.index != position) { // obsoleto
             pending = null
-            saving = false
             return
         }
-        val idx = p.index
-        val last = idx == s.session.total - 1
         val outcome = try {
-            withRetry { persistAnswer(s, idx, p.ids, p.remainingMs, last) }
+            withRetry { persistAnswer(s, p) }
         } catch (e: SessionNotActiveException) {
             resolve()
             return
@@ -440,50 +576,41 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             _stage.value = Stage.StateError
             return
         }
-        saving = false
         val result = outcome.getOrNull()
         if (result == null) {
-            saveError = if (last) SaveError.RESULT else SaveError.ANSWER
-            publishQuestion()
+            saveError = SaveError.ANSWER
+            publish()
             return
         }
-        pending = null
         current = result
-        if (result.state == SessionState.FINISHED) {
-            stopTick()
-            gradingThenResult(result)
-        } else {
-            selected = emptySet()
-            dialog = null
-            publishQuestion()
-        }
+        if (pending === p) pending = null
+        publish()
     }
 
-    private suspend fun persistAnswer(s: StoredSession, idx: Int, ids: Set<String>, tap: Long, last: Boolean): StoredSession {
-        val newSession = ExamEngine.answer(s.session, idx, ids, tap)
+    private suspend fun persistAnswer(s: StoredSession, p: PendingTap): StoredSession {
+        val newSession = ExamEngine.answer(s.session, p.index, p.ids, p.remainingMs)
         val c = deps.clock
-        val mono = c.monotonicMs()
-        val boot = c.bootCount()
-        val wall = c.wallMs()
-        val limit = s.clock.limitMs
-        val clock = if (last) ClockState(limit, tap.coerceIn(0L, limit), mono, boot, wall)
-        else ExamClockModel.checkpoint(s.clock, mono, boot, wall)
-        val finish = if (last) {
-            val r = ExamEngine.grade(newSession, limit - clock.remainingMsSaved)
-            Finish(FinishReason.COMPLETED, r.correct, wall)
-        } else null
-        deps.store.commitAnswer(s.id, newSession.answers.first { it.index == idx }, clock, finish)
-        return s.copy(
-            session = newSession, currentIndex = idx + 1, clock = clock,
-            state = if (finish != null) SessionState.FINISHED else SessionState.IN_PROGRESS,
-            finishReason = finish?.reason, correctCount = finish?.correctCount, finishedWall = finish?.finishedWall,
-        )
+        val clock = ExamClockModel.checkpoint(s.clock, c.monotonicMs(), c.bootCount(), c.wallMs())
+        deps.store.commitAnswer(s.id, newSession.answerFor(p.index)!!, p.index, clock)
+        return s.copy(session = newSession, currentIndex = p.index, clock = clock)
     }
 
-    /** "Torna-ho a provar" tras un fallo de guardado: reintenta SIN recapturar el tiempo de la pulsación. */
+    /** "Tornar-ho a provar" tras un fallo de guardado: reintenta SIN recapturar el tiempo de la pulsación. */
     fun onRetrySave() {
-        if (saveError == null || pending == null || saving) return
-        startSave()
+        val err = saveError ?: return
+        saveError = null
+        when (err) {
+            SaveError.ANSWER -> {
+                publish()
+                op { persistPending() }
+            }
+            SaveError.RESULT -> {
+                if (finishTap == null) return
+                finishing = true
+                publish()
+                op { doFinish() }
+            }
+        }
     }
 
     /** "Sortir de l'examen" desde el aviso de fallo de guardado, o "Abandonar": `ABANDONED` solo si se guarda. */
@@ -517,7 +644,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
     /** Un tick de reloj: refresca el contador, evalúa el fin por tiempo y el punto de control (~30 s). */
     internal suspend fun tick() {
         val s = current ?: return
-        if (_stage.value !is Stage.Question || lock.isLocked) return
+        if (!isExamStage() || lock.isLocked) return
         val rem = remainingNow(s)
         if (!timingOut && ExamClockModel.shouldTimeOut(rem, pendingTapMs)) {
             // Arbitraje: desde este instante (síncrono, mismo hilo que los taps) todo tap nuevo se rechaza.
@@ -526,24 +653,24 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             // En otra corrutina: finishTimedOut cancela el bucle de ticks (que es quien nos llama).
             viewModelScope.launch {
                 lock.withLock {
-                    if (_stage.value is Stage.Question && current != null && pending == null) finishTimedOut(away = false)
+                    if (isExamStage() && current != null && pending == null && !finishing) finishTimedOut(away = false)
                     else timingOut = false
                 }
             }
             return
         }
-        publishQuestion()
+        publish()
         if (++ticks % 30 == 0) checkpointNow()
     }
 
     /** Punto de control del reloj (`onStop`, cada ~30 s). Un fallo no interrumpe el examen. */
     private fun checkpointNow() {
         val s = current ?: return
-        if (_stage.value !is Stage.Question || saving) return
+        if (!isExamStage() || pending != null) return
         viewModelScope.launch {
             lock.withLock {
                 val cur = current ?: return@withLock
-                if (cur.state != SessionState.IN_PROGRESS || saving) return@withLock
+                if (cur.state != SessionState.IN_PROGRESS || pending != null) return@withLock
                 val c = deps.clock
                 val next = ExamClockModel.checkpoint(cur.clock, c.monotonicMs(), c.bootCount(), c.wallMs())
                 try {
@@ -577,7 +704,7 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             _stage.value = Stage.Grading(error = true)
             return
         }
-        _stage.value = Stage.TimeUp(s.session.answers.count { it.selectedIds.isNotEmpty() }, s.session.total, away)
+        _stage.value = Stage.TimeUp(s.session.answeredCount, s.session.total, away)
         current = done
     }
 
@@ -746,12 +873,19 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         resolve()
     }
 
-    /** Botón/gesto Atrás del sistema. Devuelve `true` si se consume (no se retrocede de pregunta, 01 §1.3). */
+    /**
+     * Botón/gesto Atrás del sistema. Devuelve `true` si se consume. En la pregunta abre "Vols sortir?" (no retrocede de
+     * pregunta: para eso está "Anterior"); en el resumen vuelve a la pregunta de origen; un diálogo se cierra primero.
+     */
     fun onBack(): Boolean {
         when (val st = _stage.value) {
             is Stage.Question -> {
                 if (st.saveError != null || st.saving) return true
-                if (st.dialog != null) onDialogDismiss() else { dialog = QuestionDialog.EXIT; publishQuestion() }
+                if (st.dialog != null) onDialogDismiss() else { dialog = QuestionDialog.EXIT; publish() }
+            }
+            is Stage.Overview -> {
+                if (st.saveError != null || st.finishing) return true
+                if (st.dialog != null) onDialogDismiss() else onBackToQuestion()
             }
             is Stage.Name -> onGoHome()
             is Stage.Rules -> if (!st.starting) onChangeName()

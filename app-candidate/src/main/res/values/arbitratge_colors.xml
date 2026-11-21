@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Identitat provisional d'Arbitratge Mobile — pendent d'aprovació de CFBB -->
+<resources>
+    <color name="arbitratge_gespa">#0F3D26</color>
+    <color name="arbitratge_verd">#1D6F42</color>
+    <color name="arbitratge_cal">#F2F5F3</color>
+    <color name="arbitratge_tinta">#18241D</color>
+    <color name="arbitratge_groc">#F2C230</color>
+    <!-- Fons de finestra (abans que Compose pinti): coherent amb `background` de cada tema. -->
+    <color name="arbitratge_finestra">#F2F5F3</color>
+</resources>

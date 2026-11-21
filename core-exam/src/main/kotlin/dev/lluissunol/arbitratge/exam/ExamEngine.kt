@@ -27,15 +27,23 @@ data class ExamSnapshot(
 @Serializable
 data class AnswerRecord(val index: Int, val selectedIds: List<String>, val remainingAtTapMs: Long)
 
-/** Sesión = instantánea + respuestas. Todo lo demás (resultado) se recalcula. */
+/**
+ * Sesión = instantánea + respuestas. Todo lo demás (resultado) se recalcula.
+ *
+ * Navegación libre (decisión del usuario, 2026-11-20): una respuesta puede sustituirse o vaciarse hasta finalizar.
+ * Una respuesta con `selectedIds` vacío equivale a "sense resposta".
+ */
 @Serializable
 data class ExamSession(val snapshot: ExamSnapshot, val answers: List<AnswerRecord> = emptyList()) {
     val total: Int get() = snapshot.questions.size
-    val answeredIndices: Set<Int> get() = answers.map { it.index }.toSet()
 
-    /** Siguiente pregunta pendiente (la primera sin responder); `total` si no queda ninguna. */
-    val currentIndex: Int get() = (0 until total).firstOrNull { it !in answeredIndices } ?: total
-    val isComplete: Boolean get() = currentIndex >= total
+    /** Índices con al menos una opción marcada. */
+    val answeredIndices: Set<Int> get() = answers.filter { it.selectedIds.isNotEmpty() }.map { it.index }.toSet()
+    val answeredCount: Int get() = answeredIndices.size
+    val unansweredCount: Int get() = total - answeredCount
+
+    /** Primera pregunta sin respuesta (o `null` si están todas respondidas). */
+    val firstUnanswered: Int? get() = (0 until total).firstOrNull { it !in answeredIndices }
     fun answerFor(index: Int): AnswerRecord? = answers.firstOrNull { it.index == index }
 }
 
@@ -49,6 +57,7 @@ data class QuestionResult(
     val isCorrect: Boolean,
     val explanation: String? = null,
     val ref: String? = null,
+    val type: QuestionType = QuestionType.SINGLE_CHOICE,
 )
 
 @Serializable
@@ -67,7 +76,7 @@ data class ExamResult(
     val failures: Int get() = total - correct
 }
 
-enum class EngineError { INVALID_RULES, INDEX_OUT_OF_RANGE, OUT_OF_ORDER, ALREADY_ANSWERED, TIME_EXPIRED, INVALID_SELECTION }
+enum class EngineError { INVALID_RULES, INDEX_OUT_OF_RANGE, TIME_EXPIRED, INVALID_SELECTION }
 
 /** Mensajes solo con códigos/recuentos/IDs; nunca texto de preguntas. */
 class ExamEngineException(val error: EngineError, message: String) : IllegalStateException(message)
@@ -104,9 +113,9 @@ object ExamEngine {
     }
 
     /**
-     * Registra la respuesta `i`. `remainingAtTapMs` es el restante capturado AL TOCAR (>= 0 o se rechaza).
-     * Idempotente: repetir la misma respuesta devuelve la misma sesión.
-     * Solo se admite el modo secuencial (`i == currentIndex`); `start` rechaza `sequential=false`.
+     * Registra (o SUSTITUYE) la respuesta `i`: navegación libre. `remainingAtTapMs` es el restante capturado AL TOCAR
+     * (>= 0 o se rechaza). Una selección vacía deja la pregunta sin responder. Idempotente: repetir exactamente la
+     * misma respuesta devuelve la misma sesión.
      */
     fun answer(session: ExamSession, index: Int, selectedIds: Collection<String>, remainingAtTapMs: Long): ExamSession {
         val q = session.snapshot.questions.getOrNull(index)
@@ -122,13 +131,9 @@ object ExamEngine {
         val record = AnswerRecord(index, ordered, remainingAtTapMs)
 
         val existing = session.answerFor(index)
-        if (existing != null) {
-            if (existing == record) return session
-            fail(EngineError.ALREADY_ANSWERED, "index=$index")
-        }
-        if (!session.snapshot.rules.sequential) fail(EngineError.INVALID_RULES, "sequential=false no soportat")
-        if (index != session.currentIndex) fail(EngineError.OUT_OF_ORDER, "index=$index current=${session.currentIndex}")
-        return session.copy(answers = session.answers + record)
+        if (existing == record) return session
+        val answers = if (existing == null) session.answers + record else session.answers.map { if (it.index == index) record else it }
+        return session.copy(answers = answers.sortedBy { it.index })
     }
 
     /**
@@ -145,7 +150,7 @@ object ExamEngine {
             val selected = session.answerFor(i)?.selectedIds.orEmpty()
             val ok = selected.isNotEmpty() && selected.toSet() == q.correctIds.toSet()
             if (selected.isEmpty()) unanswered++ else if (ok) correct++
-            QuestionResult(q.id, q.text, q.options, selected, q.correctIds, ok, q.explanation, q.ref)
+            QuestionResult(q.id, q.text, q.options, selected, q.correctIds, ok, q.explanation, q.ref, q.type)
         }
         val total = session.total
         val threshold = session.snapshot.rules.passThresholdCount

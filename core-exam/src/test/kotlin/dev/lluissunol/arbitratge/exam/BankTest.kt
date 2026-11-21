@@ -112,8 +112,9 @@ class BankTest {
         assertTrue(IssueCode.ACTIVE_WITHOUT_CORRECT in with(q("t-001", correct = emptyList())))
     }
 
-    @Test fun nonSequentialRulesAreRejected() {
-        assertTrue(IssueCode.SEQUENTIAL_REQUIRED in codes(bank(5, rules().copy(sequential = false))))
+    @Test fun legacySequentialFlagIsAcceptedEitherWay() {
+        assertTrue(codes(bank(5, rules().copy(sequential = false))).isEmpty())
+        assertTrue(codes(bank(5, rules().copy(sequential = true))).isEmpty())
     }
 
     @Test fun trueFalseErrors() {

@@ -1,122 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Catàleg en català (04 §7). Recursos per defecte = ca (03 §10.5). Les claus marcades "NOVA" no són a 04 §7. -->
+<!-- Catàleg en català (04 §7). Recursos per defecte = ca (03 §10.5). Navegació lliure: decisió de l'usuari del 2026-11-20. -->
 <resources>
-    <string name="app_name">Arbitratge CFBB</string>
+    <string name="app_name">Arbitratge Mobile</string>
+    <string name="brand_name">Arbitratge</string>
+    <string name="brand_logo_desc">Logotip d\'Arbitratge</string>
+
+    <!-- C0 Inici -->
     <string name="home_title">Examen d\'àrbitre de Futbol amb Botons</string>
-    <string name="home_summary">%1$d preguntes · %2$d minuts · Per aprovar: %3$d encerts</string>
-    <string name="home_empty">Encara no has fet cap examen. Pots practicar tantes vegades com vulguis.</string>
+    <string name="home_fact_questions">preguntes</string>
+    <string name="home_fact_minutes">minuts</string>
+    <string name="home_fact_pass">encerts per aprovar</string>
+    <string name="home_facts_a11y">%1$d preguntes, %2$d minuts, %3$d encerts per aprovar</string>
+    <string name="home_empty">Encara no has fet cap examen. El pots fer tantes vegades com vulguis.</string>
+    <string name="home_has_cred">Tens la credencial d\'aptitud.</string>
     <string name="btn_start">Començar l\'examen</string>
     <string name="btn_retake">Tornar a fer l\'examen</string>
+    <string name="last_passed">Últim examen: %1$d de %2$d encerts (aprovat)</string>
+    <string name="last_failed">Últim examen: %1$d de %2$d encerts (no aprovat)</string>
+    <string name="btn_review_last">Repassar l\'últim examen</string>
+
+    <!-- C1 Benvinguda -->
     <string name="welcome_title">Et donem la benvinguda</string>
-    <string name="welcome_body">Aquesta app et fa un examen del reglament de Futbol amb Botons. Es corregeix sola, veuràs què has fallat i quina era la resposta correcta (amb una explicació quan n\'hi hagi), i si aproves tindràs una credencial. No cal internet.</string>
+    <string name="welcome_intro">Aquesta app et fa un examen del reglament de Futbol amb Botons.</string>
+    <string name="welcome_b1">L\'examen es corregeix sol.</string>
+    <string name="welcome_b2">Veuràs què has fallat i quina era la resposta correcta.</string>
+    <string name="welcome_b3">Si aproves, tindràs una credencial.</string>
+    <string name="welcome_b4">No cal internet.</string>
     <string name="btn_understood">Entesos</string>
+
+    <!-- C2 Nom -->
     <string name="name_title">El teu nom</string>
-    <string name="name_help">Escriu el teu nom i cognoms tal com vols que surtin a la credencial. No es podran canviar després.</string>
+    <string name="name_help">Escriu el teu nom i cognoms tal com vols que surtin a la credencial.</string>
+    <string name="name_warn">No es podran canviar després.</string>
     <string name="name_label">Nom i cognoms</string>
     <string name="name_error">Escriu el teu nom per continuar.</string>
-    <!-- NOVA: errors de nom addicionals (02 §3.7.5.1) -->
     <string name="name_error_long">El nom és massa llarg. Fes servir 80 caràcters com a màxim.</string>
     <string name="name_error_chars">El nom té caràcters que no es poden fer servir. Escriu-lo només amb lletres, espais i apòstrofs.</string>
     <string name="btn_continue_generic">Continuar</string>
-    <string name="name_confirm_pre">Nom a la credencial: %1$s</string>
+
+    <!-- C3 Normes -->
     <string name="rules_title">Abans de començar</string>
     <string name="rules_time">Tens %1$d minuts en total.</string>
-    <string name="rules_count">Són %1$d preguntes, una a una.</string>
+    <string name="rules_count">Són %1$d preguntes.</string>
     <string name="rules_pass">Per aprovar cal encertar-ne %1$d.</string>
-    <string name="rules_noback">No podràs tornar a una pregunta anterior.</string>
+    <string name="rules_nav">Pots anar endavant i enrere i canviar les respostes fins que finalitzis.</string>
+    <string name="rules_types">Algunes preguntes tenen més d\'una resposta correcta: t\'ho indicarem.</string>
+    <string name="rules_unanswered">Les preguntes sense resposta compten com a fallades.</string>
+    <string name="rules_autosave">Les respostes es desen automàticament.</string>
     <string name="rules_leave">Si surts de l\'app, el temps continua passant.</string>
-    <string name="rules_name_label">Nom a la credencial:</string>
+    <string name="rules_name_label">Nom a la credencial</string>
     <string name="btn_change">Canviar</string>
     <string name="btn_begin">Començar ara</string>
-    <!-- NOVA: fallada en crear la sessió -->
     <string name="start_save_error">No hem pogut començar l\'examen. Comprova que el mòbil té espai lliure i torna-ho a provar.</string>
+    <string name="battery_low">La bateria està baixa. Carrega el mòbil abans de començar l\'examen.</string>
 
+    <!-- C4 Pregunta -->
     <string name="progress">Pregunta %1$d de %2$d</string>
-    <string name="time_left">Temps: %1$s</string>
-    <string name="time_left_a11y">Et queden %1$d minuts i %2$d segons</string>
-    <string name="time_hidden">Temps amagat</string>
-    <string name="time_hide">Amagar el temps</string>
-    <string name="time_show">Mostrar el temps</string>
+    <string name="q_number">Pregunta %1$d</string>
+    <string name="answered_progress">Respostes: %1$d de %2$d</string>
+    <string name="btn_overview">Veure-les totes</string>
+    <string name="btn_overview_a11y">Veure totes les preguntes</string>
+    <string name="btn_prev_q">Anterior</string>
+    <string name="btn_next">Següent</string>
+    <string name="btn_review_finish">Revisar i finalitzar</string>
+    <string name="q_type_single">Una resposta</string>
+    <string name="q_type_multi">Resposta múltiple</string>
+    <string name="q_type_tf">Vertader o fals</string>
     <string name="single_hint">Tria una resposta.</string>
-    <string name="multi_hint">Marca totes les respostes correctes. Pots marcar-ne més d\'una.</string>
+    <string name="tf_hint">Aquesta afirmació és vertadera o falsa?</string>
+    <string name="multi_title">N\'hi ha més d\'una resposta correcta</string>
+    <string name="multi_hint">Marca totes les que siguin correctes.</string>
     <string name="multi_count_zero">Cap resposta marcada</string>
     <string name="multi_count_one">1 resposta marcada</string>
     <string name="multi_count_many">%1$d respostes marcades</string>
-    <string name="btn_next">Següent</string>
-    <string name="btn_finish">Finalitzar l\'examen</string>
+    <string name="q_status_a11y">Pregunta %1$d de %2$d. %3$s. %4$s</string>
+
+    <!-- Cronòmetre -->
+    <string name="time_minutes">%1$d min</string>
+    <string name="time_left_min_a11y">Et queden %1$d minuts</string>
+    <string name="time_left_a11y">Et queden %1$d minuts i %2$d segons</string>
+    <string name="time_hidden_label">Temps amagat</string>
+    <string name="time_hide">amagar el temps</string>
+    <string name="time_show">mostrar el temps</string>
+    <string name="time_show_label">Mostrar el temps</string>
     <string name="warn_5">Et queden 5 minuts.</string>
     <string name="warn_1">Només queda 1 minut.</string>
     <string name="btn_dismiss">Tancar l\'avís</string>
+
+    <!-- Diàlegs C5 -->
     <string name="exit_title">Vols sortir de l\'examen?</string>
-    <string name="exit_body">El temps continua passant. Pots tornar a obrir l\'app i continuar.</string>
+    <string name="exit_body">El temps continua passant. Les respostes ja estan desades: quan tornis a obrir l\'app, podràs continuar.</string>
     <string name="btn_exit">Sortir</string>
-    <string name="btn_continue">Continuar</string>
-    <string name="noanswer_title">No has marcat cap resposta.</string>
-    <string name="noanswer_body">Si continues, comptarà com a fallada i no podràs tornar-hi.</string>
-    <string name="btn_mark">Marcar una resposta</string>
-    <string name="btn_continue_anyway">Continuar igualment</string>
+    <string name="btn_continue_exam">Continuar l\'examen</string>
     <string name="finish_title">Vols finalitzar l\'examen?</string>
-    <string name="finish_body">No podràs canviar cap resposta.</string>
-    <string name="btn_review_q">Revisar</string>
+    <plurals name="finish_body_missing">
+        <item quantity="one">Tens %1$d pregunta sense resposta: comptarà com a fallada.</item>
+        <item quantity="other">Tens %1$d preguntes sense resposta: comptaran com a fallades.</item>
+    </plurals>
+    <string name="finish_body_all">Has respost totes les preguntes.</string>
+    <string name="finish_body_end">Després de finalitzar ja no podràs canviar cap resposta.</string>
+    <string name="btn_back_exam">Tornar a l\'examen</string>
     <string name="btn_finish_ok">Finalitzar</string>
+    <string name="btn_finish">Finalitzar l\'examen</string>
+    <string name="save_title">No s\'ha pogut desar</string>
+    <string name="save_warn">No s\'ha pogut desar la teva resposta. Torna-ho a provar; la teva resposta continua marcada.</string>
+    <string name="save_fail_exit">Si no es pot desar, pots sortir de l\'examen. No es crearà cap credencial amb dades incompletes.</string>
+    <string name="save_result_title">No s\'ha pogut finalitzar</string>
+    <string name="save_result_err">No hem pogut desar el resultat. Les teves respostes continuen desades. Allibera espai al mòbil i torna-ho a provar.</string>
+    <string name="btn_retry">Tornar-ho a provar</string>
+    <string name="btn_leave_exam">Sortir de l\'examen</string>
+    <string name="btn_abandon">Abandonar l\'examen</string>
+
+    <!-- C4b Resum de preguntes -->
+    <string name="overview_title">Preguntes de l\'examen</string>
+    <string name="overview_answered">Has respost %1$d de %2$d preguntes.</string>
+    <plurals name="overview_missing">
+        <item quantity="one">Et falta %1$d pregunta per respondre.</item>
+        <item quantity="other">Et falten %1$d preguntes per respondre.</item>
+    </plurals>
+    <string name="overview_all">Has respost totes les preguntes.</string>
+    <string name="q_state_answered">Resposta desada</string>
+    <string name="q_state_empty">Sense resposta</string>
+    <string name="q_state_saving">Desant…</string>
+    <string name="q_state_save_error">No s\'ha pogut desar</string>
+    <string name="q_state_here">Ets aquí</string>
+    <string name="overview_row_a11y">Pregunta %1$d, %2$s. %3$s. Toca per anar-hi.</string>
+    <string name="btn_first_empty">Anar a la primera sense resposta</string>
+
+    <!-- C6 / C7 -->
     <string name="timeup_title">S\'ha acabat el temps</string>
-    <string name="timeup_body">Has contestat %1$d de %2$d preguntes. Les %3$d que falten comptaran com a fallades.</string>
+    <string name="timeup_answered">Has respost %1$d de %2$d preguntes.</string>
+    <plurals name="timeup_missing">
+        <item quantity="one">La que no té resposta compta com a fallada.</item>
+        <item quantity="other">Les %1$d sense resposta compten com a fallades.</item>
+    </plurals>
     <string name="timeup_away">El temps ja s\'havia acabat mentre eres fora.</string>
     <string name="btn_see_result">Veure el resultat</string>
     <string name="correcting">Corregint l\'examen…</string>
     <string name="recovering">Recuperant el teu examen…</string>
-    <string name="save_title">No s\'ha pogut desar</string>
-    <string name="save_warn">No s\'ha pogut desar la teva resposta. Torna-ho a provar; la teva resposta continua marcada.</string>
-    <string name="save_fail_exit">Si no es pot desar, pots sortir de l\'examen. No es crearà cap credencial amb dades incompletes.</string>
-    <string name="save_result_err">No hem pogut desar el resultat. Allibera espai al mòbil i torna-ho a provar.</string>
-    <string name="btn_retry">Tornar-ho a provar</string>
-    <string name="btn_leave_exam">Sortir de l\'examen</string>
-    <string name="btn_abandon">Abandonar l\'examen</string>
-    <string name="cred_pending">Encara no s\'ha pogut crear la credencial. Torna-ho a provar.</string>
-    <string name="cred_issuing">Creant la credencial…</string>
 
+    <!-- C8/C9 Resultat -->
     <string name="result_title">Resultat</string>
     <string name="passed_title">Has aprovat</string>
     <string name="passed_zero">Cap fallada. Enhorabona!</string>
     <string name="failed_title">No has aprovat, de moment</string>
-    <string name="result_correct">Encerts: %1$d de %2$d</string>
-    <string name="result_wrong">Fallades: %1$d</string>
+    <string name="score_of">de %1$d</string>
+    <string name="score_a11y">%1$d encerts de %2$d</string>
     <string name="result_min">Mínim per aprovar: %1$d</string>
+    <string name="stat_failures">Fallades</string>
+    <string name="stat_unanswered_part">%1$d sense resposta</string>
+    <string name="stat_time">Temps</string>
     <string name="result_missing">Et van faltar %1$d encerts.</string>
-    <string name="result_time">Temps: %1$d min %2$d s</string>
+    <string name="result_time">%1$d min %2$d s</string>
     <string name="passed_next">La teva credencial ja està preparada.</string>
     <string name="failed_next">Repassa les teves fallades: així aprendràs el reglament.</string>
+    <string name="cred_pending">Encara no s\'ha pogut crear la credencial. Torna-ho a provar.</string>
+    <string name="cred_issuing">Creant la credencial…</string>
     <string name="btn_see_credential">Veure la credencial</string>
     <string name="btn_review_n">Repassar les %1$d preguntes fallades</string>
     <string name="btn_review_n_one">Repassar la pregunta fallada</string>
-    <string name="btn_review_all">Repassar les preguntes</string>
     <string name="btn_home">Tornar a l\'inici</string>
+
+    <!-- C10 Repàs -->
     <string name="review_title">Repàs</string>
+    <string name="review_detail_title">Repàs</string>
     <string name="filter_wrong">Fallades %1$d</string>
     <string name="filter_all">Totes %1$d</string>
     <string name="q_wrong">Fallada</string>
     <string name="q_right">Encertada</string>
-    <string name="q_unanswered">Sense respondre</string>
-    <string name="review_q_title">Pregunta %1$d de %2$d · %3$s</string>
-    <string name="your_answer">La teva resposta</string>
-    <string name="correct_answer">La resposta correcta</string>
-    <string name="unanswered">No vas respondre aquesta pregunta.</string>
+    <string name="q_unanswered">Sense resposta</string>
+    <string name="review_ok">L\'has encertada.</string>
+    <string name="review_empty_q">No la vas respondre: compta com a fallada.</string>
+    <plurals name="review_missed">
+        <item quantity="one">No vas marcar %1$d resposta correcta.</item>
+        <item quantity="other">No vas marcar %1$d respostes correctes.</item>
+    </plurals>
+    <plurals name="review_extra">
+        <item quantity="one">Vas marcar %1$d resposta incorrecta.</item>
+        <item quantity="other">Vas marcar %1$d respostes incorrectes.</item>
+    </plurals>
+    <string name="review_both">Vas marcar %1$d d\'incorrecta(es) i no vas marcar %2$d de correcta(es).</string>
+    <string name="review_wrong_single">La teva resposta no era la correcta.</string>
     <string name="why">Per què?</string>
-    <string name="opt_right_marked">Correcta, la vas marcar</string>
-    <string name="opt_right_missed">Correcta, no la vas marcar</string>
-    <string name="opt_wrong_marked">Incorrecta, la vas marcar</string>
-    <string name="btn_prev">‹ Anterior</string>
-    <string name="btn_next_q">Següent ›</string>
+    <string name="opt_right_marked">Correcta · la vas marcar</string>
+    <string name="opt_right_missed">Correcta · no la vas marcar</string>
+    <string name="opt_wrong_marked">Incorrecta · la vas marcar</string>
+    <string name="opt_wrong_unmarked">Incorrecta · no la vas marcar</string>
     <string name="review_empty">Cap pregunta per mostrar.</string>
     <string name="back">Enrere</string>
-    <!-- NOVA: targeta de l'últim resultat a C0 -->
-    <string name="last_passed">Has aprovat · %1$d de %2$d</string>
-    <string name="last_failed">Últim examen: %1$d de %2$d encerts</string>
-    <string name="btn_review_last">Repassar l\'últim examen</string>
 
+    <!-- C11 Credencial -->
     <string name="cred_title">Credencial d\'aptitud</string>
     <string name="cred_screen_title">La teva credencial</string>
     <string name="cred_subtitle">Àrbitre de Futbol amb Botons · CFBB</string>
+    <string name="cred_field_result">Resultat</string>
+    <string name="cred_value_apte">APTE</string>
+    <string name="cred_field_exam">Examen</string>
+    <string name="cred_value_exam">reglament %1$s</string>
+    <string name="cred_field_date">Data del dispositiu</string>
+    <string name="cred_field_code">Codi</string>
     <string name="cred_result">Resultat: APTE</string>
     <string name="cred_exam">Examen: reglament %1$s</string>
     <string name="cred_date">Data del dispositiu: %1$s</string>
@@ -126,20 +208,18 @@
     <string name="cred_disclaimer">No és un certificat oficial ni una garantia forta.</string>
     <string name="btn_show_org">Mostrar a un organitzador</string>
     <string name="qr_description">Codi QR de la credencial de %1$s</string>
+    <string name="present_result">APTE · reglament %1$s</string>
     <string name="org_present_help">Mantén la pantalla encesa i el mòbil quiet mentre l\'organitzador escaneja.</string>
     <string name="btn_close">Tancar</string>
-    <string name="cred_how_to">Per verificar-la: obre l\'adreça oficial del verificador al teu mòbil.</string>
+    <string name="cred_how_to">Per comprovar-la: obre el verificador oficial des de la seva icona (no des d\'un enllaç rebut) i escaneja aquest codi.</string>
 
+    <!-- Errors i recuperació -->
     <string name="err_state">No hem pogut recuperar l\'examen. Pots començar-ne un de nou.</string>
     <string name="btn_new">Començar de nou</string>
     <string name="err_build">Aquesta versió de l\'app té un problema. Descarrega l\'última versió.</string>
     <string name="err_recover">No hem pogut recuperar el teu examen. Comprova que el mòbil té espai lliure i torna-ho a provar.</string>
-    <string name="battery_low">La bateria està baixa. Carrega el mòbil abans de començar l\'examen.</string>
     <string name="icon_correct">Correcta</string>
     <string name="icon_wrong">Incorrecta</string>
-    <string name="option_selected">seleccionada</string>
-    <string name="option_not_selected">no seleccionada</string>
-    <!-- NOVA: credencials pendents de crear (cua en segon pla) -->
     <plurals name="pending_cards">
         <item quantity="one">Tens %1$d credencial pendent de crear.</item>
         <item quantity="other">Tens %1$d credencials pendents de crear.</item>

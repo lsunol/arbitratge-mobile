@@ -31,7 +31,6 @@ enum class IssueCode {
     TIME_LIMIT_INVALID,
     TIME_LIMIT_ABOVE_SANITY,
     THRESHOLD_INVALID,
-    SEQUENTIAL_REQUIRED,
 }
 
 /**
@@ -87,8 +86,7 @@ object BankValidator {
         ValidationReport(mutableListOf<ValidationIssue>().also { validateRules(rules, activeCount, it) })
 
     private fun validateRules(r: ExamRules, active: Int, out: MutableList<ValidationIssue>) {
-        // Decisión pendiente (modo no secuencial): hoy solo se admite secuencial.
-        if (!r.sequential) out += ValidationIssue(IssueCode.SEQUENTIAL_REQUIRED)
+        // `sequential` quedó obsoleto (navegación libre, 2026-11-20): se acepta cualquier valor y se ignora.
         if (!EXAM_VERSION.matches(r.examVersion)) out += ValidationIssue(IssueCode.EXAM_VERSION_INVALID)
         if (r.numQuestions <= 0) out += ValidationIssue(IssueCode.NUM_QUESTIONS_INVALID, values = listOf(r.numQuestions))
         else {

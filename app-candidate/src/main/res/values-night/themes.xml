@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.Arbitratge" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">#121413</item>
+        <item name="android:windowBackground">@color/arbitratge_finestra</item>
+        <item name="android:colorBackground">@color/arbitratge_finestra</item>
     </style>
 </resources>

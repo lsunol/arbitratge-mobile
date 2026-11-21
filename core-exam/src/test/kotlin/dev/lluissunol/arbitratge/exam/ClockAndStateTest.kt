@@ -164,7 +164,7 @@ class ClockAndStateTest {
         val p = run(
             ExamPhase.Home, ExamEvent.OpenBriefing, ExamEvent.BriefingAccepted, ExamEvent.NameEntered,
             ExamEvent.SessionStarted,
-            ExamEvent.AnswerCommitted(0, 2), ExamEvent.AnswerCommitted(1, 2),
+            ExamEvent.Navigated(1, 2), ExamEvent.Navigated(0, 2), ExamEvent.Navigated(1, 2), ExamEvent.FinishConfirmed,
         )
         assertEquals(ExamPhase.Finished(FinishReason.COMPLETED), p)
         assertEquals(ExamPhase.Credential, run(p!!, ExamEvent.ResultShown(true), ExamEvent.CredentialStored))
@@ -185,8 +185,11 @@ class ClockAndStateTest {
 
     @Test fun invalidTransitionsAreRejected() {
         assertNull(ExamStateMachine.next(ExamPhase.Home, ExamEvent.SessionStarted))
-        assertNull(ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.AnswerCommitted(2, 5))) // salto
-        assertNull(ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.AnswerCommitted(0, 5))) // retroceso
+        assertNull(ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.Navigated(5, 5))) // fuera de rango
+        assertNull(ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.Navigated(-1, 5)))
+        // navegación libre: salto y retroceso válidos
+        assertEquals(ExamPhase.InProgress(4), ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.Navigated(4, 5)))
+        assertEquals(ExamPhase.InProgress(0), ExamStateMachine.next(ExamPhase.InProgress(1), ExamEvent.Navigated(0, 5)))
         assertNull(ExamStateMachine.next(ExamPhase.Abandoned, ExamEvent.SessionStarted))
         assertNull(ExamStateMachine.next(ExamPhase.Finished(FinishReason.COMPLETED), ExamEvent.AbandonCommitted))
         assertEquals(ExamPhase.Identifying, ExamStateMachine.next(ExamPhase.Ready, ExamEvent.ChangeName))

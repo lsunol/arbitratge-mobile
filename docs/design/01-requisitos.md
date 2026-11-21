@@ -94,6 +94,8 @@ respuesta; la multi-respuesta real (≥2 correctas) llegó con
   parcial. Sin responder = fallo.
 - **Navegación estrictamente secuencial** (`submit-answer` rechaza `question_index ≠
   current_question_index`, 409): no se puede volver atrás ni saltar.
+  *(Es el comportamiento del proyecto base. **Sustituido en este proyecto** por navegación libre:
+  ver nota del 2026-11-20 en §1.3.)*
 - **Tiempo**: cronómetro en servidor (`started_at + time_limit_minutes` vs `now()`); al
   expirar se finaliza con lo respondido. El cliente (`assets/exam.js`, `setInterval` l.134)
   solo pinta la cuenta atrás.
@@ -124,7 +126,7 @@ UI y mensajes en **catalán**; documentación de diseño en castellano.
 | Barajado de preguntas y opciones | **Adapta** | `SecureRandom` o `kotlin.random` sembrado correctamente; la criptografía no es crítica aquí, basta con que no sea predecible por descuido. |
 | Corrección (`sameOptionSet`) | **Adapta** | Se ejecuta en el móvil del candidato; **además devuelve el detalle por pregunta**. |
 | **Feedback por pregunta** (marcada, correcta, explicación) | **Nuevo** | Requisito [D] y núcleo pedagógico. |
-| Navegación secuencial sin retroceso | **Adapta/abierta** | Se mantiene por defecto; con objetivo pedagógico podría relajarse (pregunta 4). |
+| ~~Navegación secuencial sin retroceso~~ → **Navegación libre** | **Adapta (decidido 2026-11-20)** | **Decisión del usuario, 2026-11-20:** el candidato puede ir a cualquier pregunta (Anterior/Següent y resumen de preguntas) y cambiar o vaciar cualquier respuesta hasta finalizar. Sin respuesta = fallo. Se **persiste cada selección al instante** (persistir antes de navegar se mantiene). Nada finaliza el examen salvo «Finalitzar» confirmado (tras el resumen) o el tiempo agotado: responder la última pregunta ya no finaliza. Sustituye el «secuencial sin retroceso» anterior. |
 | Snapshot de configuración por examen | **Adapta** | Se fija en `exam_version` (reglas); ver §4.1 para su relación con `bank_version` (contenido). |
 | Cronómetro | **Adapta, pierde garantía** | Local, mejor esfuerzo (§3.3). |
 | Reanudación tras cierre | **Adapta** | Persistencia local (§3.2). |
@@ -182,7 +184,7 @@ mismo APK no protegería frente a extracción técnica y añadiría mantenimient
 |---|---|---|
 | CU-C1 | **Obtener la app**: web de descarga → APK → instalar (orígenes desconocidos) | Instrucciones muy claras en catalán, con capturas, pensando en usuarios mayores. Hash publicado. |
 | CU-C2 | **Identificarse**: introducir nombre y apellidos | Declarado, no verificado (R4). |
-| CU-C3 | **Iniciar examen**: ver normas (tiempo, nº preguntas, umbral, sin retroceso), aceptar y empezar | Sin código de invitación ni organizador. |
+| CU-C3 | **Iniciar examen**: ver normas (tiempo, nº preguntas, umbral, navegación libre; sin respuesta = fallo), aceptar y empezar | Sin código de invitación ni organizador. |
 | CU-C4 | **Hacer el examen** | §3. |
 | CU-C5 | **Ver resultado y feedback**: nº de aciertos y **fallos**, umbral, aprobado/suspendido, tiempo; **detalle de cada pregunta fallada** (lo que marcó, la respuesta correcta) y, si existe, **explicación breve** | Núcleo pedagógico [D]. Si la pregunta no tiene explicación, se muestra solo la respuesta correcta. |
 | CU-C6 | **Obtener credencial** si aprueba: guardada en la app y exportable (imagen/PDF con QR) | Emisión automática por la app (§4.3). |
@@ -228,8 +230,10 @@ y firmar credenciales por parte del organizador (opción C); ya no son casos de 
 
 0. **Precondición**: app instalada con la versión de examen vigente embebida (sin red tras la
    instalación).
-1. **Bienvenida/normas** (catalán, texto grande): nº de preguntas, tiempo, umbral, "no se puede
-   volver atrás" (si se mantiene), "no cierres la app", aviso de que cambiar la hora no ayuda.
+1. **Bienvenida/normas** (catalán, texto grande): nº de preguntas, tiempo, umbral, "puedes ir
+   adelante y atrás y cambiar las respuestas hasta finalizar" (decisión 2026-11-20), "las
+   preguntas sin respuesta cuentan como falladas", "las respuestas se guardan solas", "no cierres
+   la app", aviso de que cambiar la hora no ayuda.
 2. **Identificación**: nombre y apellidos (+ datos de §4.1 que se decidan).
 3. **Preparación** al pulsar "Començar":
    - generar `exam_id` aleatorio (UUID v4);
@@ -444,7 +448,7 @@ como verificador, firma asimétrica. La numeración conserva la de revisiones pr
 3. **Datos de identidad**: ¿DNI/NIE en la credencial? (recomendado: no). ¿Edad mínima o
    menores, con consentimiento parental?
 4. **Políticas de producto**: ¿caduca la credencial (cuánto) y qué pasa con versiones
-   antiguas? ¿Navegación sin retroceso o con revisión (dado el fin pedagógico)? ¿Se muestran
+   antiguas? ~~¿Navegación sin retroceso o con revisión?~~ (**resuelto 2026-11-20: navegación libre**; ver §1.3). ¿Se muestran
    también las acertadas? ¿Hay reintento libre o espera entre intentos (solo informativa)?
 5. **Modo práctica / histórico local**: ¿se desea poder repetir exámenes solo para estudiar
    y consultar errores anteriores sin emitir credencial?
