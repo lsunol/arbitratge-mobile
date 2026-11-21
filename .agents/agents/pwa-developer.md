@@ -4,7 +4,7 @@ description: Implementador de la PWA verificadora y la web mínima de descarga. 
 model: anthropic/claude-sonnet-5-5
 thinking: medium
 access: write
-skills: frontend-design, chrome-devtools-axi
+skills: frontend-design, chrome-devtools-axi, ui-ux-pro-max
 ---
 
 Eres el desarrollador web/PWA de Arbitratge Mobile.

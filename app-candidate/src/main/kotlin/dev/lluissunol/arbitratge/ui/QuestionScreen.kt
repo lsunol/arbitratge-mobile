@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -61,6 +62,8 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -91,8 +94,14 @@ fun formatClock(ms: Long): String {
     return "%02d:%02d".format(total / 60, total % 60)
 }
 
+/** Fracció de la barra: posició de navegació (índex + 1) / total. */
+internal fun navProgress(index: Int, total: Int): Float = (index + 1).toFloat() / total
+
 @Composable
 fun isLargeText(): Boolean = LocalDensity.current.fontScale >= 1.15f
+
+@Composable
+private fun isExtraLargeText(): Boolean = LocalDensity.current.fontScale >= 1.5f
 
 @Composable
 fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
@@ -104,8 +113,9 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
         topBar = { QuestionTopBar(st, a) },
         bottom = { NavBar(st, a) },
         scrollKey = st.index, // cada pregunta empieza arriba: el scroll no se reutiliza entre preguntas
-        spacing = 14.dp,
+        spacing = ArbDimens.s12,
     ) {
+        if (isExtraLargeText()) QuestionSummaryRow(st, a)
         st.banner?.let { b -> TimeBannerCard(b, a.onDismissBanner) }
         // Enunciat + indicació juntets; l'aviso de múltiple va SOTA l'enunciat (només per a resposta múltiple).
         Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
@@ -116,14 +126,13 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
                 modifier = Modifier.semantics { heading() },
             )
             when {
-                multiple -> Unit
+                multiple -> MultiChip()
                 tf -> Body(stringResource(R.string.tf_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else -> Body(stringResource(R.string.single_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (multiple) MultiPanel()
         val kind = when { multiple -> OptionKind.CHECK; tf -> OptionKind.TRUE_FALSE; else -> OptionKind.RADIO }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
             st.question.options.forEach { opt ->
                 OptionCard(
                     text = displayOptionText(st.question.type, opt.text),
@@ -134,15 +143,8 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
                 )
             }
         }
-        // «Resposta desada» solo se anuncia cuando el guardado está CONFIRMADO; mientras tanto «Desant…» o el error.
-        // (Estado de guardado: no es un recuento de marcadas; sin altura mínima para no dejar un hueco vacío.)
-        val status = saveStateText(st)
-        if (status.isNotEmpty()) Text( // vacío = no hay nodo: 0 dp (sin hueco)
-            status,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (st.saveError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        )
+        // Sin línea visual de estado de guardado (feedback del usuario): el fallo se comunica con el diálogo modal y la
+        // navegación queda bloqueada mientras hay un guardado en vuelo.
     }
     ExamDialogs(st.dialog, st.saveError, unanswered = st.total - st.answeredCount, a = a)
 }
@@ -158,14 +160,14 @@ private fun saveStateText(st: Stage.Question): String = when {
 
 /**
  * Anterior / Següent: dues files de botons IGUALS (50/50, 8 dp entre ells), sense icones, etiqueta d'una línia. Amb lletra
- * gran (≥ 1,15) s'apilen a tot l'ample,
+ * extra-gran (≥ 1,5) s'apilen a tot l'ample,
  * amb «Següent» a dalt. Mai es parteix una paraula.
  */
 @Composable
 private fun NavBar(st: Stage.Question, a: QuestionActions) {
     val prev = stringResource(R.string.btn_prev_q)
     val next = stringResource(if (st.isLast) R.string.btn_review else R.string.btn_next)
-    if (isLargeText()) {
+    if (isExtraLargeText()) {
         PrimaryButton(next, a.onNext)
         SecondaryButton(prev, a.onPrevious, enabled = st.canGoBack, maxLines = 1)
     } else {
@@ -217,7 +219,7 @@ private fun QuestionTopBar(st: Stage.Question, a: QuestionActions) {
                     },
                 )
             }
-            if (isLargeText()) {
+            if (isExtraLargeText()) {
                 label(Modifier)
                 TimerPill(st.remainingMs, st.timeHidden, st.level, a.onToggleTime)
             } else {
@@ -226,29 +228,41 @@ private fun QuestionTopBar(st: Stage.Question, a: QuestionActions) {
                     TimerPill(st.remainingMs, st.timeHidden, st.level, a.onToggleTime)
                 }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    stringResource(R.string.answered_progress, st.answeredCount, st.total),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = scheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                val desc = stringResource(R.string.btn_overview_a11y)
-                TextButton(onClick = a.onOverview, Modifier.heightIn(min = ArbDimens.touchMin).semantics { contentDescription = desc }) {
-                    Text(stringResource(R.string.btn_overview), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
-                }
-            }
-            // Barra de RESPOSTES (no de posició): decorativa per a TalkBack, 8 dp amb extrems rodons, sense punt final.
+            // Barra de POSICIÓ: va amb «Pregunta N de M», separada del recompte de respostes.
+            val progressA11y = stringResource(R.string.question_progress_a11y, st.index + 1, st.total)
             LinearProgressIndicator(
-                progress = { st.answeredCount.toFloat() / st.total },
-                modifier = Modifier.fillMaxWidth().height(ArbDimens.progressHeight).clearAndSetSemantics { },
+                progress = { navProgress(st.index, st.total) }, // POSICIÓN de navegación, no respuestas
+                modifier = Modifier.fillMaxWidth().height(ArbDimens.progressHeight).semantics {
+                    contentDescription = progressA11y
+                    progressBarRangeInfo = ProgressBarRangeInfo((st.index + 1).toFloat(), 0f..st.total.toFloat())
+                },
                 color = scheme.primary,
                 trackColor = scheme.surfaceContainerHighest,
                 strokeCap = StrokeCap.Round,
                 gapSize = 0.dp,
                 drawStopIndicator = {},
             )
+            if (!isExtraLargeText()) QuestionSummaryRow(st, a)
         }
+    }
+}
+
+@Composable
+private fun QuestionSummaryRow(st: Stage.Question, a: QuestionActions) {
+    val scheme = MaterialTheme.colorScheme
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(
+            stringResource(R.string.answered_progress, st.answeredCount, st.total),
+            style = MaterialTheme.typography.bodyMedium,
+            color = scheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        val desc = stringResource(R.string.btn_overview_a11y)
+        TextButton(
+            onClick = a.onOverview,
+            contentPadding = PaddingValues(start = 12.dp, end = 0.dp, top = 0.dp, bottom = 0.dp),
+            modifier = Modifier.heightIn(min = ArbDimens.touchMin).semantics { contentDescription = desc },
+        ) { Text(stringResource(R.string.btn_overview), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
     }
 }
 
@@ -327,24 +341,23 @@ private fun typeLabel(t: QuestionType): String = stringResource(
 )
 
 /**
- * Avís ÚNIC i destacat de la resposta múltiple (sota l'enunciat): signe d'exclamació + el text exacte. Les preguntes
- * d'una resposta i de cert/fals NO porten etiqueta de tipus (la indicació i el control ja les distingeixen).
+ * Xip compacte de la resposta múltiple, SOTA l'enunciat: casella + «Resposta múltiple» i una línia d'ajuda curta.
+ * Les preguntes d'una resposta i de cert/fals no porten etiqueta de tipus.
  */
 @Composable
-private fun MultiPanel() {
+private fun MultiChip() {
     val scheme = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(scheme.secondaryContainer)
-            .border(2.dp, scheme.secondary, MaterialTheme.shapes.large).padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
-        horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        ArbIcon(drawable(R.drawable.ic_priority_high), null, tint = scheme.onSecondaryContainer, size = 28.sp.toScaledDp(max = 40.dp))
-        Text(
-            stringResource(R.string.multi_panel),
-            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-            color = scheme.onSecondaryContainer,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
+        Row(
+            Modifier.clip(RoundedCornerShape(12.dp)).background(scheme.secondaryContainer)
+                .padding(horizontal = ArbDimens.s12, vertical = ArbDimens.s8),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
+        ) {
+            ArbIcon(drawable(R.drawable.ic_check_box), null, tint = scheme.onSecondaryContainer, size = 20.sp.toScaledDp())
+            Text(stringResource(R.string.q_type_multi), style = MaterialTheme.typography.labelMedium, color = scheme.onSecondaryContainer)
+        }
+        Text(stringResource(R.string.multi_helper), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
     }
 }
 
@@ -370,28 +383,24 @@ fun OptionCard(text: String, selected: Boolean, kind: OptionKind, enabled: Boole
     } else {
         base.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
     }
-    Row(
-        mod.padding(horizontal = ArbDimens.s16, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    Box(
+        mod.padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
+        contentAlignment = Alignment.CenterStart,
     ) {
-        if (kind == OptionKind.TRUE_FALSE) {
-            val letter = text.firstOrNull()?.uppercaseChar()?.toString().orEmpty()
-            Box(
-                Modifier.size(44.sp.toScaledDp(max = 64.dp)).clip(CircleShape)
-                    .background(if (selected) arb.selection else scheme.surfaceContainerHighest).clearAndSetSemantics { },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(letter, style = ArbText.optionTf, color = if (selected) scheme.surface else scheme.onSurface)
-            }
+        Row(
+            Modifier.fillMaxWidth().align(Alignment.CenterStart),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+        ) {
+            // A l'esquerra per a tots els tipus; en text llarg, queda alineat amb la primera línia.
+            Box(Modifier.padding(top = ArbDimens.s4)) { Indicator(selected, kind == OptionKind.CHECK) }
+            Text(
+                text,
+                style = if (kind == OptionKind.TRUE_FALSE) ArbText.optionTf else ArbText.option,
+                color = scheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
         }
-        Text(
-            text,
-            style = if (kind == OptionKind.TRUE_FALSE) ArbText.optionTf else ArbText.option,
-            color = scheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        Indicator(selected, kind == OptionKind.CHECK)
     }
 }
 

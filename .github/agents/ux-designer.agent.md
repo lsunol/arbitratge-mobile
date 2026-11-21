@@ -1,7 +1,7 @@
 ---
 name: ux-designer
 description: "Diseñador UX/UI para Arbitratge Mobile. Úsalo para diseñar los flujos y pantallas de la app (bienvenida, identificación, examen, resultado, credencial, modo verificador del organizador) y la web mínima de descarga del APK en GitHub Pages, con textos en catalán. Escribe docs/design/04-ux.md."
-tools: ["read","search","web","edit"]
+tools: ["read","search","web","edit","execute"]
 model: claude-sonnet-5.5
 ---
 <!-- GENERADO por scripts/sync-agents.mjs desde .agents/agents/. No editar. -->

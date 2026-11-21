@@ -4,7 +4,7 @@ description: "Implementador Android de Arbitratge Mobile. Úsalo para crear o mo
 tools: read, grep, find, ls, write, edit, bash, web_search, fetch_content, get_search_content
 model: anthropic/claude-sonnet-5-5
 thinking: medium
-skills: mobile-android-design, edge-to-edge, compose-ui-testing-patterns, testing-setup
+skills: mobile-android-design, edge-to-edge, compose-ui-testing-patterns, testing-setup, ui-ux-pro-max
 inheritProjectContext: true
 inheritSkills: true
 ---

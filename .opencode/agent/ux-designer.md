@@ -5,7 +5,7 @@ model: anthropic/claude-sonnet-5-5
 tools:
   write: true
   edit: true
-  bash: false
+  bash: true
 ---
 <!-- GENERADO por scripts/sync-agents.mjs desde .agents/agents/. No editar. -->
 

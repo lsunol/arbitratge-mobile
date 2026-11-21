@@ -4,7 +4,7 @@ description: Implementador Android de Arbitratge Mobile. Úsalo para crear o mod
 model: anthropic/claude-sonnet-5-5
 thinking: medium
 access: write
-skills: mobile-android-design, edge-to-edge, compose-ui-testing-patterns, testing-setup
+skills: mobile-android-design, edge-to-edge, compose-ui-testing-patterns, testing-setup, ui-ux-pro-max
 ---
 
 Eres el implementador Android de Arbitratge Mobile.

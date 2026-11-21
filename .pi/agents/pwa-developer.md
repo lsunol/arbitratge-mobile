@@ -4,7 +4,7 @@ description: "Implementador de la PWA verificadora y la web mínima de descarga.
 tools: read, grep, find, ls, write, edit, bash, web_search, fetch_content, get_search_content
 model: anthropic/claude-sonnet-5-5
 thinking: medium
-skills: frontend-design, chrome-devtools-axi
+skills: frontend-design, chrome-devtools-axi, ui-ux-pro-max
 inheritProjectContext: true
 inheritSkills: true
 ---

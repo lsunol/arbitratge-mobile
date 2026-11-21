@@ -5,7 +5,8 @@
 // Frontmatter portable admitido en los originales:
 //   name:        identificador (kebab-case)
 //   description: cuándo usar el agente (una línea)
-//   access:      read-only | docs | write | private-write
+//   access:      read-only | docs | design | write | private-write
+//                design escribe documentación y puede ejecutar búsquedas/scripts de UI/UX
 //                private-write no carga herramientas web; sirve al banco privado
 //   model:       provider/modelo explícito (obligatorio)
 //   thinking:    off | minimal | low | medium | high | xhigh
@@ -21,6 +22,7 @@ const TOOLS = {
   claude: {
     "read-only": "Read, Grep, Glob, WebSearch, WebFetch",
     docs: "Read, Grep, Glob, WebSearch, WebFetch, Write, Edit",
+    design: "Read, Grep, Glob, WebSearch, WebFetch, Write, Edit, Bash",
     write: "Read, Grep, Glob, WebSearch, WebFetch, Write, Edit, Bash",
     "private-write": "Read, Grep, Glob, Write, Edit, Bash",
   },
@@ -29,18 +31,21 @@ const TOOLS = {
   pi: {
     "read-only": "read, grep, find, ls, web_search, fetch_content, get_search_content",
     docs: "read, grep, find, ls, write, edit, web_search, fetch_content, get_search_content",
+    design: "read, grep, find, ls, write, edit, bash, web_search, fetch_content, get_search_content",
     write: "read, grep, find, ls, write, edit, bash, web_search, fetch_content, get_search_content",
     "private-write": "read, grep, find, ls, write, edit, bash",
   },
   copilot: {
     "read-only": ["read", "search", "web"],
     docs: ["read", "search", "web", "edit"],
+    design: ["read", "search", "web", "edit", "execute"],
     write: ["read", "search", "web", "edit", "execute"],
     "private-write": ["read", "search", "edit", "execute"],
   },
   opencode: {
     "read-only": { write: false, edit: false, bash: false },
     docs: { write: true, edit: true, bash: false },
+    design: { write: true, edit: true, bash: true },
     write: { write: true, edit: true, bash: true },
     "private-write": { write: true, edit: true, bash: true },
   },

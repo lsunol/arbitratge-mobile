@@ -1,5 +1,8 @@
 # Sistema / IDE
 .pi/subagents/
+# Enlaces de la skill project-local al original en .agents/skills/ (no duplicar).
+.claude/skills/ui-ux-pro-max
+.pi/skills/ui-ux-pro-max
 .DS_Store
 Thumbs.db
 .idea/
@@ -20,6 +23,10 @@ Thumbs.db
 *.pk8
 *.pem
 *.key
+
+# Python / skills
+__pycache__/
+*.pyc
 
 # Web / Node
 node_modules/

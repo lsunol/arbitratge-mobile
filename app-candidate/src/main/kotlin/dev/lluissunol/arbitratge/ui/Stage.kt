@@ -72,7 +72,7 @@ sealed interface Stage {
         val saveError: SaveError?,
         /** Umbral de tiempo cruzado (independiente de si el aviso se ha descartado); null si no aplica. */
         val level: TimeBanner? = null,
-        /** Selección CONFIRMADA como guardada (la «Resposta desada» solo se anuncia desde aquí, no desde [selected]). */
+        /** Selección CONFIRMADA como guardada («Contestada» en TalkBack, no desde [selected]). */
         val committed: Set<String> = selected,
     ) : Stage {
         val isLast: Boolean get() = index == total - 1

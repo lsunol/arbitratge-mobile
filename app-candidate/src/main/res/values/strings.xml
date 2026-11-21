@@ -61,7 +61,8 @@
     <!-- C4 Pregunta -->
     <string name="progress">Pregunta %1$d de %2$d</string>
     <string name="q_number">Pregunta %1$d</string>
-    <string name="answered_progress">Respostes: %1$d de %2$d</string>
+    <string name="answered_progress">Respostes:\u00A0%1$d\u00A0de\u00A0%2$d</string>
+    <string name="question_progress_a11y">Posició de l\'examen: pregunta %1$d de %2$d</string>
     <string name="btn_overview">Veure-les totes</string>
     <string name="btn_overview_a11y">Veure totes les preguntes</string>
     <string name="btn_prev_q">Anterior</string>
@@ -74,7 +75,7 @@
     <string name="q_type_tf">Cert o fals</string>
     <string name="single_hint">Tria una resposta.</string>
     <string name="tf_hint">Aquesta afirmació és certa o falsa?</string>
-    <string name="multi_panel">N\'hi ha més d\'una resposta correcta. Marca-les totes.</string>
+    <string name="multi_helper">N\'hi ha més d\'una resposta correcta. Marca-les totes.</string>
     <string name="q_status_a11y">Pregunta %1$d de %2$d. %3$s. %4$s</string>
 
     <!-- Cronòmetre -->
@@ -121,7 +122,7 @@
         <item quantity="other">Et falten %1$d preguntes per respondre.</item>
     </plurals>
     <string name="overview_all">Has respost totes les preguntes.</string>
-    <string name="q_state_answered">Resposta desada</string>
+    <string name="q_state_answered">Contestada</string>
     <string name="q_state_empty">Sense resposta</string>
     <string name="q_state_saving">Desant…</string>
     <string name="q_state_save_error">No s\'ha pogut desar</string>
