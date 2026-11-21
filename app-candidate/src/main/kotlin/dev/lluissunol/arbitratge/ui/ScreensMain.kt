@@ -77,7 +77,7 @@ fun StatusInset() {
 fun HeroCard(title: String, subtitle: String, modifier: Modifier = Modifier) {
     Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = BrandColors.Pitch, contentColor = Color.White) {
         Column(
-            Modifier.pitchLines().heightIn(min = 168.dp).padding(ArbDimens.s24),
+            Modifier.pitchLines().heightIn(min = 148.dp).padding(horizontal = ArbDimens.s24, vertical = ArbDimens.gutter),
             verticalArrangement = Arrangement.spacedBy(ArbDimens.s8),
         ) {
             BrandMark(52.dp, onPitch = true)
@@ -123,18 +123,26 @@ private fun FactTile(value: Int, label: String, icon: Int, spoken: String, modif
         Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
             ArbIcon(drawable(icon), null, tint = MaterialTheme.colorScheme.primary)
             Text(value.toString(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }
 
 @Composable
 private fun FactTiles(r: RulesSummary) {
-    val q = stringResource(R.string.home_fact_questions)
-    val m = stringResource(R.string.home_fact_minutes)
-    val p = stringResource(R.string.home_fact_pass)
+    // Etiquetes curtes a 1× (una sola línia en 3 columnes iguals); completes amb lletra gran (columna a tot l'ample).
+    val large = isLargeText()
+    val q = stringResource(if (large) R.string.home_fact_questions_full else R.string.home_fact_questions)
+    val m = stringResource(if (large) R.string.home_fact_minutes_full else R.string.home_fact_minutes)
+    val p = stringResource(if (large) R.string.home_fact_pass_full else R.string.home_fact_pass)
+    val qf = stringResource(R.string.home_fact_questions_full)
+    val mf = stringResource(R.string.home_fact_minutes_full)
+    val pf = stringResource(R.string.home_fact_pass_full)
     val whole = stringResource(R.string.home_facts_a11y, r.questions, r.minutes, r.threshold)
-    val tile: @Composable (Int, String, Int, Modifier) -> Unit = { v, l, i, mod -> FactTile(v, l, i, "$v $l", mod) }
+    val tile: @Composable (Int, String, Int, Modifier) -> Unit = { v, l, i, mod ->
+        val full = when (i) { R.drawable.ic_quiz -> qf; R.drawable.ic_timer -> mf; else -> pf }
+        FactTile(v, l, i, "$v $full", mod)
+    }
     Column(Modifier.semantics { contentDescription = whole }) {
         if (isLargeText()) {
             Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.itemGap)) {

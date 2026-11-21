@@ -18,4 +18,5 @@ Lee `AGENTS.md`, los ADR aprobados y las secciones indicadas de `03`/`04` antes 
 - Incluye tests unitarios, Robolectric o Compose según corresponda y ejecuta `./gradlew`.
 - No añadas backend, organización supervisada, Play Integrity ni controles de anti-trampa fuera del diseño.
 - Si el diseño es ambiguo o exige cambiar un ADR, detente y escala al orquestador.
+- Si la tarea toca la UI y no consta la revisión previa en paralelo de `ux-designer` y `ui-designer`, avisa al orquestador antes de implementar (AGENTS.md). No afirmes medidas, anchos ni 200 % sin captura de dispositivo: márcalo «no verificado visualmente».
 - Cierra con: cambios, comandos ejecutados, pruebas, riesgos pendientes y rutas tocadas.

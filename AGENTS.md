@@ -78,9 +78,21 @@ subagentes. Los agentes integrados de pi usan `.pi/settings.json`: `scout` Haiku
 Flujo habitual: scout/worker → implementador especializado → `reviewer` independiente →
 corrección → tests. No cambies ARB1 o un ADR dentro de una tarea de implementación.
 
+**Tareas que afectan a la UI (obligatorio):** (1) `ux-designer` y `ui-designer` revisan/especifican **en
+paralelo** ANTES de implementar y se acepta su resultado; (2) implementa el implementador (`android-developer` o
+`pwa-developer`); (3) después `reviewer` independiente **y** QA visual con capturas de dispositivo; (4) corrección y
+tests. Ninguna tarea de UI se da por cerrada sin las dos revisiones de diseño previas y la QA posterior.
+
 Checklist mínimo de `reviewer`: banco real/secretos fuera del repo y logs; ARB1 canónico;
 persistencia antes de avanzar; catalán/accesibilidad; tests; permisos/secretos de CI; cambios
 limitados al alcance. Si falla la cuota de Copilot, registrar un informe con el modelo usado.
+
+Checklist adicional de `reviewer` para cambios de UI: (a) constan las revisiones previas de `ux-designer` y
+`ui-designer`; (b) **ninguna afirmación de medidas o disposición (anchos 50/50, saltos de línea, 200 %/escala de
+fuente, alineación, truncados, contraste real) es válida sin una captura de dispositivo** (o emulador) adjunta: los
+tests de semántica Robolectric no demuestran el aspecto; si no hay captura, el informe lo marca «no verificado
+visualmente» y no puede dar PASS en ese punto; (c) textos en catalán y contrato del banco intacto (los cambios de
+etiqueta son solo de presentación); (d) accesibilidad con TalkBack marcada [PV] hasta probarse en dispositivo.
 
 ## Convenciones
 

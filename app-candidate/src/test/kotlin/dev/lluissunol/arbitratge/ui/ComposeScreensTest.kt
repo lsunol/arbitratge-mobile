@@ -16,6 +16,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -42,7 +44,7 @@ import kotlin.test.assertTrue
 
 /** Pruebas de semántica/accesibilidad de pantallas puras (sin ViewModel): 04 §8.2, 03 §10.4. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w360dp-h640dp-xxhdpi")
+@Config(sdk = [34], qualifiers = "w320dp-h640dp-xxhdpi")
 class ComposeScreensTest {
     @get:Rule val rule = createComposeRule()
 
@@ -87,7 +89,7 @@ class ComposeScreensTest {
         rule.onNodeWithText(st.question.options.first().text).performClick()
         assertEquals(listOf(st.question.options.first().id), clicked)
         rule.onNodeWithText("Pregunta 2 de 5").assertIsDisplayed()
-        rule.onNodeWithText("Una resposta").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Una resposta").fetchSemanticsNodes().isEmpty(), "sense etiqueta de tipus")
         rule.onNodeWithText("Tria una resposta.").assertIsDisplayed()
         rule.onNodeWithText("Següent").assertIsDisplayed()
         rule.onNodeWithText("Anterior").assertIsDisplayed()
@@ -97,10 +99,12 @@ class ComposeScreensTest {
         val st = questionState(QuestionType.TRUE_FALSE)
         show(st)
         rule.onAllNodes(hasRole(Role.RadioButton)).assertCountEquals(2)
-        rule.onNodeWithText("Vertader o fals").assertIsDisplayed()
-        rule.onNodeWithText("Aquesta afirmació és vertadera o falsa?").assertIsDisplayed()
-        rule.onNodeWithText("Vertader").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Cert o fals").fetchSemanticsNodes().isEmpty(), "sense etiqueta de tipus")
+        rule.onNodeWithText("Aquesta afirmació és certa o falsa?").assertIsDisplayed()
+        // «Vertader» es MOSTRA com «Cert» (només presentació; l'id i el text del banc no canvien)
+        rule.onNodeWithText("Cert").assertIsDisplayed()
         rule.onNodeWithText("Fals").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Vertader").fetchSemanticsNodes().isEmpty())
         // la insignia de lletra gran (V / F) es decorativa: no es duplica en TalkBack
         assertTrue(rule.onAllNodesWithText("V").fetchSemanticsNodes().isEmpty(), "la lletra decorativa no entra a l'arbre de semàntica")
         assertTrue(rule.onAllNodesWithText("Tria una resposta.").fetchSemanticsNodes().isEmpty())
@@ -111,16 +115,17 @@ class ComposeScreensTest {
         show(st)
         rule.onAllNodes(hasRole(Role.Checkbox)).assertCountEquals(st.question.options.size)
         rule.onAllNodes(hasRole(Role.RadioButton)).assertCountEquals(0)
-        rule.onNodeWithText("Resposta múltiple").assertIsDisplayed()
-        rule.onNodeWithText("N'hi ha més d'una resposta correcta").assertIsDisplayed()
-        rule.onNodeWithText("Marca totes les que siguin correctes.").assertIsDisplayed()
-        rule.onNodeWithText("2 respostes marcades").performScrollTo().assertIsDisplayed()
+        // un únic avís destacat amb el text exacte; cap etiqueta de tipus ni recompte de marcades
+        rule.onNodeWithText("N'hi ha més d'una resposta correcta. Marca-les totes.").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Resposta múltiple").fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodesWithText("respostes marcades", substring = true).fetchSemanticsNodes().isEmpty())
+        assertTrue(rule.onAllNodesWithText("Cap resposta marcada").fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun emptyMultipleSelectionShowsZeroCountAndNextHasNoDialog() {
         var next = 0
         show(questionState(QuestionType.MULTIPLE_CHOICE), a = QuestionActions(onNext = { next++ }))
-        rule.onNodeWithText("Cap resposta marcada").performScrollTo().assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Cap resposta marcada").fetchSemanticsNodes().isEmpty())
         rule.onNodeWithText("Següent").performClick()
         assertEquals(1, next)
         assertTrue(rule.onAllNodesWithText("No has marcat cap resposta.").fetchSemanticsNodes().isEmpty())
@@ -144,7 +149,7 @@ class ComposeScreensTest {
 
     @Test fun lastQuestionButtonOpensReviewNotFinish() {
         show(questionState(QuestionType.SINGLE_CHOICE).copy(index = 4))
-        rule.onNodeWithText("Revisar i finalitzar").assertIsDisplayed()
+        rule.onNodeWithText("Revisar").assertIsDisplayed()
         assertTrue(rule.onAllNodesWithText("Finalitzar l'examen").fetchSemanticsNodes().isEmpty())
     }
 
@@ -194,7 +199,7 @@ class ComposeScreensTest {
 
     @Test fun trueFalseUsableAtFontScale200Percent() {
         show(questionState(QuestionType.TRUE_FALSE), scale = 2f, dark = true)
-        rule.onNodeWithText("Vertader").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Cert").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Fals").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Següent").assertIsDisplayed()
     }
@@ -257,7 +262,7 @@ class ComposeScreensTest {
         rule.onNodeWithText("Pregunta 2 · Sense resposta").assertIsDisplayed()
         rule.onNodeWithText("Ets aquí").assertIsDisplayed()
         rule.onNodeWithText("Anar a la primera sense resposta").assertIsDisplayed()
-        rule.onNodeWithText("Finalitzar l'examen").assertIsDisplayed()
+        rule.onNodeWithText("Avaluar").assertIsDisplayed()
         rule.onNodeWithContentDescription("Pregunta 4, Sense resposta. ${questions[3].text}. Toca per anar-hi.").performScrollTo().performClick()
         assertEquals(3, gone)
     }
@@ -267,12 +272,12 @@ class ComposeScreensTest {
         var dismissed = 0
         var confirmed = 0
         rule.setContent { ArbitratgeTheme { OverviewScreen(st, QuestionActions(onDialogDismiss = { dismissed++ }, onDialogConfirm = { confirmed++ }), {}, {}, {}, {}) } }
-        rule.onNodeWithText("Vols finalitzar l'examen?").assertIsDisplayed()
+        rule.onNodeWithText("Vols avaluar l'examen?").assertIsDisplayed()
         rule.onNodeWithText("Tens 3 preguntes sense resposta: comptaran com a fallades.").assertIsDisplayed()
-        rule.onNodeWithText("Després de finalitzar ja no podràs canviar cap resposta.").assertIsDisplayed()
+        rule.onNodeWithText("Un cop avaluat, ja no podràs canviar cap resposta.").assertIsDisplayed()
         rule.onNodeWithText("Tornar a l'examen").performClick()
         assertEquals(1, dismissed)
-        rule.onNodeWithText("Finalitzar").performClick()
+        rule.onAllNodesWithText("Avaluar").onLast().performClick() // el del diàleg (el primari del resum és sota)
         assertEquals(1, confirmed)
     }
 
@@ -288,7 +293,7 @@ class ComposeScreensTest {
         val st = overview(List(5) { true }).copy(saveError = SaveError.RESULT)
         var retried = 0
         rule.setContent { ArbitratgeTheme { OverviewScreen(st, QuestionActions(onRetrySave = { retried++ }), {}, {}, {}, {}) } }
-        rule.onNodeWithText("No s'ha pogut finalitzar").assertIsDisplayed()
+        rule.onNodeWithText("No s'ha pogut avaluar").assertIsDisplayed()
         rule.onNodeWithText("No hem pogut desar el resultat. Les teves respostes continuen desades. Allibera espai al mòbil i torna-ho a provar.").assertIsDisplayed()
         rule.onNodeWithText("Tornar-ho a provar").performClick()
         assertEquals(1, retried)
@@ -297,7 +302,7 @@ class ComposeScreensTest {
     @Test fun overviewUsableAtFontScale200PercentDark() {
         val st = overview(listOf(true, false, true, false, false))
         rule.setContent { Scaled(2f, dark = true) { OverviewScreen(st, QuestionActions(), {}, {}, {}, {}) } }
-        rule.onNodeWithText("Finalitzar l'examen").assertIsDisplayed()
+        rule.onNodeWithText("Avaluar").assertIsDisplayed()
         rule.onNodeWithText("Preguntes de l'examen").assertIsDisplayed()
         rule.onNodeWithText("Pregunta 5 · Sense resposta").performScrollTo().assertIsDisplayed()
     }
@@ -500,6 +505,80 @@ class ComposeScreensTest {
         rule.waitForIdle()
         assertTrue(rule.onAllNodesWithText("Resposta desada").fetchSemanticsNodes().isEmpty())
         assertTrue(rule.onAllNodesWithText("No s'ha pogut desar").fetchSemanticsNodes().isNotEmpty())
+    }
+
+    // ------------------------------------------------------------------ barra Anterior / Següent (amplades) i Home
+
+    private fun bounds(text: String) =
+        rule.onNode(hasText(text), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+
+    @Test fun navButtonsAreEqualHalvesOnOneLineAtNormalFontScale() {
+        show(questionState(QuestionType.SINGLE_CHOICE, index = 1))
+        val prev = bounds("Anterior")
+        val next = bounds("Següent")
+        assertEquals(prev.width, next.width, 1f)
+        assertEquals(prev.top, next.top, 1f, "una fila: Anterior i Següent lado a lado")
+        assertTrue(prev.left < next.left, "ordre exacte: Anterior a l'esquerra, Següent a la dreta")
+        assertEquals(prev.height, next.height, 1f)
+        // una línia: l'alçada és la d'un botó de 56 dp (xxhdpi = 3×) sense creixement per salt de línia
+        assertTrue(prev.height <= 60f * 3, "alçada ${prev.height}")
+    }
+
+    @Test fun navButtonsStackWithEqualFullWidthsAndNextOnTopAtFontScale130() {
+        show(questionState(QuestionType.SINGLE_CHOICE, index = 1), scale = 1.15f)
+        val prev = bounds("Anterior")
+        val next = bounds("Següent")
+        assertEquals(prev.width, next.width, 1f)
+        assertTrue(next.top < prev.top, "Següent a dalt")
+        assertEquals(prev.left, next.left, 1f)
+    }
+
+    @Test fun lastQuestionKeepsEqualHalvesWithTheShortReviewLabel() {
+        show(questionState(QuestionType.SINGLE_CHOICE).copy(index = 4))
+        val prev = bounds("Anterior")
+        val next = bounds("Revisar")
+        assertEquals(prev.width, next.width, 1f)
+        assertEquals(prev.top, next.top, 1f)
+        assertTrue(prev.left < next.left)
+    }
+
+    private fun overflows(text: String): Boolean {
+        val node = rule.onNode(hasText(text), useUnmergedTree = true).fetchSemanticsNode()
+        val r = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        node.config.getOrNull(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult)?.action?.invoke(r)
+        // (hasVisualOverflow no és fiable amb les mètriques de text de Robolectric: es comprova una línia i sense el·lipsi)
+        return r.any { it.lineCount != 1 || it.isLineEllipsized(0) }
+    }
+
+    private fun assertNoNavOverflow(scale: Float, last: Boolean) {
+        rule.setContent { Scaled(scale) { QuestionScreen(questionState(QuestionType.SINGLE_CHOICE, index = if (last) 4 else 1), QuestionActions()) } }
+        val n = if (last) "Revisar" else "Següent"
+        assertTrue(!overflows(n), "$n desborda a escala $scale")
+        assertTrue(!overflows("Anterior"), "Anterior desborda a escala $scale")
+    }
+
+    @Test fun navLabelsDoNotOverflowAt320dpScale1() = assertNoNavOverflow(1f, false)
+    @Test fun navLabelsDoNotOverflowAt320dpScale1LastQuestion() = assertNoNavOverflow(1f, true)
+    @Test fun navLabelsDoNotOverflowAt320dpScale115() = assertNoNavOverflow(1.15f, false)
+    @Test fun navLabelsDoNotOverflowAt320dpScale129() = assertNoNavOverflow(1.29f, false)
+
+    @Test fun multiPanelSitsBelowTheQuestionStem() {
+        val st = questionState(QuestionType.MULTIPLE_CHOICE)
+        show(st)
+        val stem = rule.onNodeWithText(st.question.text).fetchSemanticsNode().boundsInRoot
+        val panel = rule.onNodeWithText("N'hi ha més d'una resposta correcta. Marca-les totes.").fetchSemanticsNode().boundsInRoot
+        assertTrue(panel.top >= stem.bottom, "panel ${panel.top} < enunciat ${stem.bottom}")
+    }
+
+    @Test fun homeFactTilesAreThreeEqualSingleLineColumnsWithShortLabelsAndFullSpeech() {
+        rule.setContent { ArbitratgeTheme { HomeScreen(Stage.Home(RulesSummary(5, 5, 3), null, null), {}, {}, {}) } }
+        rule.onNodeWithText("preg.").assertIsDisplayed()
+        rule.onNodeWithText("min").assertIsDisplayed()
+        rule.onNodeWithText("encerts").assertIsDisplayed()
+        val w = listOf("preg.", "min", "encerts").map { rule.onNodeWithText(it, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot }
+        // una sola línia: l'alçada d'una etiqueta de 16 sp és d'una línia (≈ 24 dp = 72 px a 3×)
+        w.forEach { assertTrue(it.height <= 30f * 3, "etiqueta en més d'una línia: ${it.height}") }
+        rule.onNodeWithContentDescription("5 preguntes, 5 minuts, 3 encerts per aprovar").assertExists()
     }
 
     // ------------------------------------------------------------------ tema

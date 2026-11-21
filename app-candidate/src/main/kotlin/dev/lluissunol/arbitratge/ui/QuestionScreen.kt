@@ -92,7 +92,7 @@ fun formatClock(ms: Long): String {
 }
 
 @Composable
-fun isLargeText(): Boolean = LocalDensity.current.fontScale >= 1.3f
+fun isLargeText(): Boolean = LocalDensity.current.fontScale >= 1.15f
 
 @Composable
 fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
@@ -104,56 +104,45 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
         topBar = { QuestionTopBar(st, a) },
         bottom = { NavBar(st, a) },
         scrollKey = st.index, // cada pregunta empieza arriba: el scroll no se reutiliza entre preguntas
+        spacing = 14.dp,
     ) {
         st.banner?.let { b -> TimeBannerCard(b, a.onDismissBanner) }
-        TypeChip(st.question.type)
-        Text(
-            st.question.text,
-            style = ArbText.question,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.semantics { heading() },
-        )
-        when {
-            multiple -> MultiPanel()
-            tf -> Body(stringResource(R.string.tf_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            else -> Body(stringResource(R.string.single_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        val kind = when { multiple -> OptionKind.CHECK; tf -> OptionKind.TRUE_FALSE; else -> OptionKind.RADIO }
-        st.question.options.forEach { opt ->
-            OptionCard(
-                text = opt.text,
-                selected = opt.id in st.selected,
-                kind = kind,
-                enabled = st.saveError == null,
-                onClick = { a.onSelect(opt.id) },
+        // Enunciat + indicació juntets; l'aviso de múltiple va SOTA l'enunciat (només per a resposta múltiple).
+        Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
+            Text(
+                st.question.text,
+                style = ArbText.question,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.semantics { heading() },
             )
+            when {
+                multiple -> Unit
+                tf -> Body(stringResource(R.string.tf_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else -> Body(stringResource(R.string.single_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
-        // «Resposta desada» solo se anuncia cuando el guardado está CONFIRMADO; mientras tanto «Desant…» o el error.
-        Text(
-            saveStateText(st),
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (st.saveError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.heightIn(min = 24.dp).semantics { liveRegion = LiveRegionMode.Polite },
-        )
-        if (multiple) {
-            val n = st.selected.size
-            Row(horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8), verticalAlignment = Alignment.CenterVertically) {
-                ArbIcon(
-                    drawable(if (n > 0) R.drawable.ic_check_box else R.drawable.ic_check_box_outline), null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, size = 20.sp.toScaledDp(),
-                )
-                Text(
-                    when (n) {
-                        0 -> stringResource(R.string.multi_count_zero)
-                        1 -> stringResource(R.string.multi_count_one)
-                        else -> stringResource(R.string.multi_count_many, n)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        if (multiple) MultiPanel()
+        val kind = when { multiple -> OptionKind.CHECK; tf -> OptionKind.TRUE_FALSE; else -> OptionKind.RADIO }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            st.question.options.forEach { opt ->
+                OptionCard(
+                    text = displayOptionText(st.question.type, opt.text),
+                    selected = opt.id in st.selected,
+                    kind = kind,
+                    enabled = st.saveError == null,
+                    onClick = { a.onSelect(opt.id) },
                 )
             }
         }
+        // «Resposta desada» solo se anuncia cuando el guardado está CONFIRMADO; mientras tanto «Desant…» o el error.
+        // (Estado de guardado: no es un recuento de marcadas; sin altura mínima para no dejar un hueco vacío.)
+        val status = saveStateText(st)
+        if (status.isNotEmpty()) Text( // vacío = no hay nodo: 0 dp (sin hueco)
+            status,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (st.saveError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
     }
     ExamDialogs(st.dialog, st.saveError, unanswered = st.total - st.answeredCount, a = a)
 }
@@ -167,19 +156,22 @@ private fun saveStateText(st: Stage.Question): String = when {
     else -> ""
 }
 
+/**
+ * Anterior / Següent: dues files de botons IGUALS (50/50, 8 dp entre ells), sense icones, etiqueta d'una línia. Amb lletra
+ * gran (≥ 1,15) s'apilen a tot l'ample,
+ * amb «Següent» a dalt. Mai es parteix una paraula.
+ */
 @Composable
 private fun NavBar(st: Stage.Question, a: QuestionActions) {
     val prev = stringResource(R.string.btn_prev_q)
-    val next = stringResource(if (st.isLast) R.string.btn_review_finish else R.string.btn_next)
-    val prevIcon = vector(Icons.AutoMirrored.Filled.ArrowBack)
-    val nextIcon = vector(Icons.AutoMirrored.Filled.ArrowForward)
+    val next = stringResource(if (st.isLast) R.string.btn_review else R.string.btn_next)
     if (isLargeText()) {
-        PrimaryButton(next, a.onNext, icon = if (st.isLast) null else nextIcon)
-        SecondaryButton(prev, a.onPrevious, enabled = st.canGoBack, icon = prevIcon)
+        PrimaryButton(next, a.onNext)
+        SecondaryButton(prev, a.onPrevious, enabled = st.canGoBack, maxLines = 1)
     } else {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12)) {
-            SecondaryButton(prev, a.onPrevious, Modifier.weight(1f), enabled = st.canGoBack, icon = prevIcon)
-            PrimaryButton(next, a.onNext, Modifier.weight(1.4f), icon = if (st.isLast) null else nextIcon)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
+            SecondaryButton(prev, a.onPrevious, Modifier.weight(1f), enabled = st.canGoBack, maxLines = 1, hPad = 12.dp)
+            PrimaryButton(next, a.onNext, Modifier.weight(1f), maxLines = 1, hPad = 12.dp)
         }
     }
 }
@@ -334,43 +326,25 @@ private fun typeLabel(t: QuestionType): String = stringResource(
     },
 )
 
-/** Etiqueta del tipus (icona + text, mai només la forma del control). */
-@Composable
-private fun TypeChip(t: QuestionType) {
-    val icon = when (t) {
-        QuestionType.SINGLE_CHOICE -> R.drawable.ic_radio_checked
-        QuestionType.MULTIPLE_CHOICE -> R.drawable.ic_check_box
-        QuestionType.TRUE_FALSE -> R.drawable.ic_rule
-    }
-    Row(
-        Modifier.clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(horizontal = ArbDimens.s12, vertical = ArbDimens.s8),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
-    ) {
-        ArbIcon(drawable(icon), null, tint = MaterialTheme.colorScheme.onSecondaryContainer, size = 20.sp.toScaledDp())
-        Text(typeLabel(t), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-    }
-}
-
-/** Panell destacat de la resposta múltiple: «N'hi ha més d'una resposta correcta». */
+/**
+ * Avís ÚNIC i destacat de la resposta múltiple (sota l'enunciat): signe d'exclamació + el text exacte. Les preguntes
+ * d'una resposta i de cert/fals NO porten etiqueta de tipus (la indicació i el control ja les distingeixen).
+ */
 @Composable
 private fun MultiPanel() {
     val scheme = MaterialTheme.colorScheme
     Row(
         Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(scheme.secondaryContainer)
-            .border(2.dp, scheme.secondary, MaterialTheme.shapes.large).padding(ArbDimens.s16),
+            .border(2.dp, scheme.secondary, MaterialTheme.shapes.large).padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
         horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        ArbIcon(vector(Icons.Default.Info), null, tint = scheme.onSecondaryContainer)
-        Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
-            Text(
-                stringResource(R.string.multi_title),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = scheme.onSecondaryContainer,
-            )
-            Text(stringResource(R.string.multi_hint), style = MaterialTheme.typography.bodyLarge, color = scheme.onSecondaryContainer)
-        }
+        ArbIcon(drawable(R.drawable.ic_priority_high), null, tint = scheme.onSecondaryContainer, size = 28.sp.toScaledDp(max = 40.dp))
+        Text(
+            stringResource(R.string.multi_panel),
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+            color = scheme.onSecondaryContainer,
+        )
     }
 }
 

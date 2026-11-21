@@ -93,6 +93,7 @@ fun ScreenScaffold(
     bottom: (@Composable ColumnScope.() -> Unit)? = null,
     /** El estado de scroll es PROPIO de cada clave (p. ej. el índice de la pregunta): no se reutiliza entre preguntas. */
     scrollKey: Any? = null,
+    spacing: Dp = ArbDimens.itemGap,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = key(scrollKey) { rememberScrollState() }
@@ -119,15 +120,15 @@ fun ScreenScaffold(
     ) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(scroll)
-                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.s16),
-            verticalArrangement = Arrangement.spacedBy(ArbDimens.itemGap),
+                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.s12),
+            verticalArrangement = Arrangement.spacedBy(spacing),
             content = content,
         )
     }
 }
 
 /**
- * Barra superior del color del fons, títol 22/600 que pot ocupar diverses línies (200 %). Les accions (cronòmetre) van
+ * Barra superior del color del fons, títol 22/600 que pot ocupar diverses línies (lletra gran). Les accions (cronòmetre) van
  * a la dreta amb el marge de 20 dp; amb text gran baixen a una segona fila perquè el títol no s'aixafi.
  */
 @Composable
@@ -165,27 +166,27 @@ fun ArbTopBar(title: String, onBack: (() -> Unit)?, actions: (@Composable () -> 
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-private fun ButtonLabel(text: String, icon: Painter?) {
+private fun ButtonLabel(text: String, icon: Painter?, maxLines: Int = Int.MAX_VALUE) {
     if (icon != null) {
         ArbIcon(icon, null, size = 22.sp.toScaledDp())
         Spacer(Modifier.size(ArbDimens.s8))
     }
-    Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
+    Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
 }
 
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null) {
+fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null, maxLines: Int = Int.MAX_VALUE, hPad: Dp = 20.dp) {
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
         modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-    ) { ButtonLabel(text, icon) }
+        contentPadding = PaddingValues(horizontal = hPad, vertical = 14.dp),
+    ) { ButtonLabel(text, icon, maxLines) }
 }
 
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null) {
+fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null, maxLines: Int = Int.MAX_VALUE, hPad: Dp = 20.dp) {
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
@@ -193,8 +194,8 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
         border = BorderStroke(1.5.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
         modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-    ) { ButtonLabel(text, icon) }
+        contentPadding = PaddingValues(horizontal = hPad, vertical = 14.dp),
+    ) { ButtonLabel(text, icon, maxLines) }
 }
 
 @Composable
@@ -440,3 +441,11 @@ fun MaxBrightness() {
         }
     }
 }
+
+/**
+ * Etiqueta MOSTRADA d'una opció. Només presentació: l'id (`t`/`f`) i el text del banc («Vertader»/«Fals», contracte de
+ * `BankValidator`) no canvien; a la pantalla (i a TalkBack) «Vertader» es mostra com «Cert».
+ */
+@Composable
+fun displayOptionText(type: dev.lluissunol.arbitratge.exam.QuestionType, text: String): String =
+    if (type == dev.lluissunol.arbitratge.exam.QuestionType.TRUE_FALSE && text == dev.lluissunol.arbitratge.exam.BankValidator.TRUE_TEXT) stringResource(R.string.tf_true_display) else text

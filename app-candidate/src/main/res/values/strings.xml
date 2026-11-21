@@ -7,9 +7,13 @@
 
     <!-- C0 Inici -->
     <string name="home_title">Examen d\'àrbitre de Futbol amb Botons</string>
-    <string name="home_fact_questions">preguntes</string>
-    <string name="home_fact_minutes">minuts</string>
-    <string name="home_fact_pass">encerts per aprovar</string>
+    <!-- Etiquetes CURTES (una sola línia a 1×); les completes són per a lletra gran i per a TalkBack. -->
+    <string name="home_fact_questions">preg.</string>
+    <string name="home_fact_minutes">min</string>
+    <string name="home_fact_pass">encerts</string>
+    <string name="home_fact_questions_full">preguntes</string>
+    <string name="home_fact_minutes_full">minuts</string>
+    <string name="home_fact_pass_full">encerts per aprovar</string>
     <string name="home_facts_a11y">%1$d preguntes, %2$d minuts, %3$d encerts per aprovar</string>
     <string name="home_empty">Encara no has fet cap examen. El pots fer tantes vegades com vulguis.</string>
     <string name="home_has_cred">Tens la credencial d\'aptitud.</string>
@@ -62,17 +66,15 @@
     <string name="btn_overview_a11y">Veure totes les preguntes</string>
     <string name="btn_prev_q">Anterior</string>
     <string name="btn_next">Següent</string>
+    <string name="btn_review">Revisar</string>
+    <string name="tf_true_display">Cert</string>
     <string name="btn_review_finish">Revisar i finalitzar</string>
     <string name="q_type_single">Una resposta</string>
     <string name="q_type_multi">Resposta múltiple</string>
-    <string name="q_type_tf">Vertader o fals</string>
+    <string name="q_type_tf">Cert o fals</string>
     <string name="single_hint">Tria una resposta.</string>
-    <string name="tf_hint">Aquesta afirmació és vertadera o falsa?</string>
-    <string name="multi_title">N\'hi ha més d\'una resposta correcta</string>
-    <string name="multi_hint">Marca totes les que siguin correctes.</string>
-    <string name="multi_count_zero">Cap resposta marcada</string>
-    <string name="multi_count_one">1 resposta marcada</string>
-    <string name="multi_count_many">%1$d respostes marcades</string>
+    <string name="tf_hint">Aquesta afirmació és certa o falsa?</string>
+    <string name="multi_panel">N\'hi ha més d\'una resposta correcta. Marca-les totes.</string>
     <string name="q_status_a11y">Pregunta %1$d de %2$d. %3$s. %4$s</string>
 
     <!-- Cronòmetre -->
@@ -92,20 +94,20 @@
     <string name="exit_body">El temps continua passant. Les respostes ja estan desades: quan tornis a obrir l\'app, podràs continuar.</string>
     <string name="btn_exit">Sortir</string>
     <string name="btn_continue_exam">Continuar l\'examen</string>
-    <string name="finish_title">Vols finalitzar l\'examen?</string>
+    <string name="finish_title">Vols avaluar l\'examen?</string>
     <plurals name="finish_body_missing">
         <item quantity="one">Tens %1$d pregunta sense resposta: comptarà com a fallada.</item>
         <item quantity="other">Tens %1$d preguntes sense resposta: comptaran com a fallades.</item>
     </plurals>
     <string name="finish_body_all">Has respost totes les preguntes.</string>
-    <string name="finish_body_end">Després de finalitzar ja no podràs canviar cap resposta.</string>
+    <string name="finish_body_end">Un cop avaluat, ja no podràs canviar cap resposta.</string>
     <string name="btn_back_exam">Tornar a l\'examen</string>
-    <string name="btn_finish_ok">Finalitzar</string>
-    <string name="btn_finish">Finalitzar l\'examen</string>
+    <string name="btn_finish_ok">Avaluar</string>
+    <string name="btn_finish">Avaluar</string>
     <string name="save_title">No s\'ha pogut desar</string>
     <string name="save_warn">No s\'ha pogut desar la teva resposta. Torna-ho a provar; la teva resposta continua marcada.</string>
     <string name="save_fail_exit">Si no es pot desar, pots sortir de l\'examen. No es crearà cap credencial amb dades incompletes.</string>
-    <string name="save_result_title">No s\'ha pogut finalitzar</string>
+    <string name="save_result_title">No s\'ha pogut avaluar</string>
     <string name="save_result_err">No hem pogut desar el resultat. Les teves respostes continuen desades. Allibera espai al mòbil i torna-ho a provar.</string>
     <string name="btn_retry">Tornar-ho a provar</string>
     <string name="btn_leave_exam">Sortir de l\'examen</string>

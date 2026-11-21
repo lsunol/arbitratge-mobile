@@ -433,7 +433,7 @@ private fun QuestionDetail(index: Int, total: Int, q: QuestionResult) {
             Text(reasonText(q), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         }
     } else Body(reasonText(q), color = scheme.onSurfaceVariant)
-    q.options.forEach { o -> ResolvedOption(o.text, marked = o.id in q.selectedIds, correct = o.id in q.correctIds) }
+    q.options.forEach { o -> ResolvedOption(displayOptionText(q.type, o.text), marked = o.id in q.selectedIds, correct = o.id in q.correctIds) }
     // Sin `explanation`: ni bloque ni hueco.
     q.explanation?.takeIf { it.isNotBlank() }?.let {
         Callout(drawable(R.drawable.ic_menu_book), scheme.surfaceContainer, scheme.onSurface) {
