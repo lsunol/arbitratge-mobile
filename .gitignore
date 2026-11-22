@@ -1,8 +1,9 @@
 # Sistema / IDE
 .pi/subagents/
-# Enlaces de la skill project-local al original en .agents/skills/ (no duplicar).
-.claude/skills/ui-ux-pro-max
-.pi/skills/ui-ux-pro-max
+# Enlaces de las skills project-local al original en .agents/skills/ (no duplicar;
+# se recrean con node scripts/link-project-skills.mjs).
+.claude/skills/
+.pi/skills/
 .DS_Store
 Thumbs.db
 .idea/
@@ -66,3 +67,4 @@ SHA256SUMS.txt
 
 # Salida de scripts/stamp-web.mjs (artefacto de Pages)
 /_site/
+**/.capture-ui.pid

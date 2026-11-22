@@ -7,7 +7,11 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const skills = ["ui-ux-pro-max"];
+// Todas las skills originales del proyecto (cada subcarpeta de .agents/skills con SKILL.md).
+const skills = fs.readdirSync(path.join(root, ".agents", "skills"), { withFileTypes: true })
+  .filter((d) => d.isDirectory() && fs.existsSync(path.join(root, ".agents", "skills", d.name, "SKILL.md")))
+  .map((d) => d.name)
+  .sort();
 const harnessDirs = [".claude/skills", ".pi/skills"];
 
 function windowsJunction(link, target) {
@@ -24,7 +28,17 @@ for (const dir of harnessDirs) {
     const target = path.join(root, ".agents", "skills", name);
     const link = path.join(root, dir, name);
     if (!fs.existsSync(target)) throw new Error(`Falta la skill original: ${target}`);
-    if (fs.existsSync(link)) fs.rmSync(link, { recursive: true, force: true });
+    // Solo sustituye enlaces/junctions: nunca borra una carpeta real (sería una copia a revisar).
+    let st = null;
+    try { st = fs.lstatSync(link); } catch {}
+    if (st && !st.isSymbolicLink()) {
+      const real = fs.realpathSync(link);
+      if (real !== fs.realpathSync(target)) throw new Error(`${link} es una carpeta real, no un enlace: revísala a mano`);
+    }
+    if (st) {
+      // Quita solo el enlace (unlink; en Windows un junction de directorio puede requerir rmdir).
+      try { fs.unlinkSync(link); } catch { fs.rmdirSync(link); }
+    }
     try {
       fs.symlinkSync(target, link, process.platform === "win32" ? "junction" : "dir");
     } catch (error) {

@@ -10,8 +10,11 @@
 //                private-write no carga herramientas web; sirve al banco privado
 //   model:       provider/modelo explícito (obligatorio)
 //   thinking:    off | minimal | low | medium | high | xhigh
-//   skills:      lista CSV de skills ya instaladas; se propaga a pi
+//   skills:      lista CSV de skills ya instaladas. Se propaga al frontmatter de pi y, en
+//                todos los harnesses, a una sección «Skills asignadas» con la ruta del
+//                SKILL.md (proyecto: .agents/skills/; global: ~/.agents/skills/).
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,6 +71,23 @@ function parse(file) {
 }
 
 const q = (s) => JSON.stringify(s); // YAML acepta cadenas JSON
+
+// Ruta portable del SKILL.md: primero la del proyecto, luego la global (~/.agents/skills).
+const missingSkills = new Set();
+function skillPath(name) {
+  if (fs.existsSync(path.join(root, ".agents", "skills", name, "SKILL.md"))) return `.agents/skills/${name}/SKILL.md`;
+  if (!fs.existsSync(path.join(os.homedir(), ".agents", "skills", name, "SKILL.md"))) missingSkills.add(name);
+  return `~/.agents/skills/${name}/SKILL.md`;
+}
+function skillsSection(skills) {
+  const list = (skills || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!list.length) return "";
+  return "\n\n## Skills asignadas\n\n" +
+    "Lee el `SKILL.md` (y solo las referencias que necesites) cuando la tarea coincida con su uso; " +
+    "si tu harness ya las expone como skills, usa ese mecanismo. Rutas del proyecto desde la raíz " +
+    "del repo; globales en `~/.agents/skills/` (ver `docs/development/skills.md`).\n\n" +
+    list.map((s) => `- \`${s}\` — \`${skillPath(s)}\``).join("\n") + "\n";
+}
 const claudeModel = (model) => model.includes("claude-opus") ? "opus" : model.includes("claude-haiku") ? "haiku" : "sonnet";
 const copilotModel = (model) => model.includes("claude-opus") ? "gpt-6.1-terra" : model.includes("claude-haiku") ? "claude-haiku-5.5" : model.includes("claude-sonnet") ? "claude-sonnet-5.5" : model.replace(/^github-copilot\//, "");
 const HEADER = "<!-- GENERADO por scripts/sync-agents.mjs desde .agents/agents/. No editar. -->\n\n";
@@ -104,6 +124,7 @@ const targets = [
 
 const sources = fs.readdirSync(srcDir).filter((f) => f.endsWith(".md")).sort();
 const agents = sources.map((f) => parse(path.join(srcDir, f)));
+for (const a of agents) a.body = a.body.trimEnd() + skillsSection(a.meta.skills) + (a.meta.skills ? "" : "\n");
 
 for (const t of targets) {
   const dir = path.join(root, t.dir);
@@ -120,6 +141,9 @@ for (const t of targets) {
     fs.writeFileSync(path.join(dir, t.file(a.meta.name)), `---\n${t.fm(a.meta)}\n---\n${HEADER}${a.body}`);
   }
   console.log(`${t.dir}: ${agents.length} agentes`);
+}
+if (missingSkills.size) {
+  console.warn(`AVISO: skills no instaladas en esta máquina: ${[...missingSkills].join(", ")} (ver docs/development/skills.md)`);
 }
 
 // ---------------------------------------------------------------------------

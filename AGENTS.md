@@ -73,7 +73,13 @@ que genera `.claude/agents/`, `.pi/agents/`, `.opencode/agent/` y `.github/agent
 
 Los originales de diseño retirados quedan en `docs/agents-archive/` y no se cargan como
 subagentes. Los agentes integrados de pi usan `.pi/settings.json`: `scout` Haiku/low,
-`worker` Sonnet/medium, `reviewer` GPT-6.1 Terra/high y `oracle` Opus/high.
+`worker` Sonnet/medium, `reviewer` GPT-6.1 Terra/high (con `ui-ux-pro-max` y
+`compose-ui-testing-patterns`) y `oracle` Opus/high.
+
+**Skills:** cada agente declara las suyas en el frontmatter `skills:` del original y el sync las
+propaga a todos los harnesses. Catálogo, evidencia, ubicación y descartes en
+[`docs/development/skills.md`](docs/development/skills.md). Skills del proyecto en `.agents/skills/`
+(enlaces con `node scripts/link-project-skills.mjs`); no se instala ninguna nueva sin aprobación.
 
 Flujo habitual: scout/worker → implementador especializado → `reviewer` independiente →
 corrección → tests. No cambies ARB1 o un ADR dentro de una tarea de implementación.
@@ -119,3 +125,6 @@ de sello ARB1 existe en el APK final por ADR 0001, pero su material de build sig
 - Paquete y `applicationId`: `dev.lluissunol.arbitratge` (decidido). La firma de release
   usa el keystore compartido `dev.lluissunol` (skill global `lluissunol-apk-signing`).
 - Cada tarea termina con pruebas ejecutadas, riesgos/pendientes y rutas tocadas.
+- **Nunca mates procesos por nombre** (`taskkill /IM node.exe`, `killall node`, `pkill node`): pi y
+  opencode corren en Node y se mataría la sesión. Solo por PID (p. ej. `.capture-ui.pid` de
+  `scripts/qa/capture-ui.mjs`). Con un móvil físico conectado, la QA apunta siempre a `emulator-5554`.

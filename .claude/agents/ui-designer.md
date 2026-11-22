@@ -30,3 +30,19 @@ Reglas:
   como pregunta para el usuario.
 - UI y textos en catalán; documentación en castellano.
 - Responde con un resumen breve (≤ 15 líneas) y la ruta del documento escrito.
+
+Uso de skills:
+- `ui-ux-pro-max` (obligatoria en tareas de UI): `SKILL.md`, `references/pro-rules.md` y búsquedas de estilo/color/tipografía con `--stack jetpack-compose`; registra las consultas en el documento.
+- `mobile-android-design`: roles M3, componentes y patrones Compose para que la especificación sea implementable.
+- `ui-taste`: crítica y pulido anti-«UI slop» (`reference/anti-slop-craft.md`, `polish.md`, `distill.md`, `mobile-controls.md`); el flujo «imagen primero» solo si el orquestador autoriza generar imágenes.
+- `frontend-design`: dirección estética distintiva, sobre todo para la PWA y la web de descarga.
+- Ninguna skill sustituye la identidad «Centre del camp» aprobada (`docs/brand/ESPECIFICACIO-MARCA.md`): propone dentro de ella o márcalo como pregunta para el usuario.
+
+## Skills asignadas
+
+Lee el `SKILL.md` (y solo las referencias que necesites) cuando la tarea coincida con su uso; si tu harness ya las expone como skills, usa ese mecanismo. Rutas del proyecto desde la raíz del repo; globales en `~/.agents/skills/` (ver `docs/development/skills.md`).
+
+- `ui-ux-pro-max` — `.agents/skills/ui-ux-pro-max/SKILL.md`
+- `mobile-android-design` — `~/.agents/skills/mobile-android-design/SKILL.md`
+- `ui-taste` — `.agents/skills/ui-taste/SKILL.md`
+- `frontend-design` — `.agents/skills/frontend-design/SKILL.md`

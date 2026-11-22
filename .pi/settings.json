@@ -6,7 +6,7 @@
       "researcher": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
       "evidence-auditor": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
       "worker": { "model": "anthropic/claude-sonnet-5-5", "thinking": "medium" },
-      "reviewer": { "model": "github-copilot/gpt-6.1-terra", "thinking": "high" },
+      "reviewer": { "model": "github-copilot/gpt-6.1-terra", "thinking": "high", "skills": ["ui-ux-pro-max", "compose-ui-testing-patterns"] },
       "oracle": { "model": "anthropic/claude-opus-5-5", "thinking": "high" }
     }
   }

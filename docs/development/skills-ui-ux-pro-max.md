@@ -35,8 +35,8 @@ alineación de controles).
   node scripts/link-project-skills.mjs
   ```
 
-  El script es idempotente: elimina solo los enlaces/dirigidos conocidos (`ui-ux-pro-max`) y los
-  vuelve a crear sin copiar. opencode seguirá viendo `.claude/skills/`.
+  El script es idempotente: enlaza todas las skills de `.agents/skills/`, sustituye solo enlaces
+  (nunca carpetas reales) y no copia nada. Catálogo completo de skills: `skills.md`. opencode seguirá viendo `.claude/skills/`.
 
 Los enlaces/junctions locales se ignoran en git. El original (incluido su `LICENSE` MIT) y el lock
 sí se versionan.

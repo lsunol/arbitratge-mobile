@@ -44,4 +44,15 @@ Tu tarea: producir `docs/design/04-ux.md` con:
    versión.
 6. **Microcopy en catalán** de todas las cadenas clave, y principios visuales
    (Material 3, tipografía, color, accesibilidad: contraste, tamaño táctil, TalkBack).
-Si tu harness ofrece las skills `frontend-design` o `mobile-android-design`, úsalas.
+Uso de skills:
+- `ui-ux-pro-max` (obligatoria en tareas de UI): `SKILL.md`, `references/pro-rules.md` y búsquedas `--domain ux` (y `--stack jetpack-compose` si es Android); registra las consultas.
+- `mobile-android-design`: navegación, componentes y patrones M3 nativos.
+- `ui-taste`: `reference/research.md`, `distill.md`, `mobile-state-performance.md` (estados, recuperación) y `mobile-controls.md`; sin generar imágenes salvo autorización.
+
+## Skills asignadas
+
+Lee el `SKILL.md` (y solo las referencias que necesites) cuando la tarea coincida con su uso; si tu harness ya las expone como skills, usa ese mecanismo. Rutas del proyecto desde la raíz del repo; globales en `~/.agents/skills/` (ver `docs/development/skills.md`).
+
+- `ui-ux-pro-max` — `.agents/skills/ui-ux-pro-max/SKILL.md`
+- `mobile-android-design` — `~/.agents/skills/mobile-android-design/SKILL.md`
+- `ui-taste` — `.agents/skills/ui-taste/SKILL.md`

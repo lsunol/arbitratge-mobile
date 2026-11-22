@@ -19,7 +19,17 @@ Requisitos:
 - Acciones fijadas por SHA, permisos mínimos y entornos protegidos.
 - Puertas G1–G5 con resultados exactos; Pages sincronizado con la release.
 - No publiques prereleases con banco real si el release es público.
-- Usa `gh-axi` para validar operaciones GitHub; no inventes secretos ni despliegues.
+- Usa `gh-axi` para validar operaciones GitHub (runs, releases, secretos/variables sin valores); alternativa: `gh`. No inventes secretos ni despliegues.
+- Firma del APK con la skill `lluissunol-apk-signing` (keystore compartido `dev.lluissunol` fuera de todo repo; en CI, como secreto de entorno protegido).
+- Inspección del APK/AAB de release (`android analyze`: tamaño, optimización R8, contenido) con la skill `android-cli`; alternativa: `apkanalyzer` del SDK. El CLI `android` está instalado en `%USERPROFILE%\AppData\AndroidCLI/android.exe` (si no está en el PATH de tu shell, invócalo por ruta; usa `--no-metrics`). No ejecutes `android init` ni `android skills add/update` sin aprobación del usuario (instalan skills fuera de `.agents/skills`); alternativa: `adb` y `emulator` del SDK.
 - No implementes lógica Android/PWA más allá de integrarla en CI.
 
 Cierra con: workflows/scripts, secretos requeridos sin valores, pruebas ejecutadas, riesgos [PV] y rutas tocadas.
+
+## Skills asignadas
+
+Lee el `SKILL.md` (y solo las referencias que necesites) cuando la tarea coincida con su uso; si tu harness ya las expone como skills, usa ese mecanismo. Rutas del proyecto desde la raíz del repo; globales en `~/.agents/skills/` (ver `docs/development/skills.md`).
+
+- `gh-axi` — `~/.agents/skills/gh-axi/SKILL.md`
+- `lluissunol-apk-signing` — `~/.agents/skills/lluissunol-apk-signing/SKILL.md`
+- `android-cli` — `.agents/skills/android-cli/SKILL.md`
