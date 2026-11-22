@@ -30,7 +30,7 @@
     <string name="welcome_b2">Veuràs què has fallat i quina era la resposta correcta.</string>
     <string name="welcome_b3">Si aproves, tindràs una credencial.</string>
     <string name="welcome_b4">No cal internet.</string>
-    <string name="btn_understood">Entesos</string>
+    <string name="btn_understood">Continuar</string>
 
     <!-- C2 Nom -->
     <string name="name_title">El teu nom</string>
@@ -60,12 +60,14 @@
 
     <!-- C4 Pregunta -->
     <string name="progress">Pregunta %1$d de %2$d</string>
+    <string name="progress_short">%1$d de %2$d</string>
     <string name="q_number">Pregunta %1$d</string>
     <string name="answered_progress">Respostes:\u00A0%1$d\u00A0de\u00A0%2$d</string>
     <string name="question_progress_a11y">Posició de l\'examen: pregunta %1$d de %2$d</string>
     <string name="btn_overview">Veure-les totes</string>
     <string name="btn_overview_a11y">Veure totes les preguntes</string>
     <string name="btn_prev_q">Anterior</string>
+    <string name="btn_prev_q_a11y">Pregunta anterior</string>
     <string name="btn_next">Següent</string>
     <string name="btn_review">Revisar</string>
     <string name="tf_true_display">Cert</string>
@@ -115,12 +117,16 @@
     <string name="btn_abandon">Abandonar l\'examen</string>
 
     <!-- C4b Resum de preguntes -->
-    <string name="overview_title">Preguntes de l\'examen</string>
-    <string name="overview_answered">Has respost %1$d de %2$d preguntes.</string>
-    <plurals name="overview_missing">
-        <item quantity="one">Et falta %1$d pregunta per respondre.</item>
-        <item quantity="other">Et falten %1$d preguntes per respondre.</item>
+    <string name="overview_title">Preguntes</string>
+    <plurals name="overview_answered_short">
+        <item quantity="one">%1$d contestada</item>
+        <item quantity="other">%1$d contestades</item>
     </plurals>
+    <plurals name="overview_missing_short">
+        <item quantity="one">en falta %1$d</item>
+        <item quantity="other">en falten %1$d</item>
+    </plurals>
+    <string name="overview_summary">%1$s · %2$s</string>
     <string name="overview_all">Has respost totes les preguntes.</string>
     <string name="q_state_answered">Contestada</string>
     <string name="q_state_empty">Sense resposta</string>

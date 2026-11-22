@@ -1,12 +1,10 @@
 package dev.lluissunol.arbitratge.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -21,11 +20,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -36,20 +34,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.collectionInfo
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import dev.lluissunol.arbitratge.R
 
 @Composable
@@ -72,93 +68,42 @@ fun StatusInset() {
     Spacer(Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)).height(ArbDimens.s8))
 }
 
-/** Capçalera de marca: gespa profunda, línies de cal i el botó. Provisional (CFBB ha d'aprovar la identitat). */
+/** Fila d'una llista informativa (I4): icona de contorn de 24 dp sense cercle, alineada amb la 1a línia; text en tinta. */
 @Composable
-fun HeroCard(title: String, subtitle: String, modifier: Modifier = Modifier) {
-    Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = BrandColors.Pitch, contentColor = Color.White) {
-        Column(
-            Modifier.pitchLines().heightIn(min = 148.dp).padding(horizontal = ArbDimens.s24, vertical = ArbDimens.gutter),
-            verticalArrangement = Arrangement.spacedBy(ArbDimens.s8),
-        ) {
-            BrandMark(52.dp, onPitch = true)
-            Spacer(Modifier.height(ArbDimens.s8))
-            Text(title, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.semantics { heading() })
-            Text(subtitle, style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.88f))
-        }
-    }
-}
-
-@Composable
-private fun BenefitRow(icon: androidx.compose.ui.graphics.painter.Painter, text: String) {
-    Row(Modifier.heightIn(min = ArbDimens.buttonMin), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12), verticalAlignment = Alignment.CenterVertically) {
-        IconBadge(icon, MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-        Body(text, Modifier.weight(1f))
+private fun InfoRow(icon: Painter, text: String, modifier: Modifier = Modifier, tint: Color = MaterialTheme.colorScheme.secondary) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s16)) {
+        ArbIcon(icon, null, Modifier.padding(top = 2.dp), tint = tint)
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
 fun WelcomeScreen(onUnderstood: () -> Unit) {
-    ScreenScaffold(title = null, topBar = { StatusInset() }, bottom = {
-        PrimaryButton(stringResource(R.string.btn_understood), onUnderstood)
-    }) {
-        HeroCard(stringResource(R.string.brand_name), stringResource(R.string.home_title))
-        Gap(4)
+    ScreenScaffold(
+        title = null, pinBottom = false,
+        header = { BrandBand(stringResource(R.string.brand_name), stringResource(R.string.home_title)) },
+        bottom = { PrimaryButton(stringResource(R.string.btn_understood), onUnderstood) },
+    ) {
         Heading(stringResource(R.string.welcome_title))
         Body(stringResource(R.string.welcome_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        BenefitRow(vector(Icons.Default.Check), stringResource(R.string.welcome_b1))
-        BenefitRow(drawable(R.drawable.ic_menu_book), stringResource(R.string.welcome_b2))
-        BenefitRow(drawable(R.drawable.ic_id_card), stringResource(R.string.welcome_b3))
-        BenefitRow(drawable(R.drawable.ic_wifi_off), stringResource(R.string.welcome_b4))
+        InfoRow(vector(Icons.Outlined.Check), stringResource(R.string.welcome_b1))
+        InfoRow(drawable(R.drawable.ic_menu_book), stringResource(R.string.welcome_b2))
+        InfoRow(drawable(R.drawable.ic_id_card), stringResource(R.string.welcome_b3))
+        InfoRow(drawable(R.drawable.ic_wifi_off), stringResource(R.string.welcome_b4))
     }
 }
 
+/** Les tres dades de l'examen amb etiquetes COMPLETES («preguntes», «minuts», «encerts per aprovar»), sense abreviar. */
 @Composable
-private fun FactTile(value: Int, label: String, icon: Int, spoken: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier.semantics(mergeDescendants = true) { contentDescription = spoken },
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
-            ArbIcon(drawable(icon), null, tint = MaterialTheme.colorScheme.primary)
-            Text(value.toString(), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-        }
-    }
-}
-
-@Composable
-private fun FactTiles(r: RulesSummary) {
-    // Etiquetes curtes a 1× (una sola línia en 3 columnes iguals); completes amb lletra gran (columna a tot l'ample).
-    val large = isLargeText()
-    val q = stringResource(if (large) R.string.home_fact_questions_full else R.string.home_fact_questions)
-    val m = stringResource(if (large) R.string.home_fact_minutes_full else R.string.home_fact_minutes)
-    val p = stringResource(if (large) R.string.home_fact_pass_full else R.string.home_fact_pass)
-    val qf = stringResource(R.string.home_fact_questions_full)
-    val mf = stringResource(R.string.home_fact_minutes_full)
-    val pf = stringResource(R.string.home_fact_pass_full)
-    val whole = stringResource(R.string.home_facts_a11y, r.questions, r.minutes, r.threshold)
-    val tile: @Composable (Int, String, Int, Modifier) -> Unit = { v, l, i, mod ->
-        val full = when (i) { R.drawable.ic_quiz -> qf; R.drawable.ic_timer -> mf; else -> pf }
-        FactTile(v, l, i, "$v $full", mod)
-    }
-    Column(Modifier.semantics { contentDescription = whole }) {
-        if (isLargeText()) {
-            Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.itemGap)) {
-                tile(r.questions, q, R.drawable.ic_quiz, Modifier.fillMaxWidth())
-                tile(r.minutes, m, R.drawable.ic_timer, Modifier.fillMaxWidth())
-                tile(r.threshold, p, R.drawable.ic_flag, Modifier.fillMaxWidth())
-            }
-        } else {
-            // Tarjetas de la misma altura aunque una etiqueta ocupe dos líneas (IntrinsicSize).
-            Row(Modifier.height(IntrinsicSize.Max), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
-                tile(r.questions, q, R.drawable.ic_quiz, Modifier.weight(1f).fillMaxHeight())
-                tile(r.minutes, m, R.drawable.ic_timer, Modifier.weight(1f).fillMaxHeight())
-                tile(r.threshold, p, R.drawable.ic_flag, Modifier.weight(1f).fillMaxHeight())
-            }
-        }
-    }
+private fun RulesFactStrip(r: RulesSummary) {
+    FactStrip(
+        listOf(
+            FactCell(r.questions.toString(), stringResource(R.string.home_fact_questions_full)),
+            FactCell(r.minutes.toString(), stringResource(R.string.home_fact_minutes_full)),
+            FactCell(r.threshold.toString(), stringResource(R.string.home_fact_pass_full)),
+        ),
+        spoken = stringResource(R.string.home_facts_a11y, r.questions, r.minutes, r.threshold),
+    )
 }
 
 /** Miniatura del carnet (no és la credencial: només la recorda). Sense cap marca de validesa. */
@@ -166,7 +111,7 @@ private fun FactTiles(r: RulesSummary) {
 private fun CredentialMini(name: String) {
     Surface(
         Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = BrandColors.Paper,
-        border = androidx.compose.foundation.BorderStroke(1.dp, BrandColors.PaperLine),
+        border = BorderStroke(1.dp, BrandColors.PaperLine),
     ) {
         Column {
             Row(
@@ -184,6 +129,10 @@ private fun CredentialMini(name: String) {
     }
 }
 
+/**
+ * Inici. Banda I3 (34 % de la finestra amb lletra < 1,3× si encara no hi ha historial) + `FactStrip`. Amb historial, l'ordre és el de UX P2.1:
+ * 1) estat de l'últim examen, 2) miniatura de la credencial si n'hi ha, 3) fila «Repassar l'últim examen».
+ */
 @Composable
 fun HomeScreen(
     st: Stage.Home,
@@ -192,32 +141,42 @@ fun HomeScreen(
     onReviewLast: () -> Unit,
     onRetryPending: () -> Unit = {},
 ) {
-    ScreenScaffold(title = null, topBar = { StatusInset() }, bottom = {
-        if (st.credential != null) {
-            PrimaryButton(stringResource(R.string.btn_see_credential), onShowCredential)
-            SecondaryButton(stringResource(R.string.btn_retake), onStart)
-        } else {
-            PrimaryButton(stringResource(R.string.btn_start), onStart)
-        }
-    }) {
-        HeroCard(stringResource(R.string.brand_name), stringResource(R.string.home_title))
-        FactTiles(st.rules)
-        st.credential?.let { CredentialMini(it.name) }
-        // El resultat de l'últim intent va APART de la credencial (UX F11): dues veritats, dues targetes.
+    ScreenScaffold(
+        title = null, pinBottom = false,
+        header = { BrandBand(stringResource(R.string.brand_name), stringResource(R.string.home_title), minHeightFraction = if (st.last == null && st.credential == null) 0.34f else 0f) },
+        bottom = {
+            if (st.credential != null) {
+                PrimaryButton(stringResource(R.string.btn_see_credential), onShowCredential)
+                SecondaryButton(stringResource(R.string.btn_retake), onStart)
+            } else {
+                PrimaryButton(stringResource(R.string.btn_start), onStart)
+            }
+        },
+    ) {
+        RulesFactStrip(st.rules)
         val last = st.last
         if (last != null) {
-            ArbCard {
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = ArbDimens.touchMin),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+            ) {
+                ArbIcon(vector(if (last.passed) Icons.Outlined.CheckCircle else Icons.Outlined.Info), null, tint = MaterialTheme.colorScheme.secondary)
                 Text(
                     stringResource(if (last.passed) R.string.last_passed else R.string.last_failed, last.correct, last.total),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f),
                 )
-                TertiaryButton(stringResource(R.string.btn_review_last), onReviewLast, fillWidth = false)
             }
+        }
+        st.credential?.let { CredentialMini(it.name) }
+        if (last != null) {
+            ActionRow(
+                drawable(R.drawable.ic_menu_book), stringResource(R.string.btn_review_last), null, onReviewLast,
+            )
         } else if (st.credential == null) {
             Body(stringResource(R.string.home_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         st.pending?.let { p ->
-            Callout(vector(Icons.Default.Warning), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer) {
+            InfoBanner(BannerKind.ERROR) {
                 if (p.count > 0) Body(pluralStringResource(R.plurals.pending_cards, p.count, p.count))
                 else Body(stringResource(R.string.pending_read_error))
                 if (p.error && p.count > 0) {
@@ -272,70 +231,82 @@ fun NameScreen(st: Stage.Name, onChange: (String) -> Unit, onContinue: () -> Uni
             keyboardActions = KeyboardActions(onDone = { onContinue() }),
             modifier = Modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
         )
-        Callout(vector(Icons.Default.Info), MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer) {
+        InfoBanner(BannerKind.NEUTRAL) {
             Text(stringResource(R.string.name_warn), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         }
     }
 }
 
+/** Tarja del nom (I4): vora d'1,5 dp, radi 12, el nom en `titleLarge` i «Canviar» a la mateixa fila (columna amb lletra gran). */
 @Composable
-private fun RuleRow(icon: androidx.compose.ui.graphics.painter.Painter, text: String, warn: Boolean = false) {
+private fun NameCard(nom: String, onChangeName: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
-    Row(Modifier.heightIn(min = ArbDimens.touchMin), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12), verticalAlignment = Alignment.CenterVertically) {
-        IconBadge(
-            icon,
-            if (warn) scheme.tertiaryContainer else scheme.primaryContainer,
-            if (warn) scheme.onTertiaryContainer else scheme.onPrimaryContainer,
-        )
-        Body(text, Modifier.weight(1f))
+    val change: @Composable (Modifier) -> Unit = { m ->
+        TertiaryButton(stringResource(R.string.btn_change), onChangeName, modifier = m, icon = vector(Icons.Outlined.Edit), fillWidth = false)
+    }
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = scheme.surface, border = BorderStroke(1.5.dp, scheme.outline)) {
+        if (isLargeText()) {
+            Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
+                Text(stringResource(R.string.rules_name_label), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+                Text(nom, style = MaterialTheme.typography.titleLarge, color = scheme.onSurface)
+                change(Modifier.offset(x = (-16).dp))
+            }
+        } else {
+            Row(Modifier.padding(start = ArbDimens.s16, top = ArbDimens.s12, bottom = ArbDimens.s12, end = ArbDimens.s8), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
+                    Text(stringResource(R.string.rules_name_label), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+                    Text(nom, style = MaterialTheme.typography.titleLarge, color = scheme.onSurface)
+                }
+                change(Modifier)
+            }
+        }
     }
 }
 
+/**
+ * Normes en tres nivells (UX P2.2): `FactStrip`, 4 regles amb icona de contorn sense cercle i l'avís ambre «Si surts de
+ * l'app…» a part. `collectionInfo` = 6 elements (dades, 4 regles, avís).
+ */
 @Composable
 fun RulesScreen(st: Stage.Rules, onChangeName: () -> Unit, onBegin: () -> Unit, onBack: () -> Unit) {
-    ScreenScaffold(title = stringResource(R.string.rules_title), onBack = onBack, bottom = {
+    ScreenScaffold(title = stringResource(R.string.rules_title), onBack = onBack, pinBottom = false, bottom = {
         PrimaryButton(stringResource(R.string.btn_begin), onBegin, enabled = !st.starting)
     }) {
         Column(
-            Modifier.semantics { collectionInfo = CollectionInfo(8, 1) },
-            verticalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+            Modifier.semantics { collectionInfo = CollectionInfo(6, 1) },
+            verticalArrangement = Arrangement.spacedBy(ArbDimens.s16),
         ) {
-            RuleRow(drawable(R.drawable.ic_timer), stringResource(R.string.rules_time, st.summary.minutes))
-            RuleRow(drawable(R.drawable.ic_quiz), stringResource(R.string.rules_count, st.summary.questions))
-            RuleRow(drawable(R.drawable.ic_flag), stringResource(R.string.rules_pass, st.summary.threshold))
-            RuleRow(drawable(R.drawable.ic_swap_horiz), stringResource(R.string.rules_nav))
-            RuleRow(drawable(R.drawable.ic_check_box), stringResource(R.string.rules_types))
-            RuleRow(drawable(R.drawable.ic_remove), stringResource(R.string.rules_unanswered))
-            RuleRow(vector(Icons.Default.Check), stringResource(R.string.rules_autosave))
-            RuleRow(vector(Icons.AutoMirrored.Filled.ExitToApp), stringResource(R.string.rules_leave), warn = true)
+            RulesFactStrip(st.summary)
+            InfoRow(drawable(R.drawable.ic_swap_horiz), stringResource(R.string.rules_nav))
+            InfoRow(drawable(R.drawable.ic_checklist), stringResource(R.string.rules_types))
+            InfoRow(drawable(R.drawable.ic_remove), stringResource(R.string.rules_unanswered))
+            InfoRow(vector(Icons.Outlined.Check), stringResource(R.string.rules_autosave))
+            InfoBanner(BannerKind.WARNING) { Text(stringResource(R.string.rules_leave), style = MaterialTheme.typography.bodyLarge) }
         }
-        ArbCard {
-            Text(stringResource(R.string.rules_name_label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(st.nom, style = MaterialTheme.typography.headlineSmall)
-            TertiaryButton(stringResource(R.string.btn_change), onChangeName, icon = vector(Icons.Default.Edit), fillWidth = false)
-        }
+        NameCard(st.nom, onChangeName)
         if (isBatteryLow(androidx.compose.ui.platform.LocalContext.current)) {
-            Callout(
-                drawable(R.drawable.ic_battery_alert), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer,
-                Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            InfoBanner(
+                BannerKind.WARNING, Modifier.semantics { liveRegion = LiveRegionMode.Polite }, icon = drawable(R.drawable.ic_battery_alert),
             ) { Text(stringResource(R.string.battery_low), style = MaterialTheme.typography.bodyLarge) }
         }
         if (st.saveError) {
-            Callout(
-                vector(Icons.Default.Warning), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer,
-                Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-            ) { Text(stringResource(R.string.start_save_error), style = MaterialTheme.typography.bodyLarge) }
+            InfoBanner(BannerKind.ERROR, Modifier.semantics { liveRegion = LiveRegionMode.Assertive }) {
+                Text(stringResource(R.string.start_save_error), style = MaterialTheme.typography.bodyLarge)
+            }
         }
     }
 }
 
 @Composable
 fun ErrorScreen(message: String, buttonLabel: String?, onButton: (() -> Unit)?) {
-    ScreenScaffold(title = null, topBar = { StatusInset() }, bottom = if (buttonLabel != null && onButton != null) {
-        { PrimaryButton(buttonLabel, onButton) }
-    } else null) {
-        HeroCard(stringResource(R.string.brand_name), stringResource(R.string.home_title))
-        Callout(vector(Icons.Default.Warning), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer) {
+    ScreenScaffold(
+        title = null,
+        header = { BrandBand(stringResource(R.string.brand_name), stringResource(R.string.home_title)) },
+        bottom = if (buttonLabel != null && onButton != null) {
+            { PrimaryButton(buttonLabel, onButton) }
+        } else null,
+    ) {
+        InfoBanner(BannerKind.ERROR) {
             Text(message, style = MaterialTheme.typography.titleMedium)
         }
     }

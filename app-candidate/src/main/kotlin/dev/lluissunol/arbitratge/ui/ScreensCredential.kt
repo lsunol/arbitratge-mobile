@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -65,7 +65,7 @@ fun CredentialScreen(c: StoredCredential, onPresent: () -> Unit, onHome: () -> U
     // El token guardado es lo que se codifica: nunca se reconstruye (02 §3.7.10 paso 6).
     val qr = remember(c.token) { QrEncoder.encode(c.token) }
     val dark = androidx.compose.foundation.isSystemInDarkTheme()
-    ScreenScaffold(title = stringResource(R.string.cred_screen_title), onBack = onBack, bottom = {
+    ScreenScaffold(title = stringResource(R.string.cred_screen_title), onBack = onBack, pinBottom = false, bottom = {
         PrimaryButton(stringResource(R.string.btn_show_org), onPresent, icon = drawable(R.drawable.ic_id_card))
         TertiaryButton(stringResource(R.string.btn_home), onHome)
     }) {
@@ -122,7 +122,7 @@ fun CredentialScreen(c: StoredCredential, onPresent: () -> Unit, onHome: () -> U
                     Modifier.fillMaxWidth().background(BrandColors.PaperFoot).padding(ArbDimens.s16),
                     horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
                 ) {
-                    ArbIcon(vector(Icons.Default.Info), null, tint = BrandColors.PaperMuted)
+                    ArbIcon(vector(Icons.Outlined.Info), null, tint = BrandColors.PaperMuted)
                     Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
                         Text(stringResource(R.string.cred_note), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PaperMuted)
                         Text(stringResource(R.string.cred_disclaimer), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PaperMuted)
@@ -167,7 +167,7 @@ fun PresentationScreen(c: StoredCredential, onClose: () -> Unit) {
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = black),
                 modifier = Modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin).padding(vertical = 0.dp),
             ) {
-                ArbIcon(vector(Icons.Default.Close), null, tint = black)
+                ArbIcon(vector(Icons.Outlined.Close), null, tint = black)
                 androidx.compose.foundation.layout.Spacer(Modifier.padding(start = ArbDimens.s8))
                 Text(stringResource(R.string.btn_close), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
             }

@@ -132,24 +132,29 @@ class ComposeScreensTest {
     }
 
     @Test fun selectedStateDiffersInShapeAndColorFromUnselectedAndFromCorrectness() {
-        // El token de selecció és diferent del verd de «correcta» (UX F4).
-        assertNotEquals(LightArbColors.selection, LightScheme.primary)
-        assertNotEquals(LightArbColors.selectionContainer, LightScheme.primaryContainer)
-        assertNotEquals(DarkArbColors.selection, DarkScheme.primary)
-        assertNotEquals(DarkArbColors.selectionContainer, DarkScheme.primaryContainer)
+        // «Marca de bolígraf» (I2): la selecció és tinta, diferent del verd de «correcta» i del vermell de «incorrecta» (UX F4).
+        assertNotEquals(LightArbColors.mark, LightArbColors.correct)
+        assertNotEquals(LightArbColors.mark, LightArbColors.wrong)
+        assertNotEquals(DarkArbColors.mark, DarkArbColors.correct)
+        assertNotEquals(DarkArbColors.mark, DarkArbColors.wrong)
+        assertNotEquals(LightArbColors.mark, LightScheme.surface)
+        assertNotEquals(DarkArbColors.mark, DarkScheme.surface)
     }
 
     // ------------------------------------------------------------------ barra Anterior / Següent
 
-    @Test fun firstQuestionShowsPreviousDisabled() {
+    @Test fun firstQuestionHasNoPreviousButtonAndNextFillsTheBar() {
         show(questionState(QuestionType.SINGLE_CHOICE, index = 0))
-        rule.onNodeWithText("Anterior").assertIsDisplayed()
-        rule.onNode(hasText("Anterior")).assertIsNotEnabled()
+        assertTrue(rule.onAllNodesWithText("Anterior").fetchSemanticsNodes().isEmpty(), "a la P1 no es mostra un «Anterior» inactiu")
+        rule.onNodeWithText("Següent").assertIsDisplayed()
+        // «Següent» ocupa tot l'ample útil (menys el marge de 20 dp a cada costat; Robolectric: 1 dp = 3 px a xxhdpi)
+        val next = bounds("Següent")
+        assertTrue(next.width >= 280f * 3, "Següent a ample complet: ${next.width}")
     }
 
     @Test fun lastQuestionButtonOpensReviewNotFinish() {
         show(questionState(QuestionType.SINGLE_CHOICE).copy(index = 4))
-        rule.onNodeWithText("Revisar").assertIsDisplayed()
+        rule.onNodeWithText("Revisar i finalitzar").assertIsDisplayed()
         assertTrue(rule.onAllNodesWithText("Finalitzar l'examen").fetchSemanticsNodes().isEmpty())
     }
 
@@ -187,9 +192,9 @@ class ComposeScreensTest {
     private fun multiAt200(dark: Boolean) {
         val st = questionState(QuestionType.MULTIPLE_CHOICE)
         show(st, scale = 2f, dark = dark)
-        // la barra Anterior/Següent (apilada) segueix visible i les opcions són accessibles amb scroll, sense truncar
+        // una sola fila [fletxa «Pregunta anterior» | Següent] segueix visible; les opcions són accessibles amb scroll
         rule.onNodeWithText("Següent").assertIsDisplayed()
-        rule.onNodeWithText("Anterior").assertIsDisplayed()
+        rule.onNodeWithContentDescription("Pregunta anterior").assertIsDisplayed()
         st.question.options.forEach { rule.onNodeWithText(it.text).performScrollTo().assertIsDisplayed() }
     }
 
@@ -255,9 +260,8 @@ class ComposeScreensTest {
                 OverviewScreen(st, QuestionActions(), {}, { gone = it }, {}, {})
             }
         }
-        rule.onNodeWithText("Preguntes de l'examen").assertIsDisplayed()
-        rule.onNodeWithText("Has respost 2 de 5 preguntes.").assertIsDisplayed()
-        rule.onNodeWithText("Et falten 3 preguntes per respondre.").assertIsDisplayed()
+        rule.onNodeWithText("Preguntes").assertIsDisplayed()
+        rule.onNodeWithText("2 contestades · en falten 3").assertIsDisplayed()
         rule.onNodeWithText("Pregunta 1 · Contestada").assertIsDisplayed()
         rule.onNodeWithText("Pregunta 2 · Sense resposta").assertIsDisplayed()
         rule.onNodeWithText("Ets aquí").assertIsDisplayed()
@@ -303,7 +307,7 @@ class ComposeScreensTest {
         val st = overview(listOf(true, false, true, false, false))
         rule.setContent { Scaled(2f, dark = true) { OverviewScreen(st, QuestionActions(), {}, {}, {}, {}) } }
         rule.onNodeWithText("Avaluar").assertIsDisplayed()
-        rule.onNodeWithText("Preguntes de l'examen").assertIsDisplayed()
+        rule.onNodeWithText("Preguntes").assertIsDisplayed()
         rule.onNodeWithText("Pregunta 5 · Sense resposta").performScrollTo().assertIsDisplayed()
     }
 
@@ -316,8 +320,9 @@ class ComposeScreensTest {
     @Test fun homeAt200PercentDarkShowsFactsCredentialAndNoPracticeClaim() {
         val st = Stage.Home(RulesSummary(5, 5, 3), cred, LastResult("s1", 2, 5, false))
         rule.setContent { Scaled(2f, dark = true) { HomeScreen(st, {}, {}, {}) } }
-        rule.onNodeWithText("Veure la credencial").assertIsDisplayed()
-        rule.onNodeWithText("Tornar a fer l'examen").assertIsDisplayed()
+        // I9: a ≥ 1,5× les accions baixen al final del contingut (sense barra fixa)
+        rule.onNodeWithText("Veure la credencial").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Tornar a fer l'examen").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("preguntes").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Tens la credencial d'aptitud.").performScrollTo().assertIsDisplayed()
         // credencial i últim intent, separats (UX F11)
@@ -418,7 +423,7 @@ class ComposeScreensTest {
         rule.setContent { Scaled(2f, dark = true) { CredentialScreen(cred, {}, {}, {}) } }
         rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
         rule.onNodeWithText("7F3A-92C1").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("Mostrar a un organitzador").assertIsDisplayed()
+        rule.onNodeWithText("Mostrar a un organitzador").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun presentationShowsLargeQrNameCodeAndNoRemovePrefixHack() {
@@ -541,42 +546,42 @@ class ComposeScreensTest {
     @Test fun controlLeftMultiple() = controlLeft(QuestionType.MULTIPLE_CHOICE)
     @Test fun controlLeftTrueFalse() = controlLeft(QuestionType.TRUE_FALSE)
 
-    @Test fun navButtonsAreEqualHalvesOnOneLineAtNormalFontScale() {
+    @Test fun nextWeighsMoreThanPreviousOnOneLineAtNormalFontScale() {
         show(questionState(QuestionType.SINGLE_CHOICE, index = 1))
         val prev = bounds("Anterior")
         val next = bounds("Següent")
-        assertEquals(prev.width, next.width, 1f)
         assertEquals(prev.top, next.top, 1f, "una fila: Anterior i Següent lado a lado")
         assertTrue(prev.left < next.left, "ordre exacte: Anterior a l'esquerra, Següent a la dreta")
+        // UX P1.3: Següent pesa 1,4 i Anterior 1 (acció principal amb més pes)
+        assertEquals(1.4f, next.width / prev.width, 0.05f)
         assertEquals(prev.height, next.height, 1f)
         // una línia: l'alçada és la d'un botó de 56 dp (xxhdpi = 3×) sense creixement per salt de línia
         assertTrue(prev.height <= 60f * 3, "alçada ${prev.height}")
     }
 
-    @Test fun navButtonsStayEqualHalvesAtFontScale115WhenTheyFit() {
+    @Test fun navButtonsStayOnOneRowAtFontScale115WhenTheyFit() {
         show(questionState(QuestionType.SINGLE_CHOICE, index = 1), scale = 1.15f)
         val prev = bounds("Anterior")
         val next = bounds("Següent")
-        assertEquals(prev.width, next.width, 1f)
         assertEquals(prev.top, next.top, 1f, "a 1,15 encara caben en una fila")
         assertTrue(prev.left < next.left)
     }
 
-    @Test fun navButtonsStackAtExtraLargeText() {
+    @Test fun navBarIsASingleRowWithAnIconPreviousAtExtraLargeText() {
         show(questionState(QuestionType.SINGLE_CHOICE, index = 1), scale = 2f)
-        val prev = bounds("Anterior")
+        val prev = rule.onNodeWithContentDescription("Pregunta anterior").fetchSemanticsNode().boundsInRoot
         val next = bounds("Següent")
-        assertEquals(prev.width, next.width, 1f)
-        assertTrue(next.top < prev.top, "Següent a dalt a lletra 200 %")
-        assertEquals(prev.left, next.left, 1f)
+        assertEquals(prev.top, next.top, ArbHeightTolerance, "una sola fila a lletra 200 %")
+        assertTrue(prev.left < next.left)
+        assertTrue(prev.width >= 56f * 3 - 1f && prev.height >= 56f * 3 - 1f, "fletxa d'almenys 56 dp: ${prev.width}x${prev.height}")
+        assertTrue(rule.onAllNodesWithText("Anterior").fetchSemanticsNodes().isEmpty(), "l'etiqueta de text no es mostra: només la fletxa")
     }
 
-    @Test fun lastQuestionKeepsEqualHalvesWithTheShortReviewLabel() {
+    @Test fun lastQuestionOffersReviewAndFinish() {
         show(questionState(QuestionType.SINGLE_CHOICE).copy(index = 4))
         val prev = bounds("Anterior")
-        val next = bounds("Revisar")
-        assertEquals(prev.width, next.width, 1f)
-        assertEquals(prev.top, next.top, 1f)
+        val next = bounds("Revisar i finalitzar")
+        assertEquals(1.4f, next.width / prev.width, 0.05f)
         assertTrue(prev.left < next.left)
     }
 
@@ -590,8 +595,8 @@ class ComposeScreensTest {
 
     private fun assertNoNavOverflow(scale: Float, last: Boolean) {
         rule.setContent { Scaled(scale) { QuestionScreen(questionState(QuestionType.SINGLE_CHOICE, index = if (last) 4 else 1), QuestionActions()) } }
-        val n = if (last) "Revisar" else "Següent"
-        assertTrue(!overflows(n), "$n desborda a escala $scale")
+        // «Revisar i finalitzar» pot ocupar dues línies (UX Q6); «Següent» i «Anterior», una de sola.
+        if (!last) assertTrue(!overflows("Següent"), "Següent desborda a escala $scale")
         assertTrue(!overflows("Anterior"), "Anterior desborda a escala $scale")
     }
 
@@ -608,14 +613,14 @@ class ComposeScreensTest {
         assertTrue(panel.top >= stem.bottom, "panel ${panel.top} < enunciat ${stem.bottom}")
     }
 
-    @Test fun homeFactTilesAreThreeEqualSingleLineColumnsWithShortLabelsAndFullSpeech() {
+    @Test fun homeFactStripHasThreeEqualColumnsWithFullLabelsAndFullSpeech() {
         rule.setContent { ArbitratgeTheme { HomeScreen(Stage.Home(RulesSummary(5, 5, 3), null, null), {}, {}, {}) } }
-        rule.onNodeWithText("preg.").assertIsDisplayed()
-        rule.onNodeWithText("min").assertIsDisplayed()
-        rule.onNodeWithText("encerts").assertIsDisplayed()
-        val w = listOf("preg.", "min", "encerts").map { rule.onNodeWithText(it, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot }
-        // una sola línia: l'alçada d'una etiqueta de 16 sp és d'una línia (≈ 24 dp = 72 px a 3×)
-        w.forEach { assertTrue(it.height <= 30f * 3, "etiqueta en més d'una línia: ${it.height}") }
+        val labels = listOf("preguntes", "minuts", "encerts per aprovar")
+        labels.forEach { rule.onNodeWithText(it, substring = true, useUnmergedTree = true).assertIsDisplayed() }
+        assertTrue(rule.onAllNodesWithText("preg.", useUnmergedTree = true).fetchSemanticsNodes().isEmpty(), "sense abreviatures")
+        val w = labels.map { rule.onNodeWithText(it, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot }
+        assertEquals(w[0].top, w[1].top, 1f, "tres columnes a la mateixa altura")
+        assertEquals(w[1].top, w[2].top, 1f)
         rule.onNodeWithContentDescription("5 preguntes, 5 minuts, 3 encerts per aprovar").assertExists()
     }
 
@@ -637,3 +642,5 @@ class ComposeScreensTest {
         assertEquals(36, LightScheme.allRoles().size)
     }
 }
+
+private const val ArbHeightTolerance = 4f

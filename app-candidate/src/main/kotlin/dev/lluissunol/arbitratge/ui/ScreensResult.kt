@@ -22,13 +22,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -79,7 +79,7 @@ fun TimeUpScreen(st: Stage.TimeUp, onSeeResult: () -> Unit) {
     ScreenScaffold(title = stringResource(R.string.timeup_title), bottom = {
         PrimaryButton(stringResource(R.string.btn_see_result), onSeeResult)
     }) {
-        Callout(drawable(R.drawable.ic_timer), MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer) {
+        InfoBanner(BannerKind.WARNING, icon = drawable(R.drawable.ic_timer)) {
             if (st.away) Body(stringResource(R.string.timeup_away))
             Body(stringResource(R.string.timeup_answered, st.answered, st.total))
             val missing = st.total - st.answered
@@ -109,10 +109,9 @@ fun GradingScreen(st: Stage.Grading, onRetry: () -> Unit, onAbandon: () -> Unit)
             PrimaryButton(stringResource(R.string.btn_retry), onRetry)
             SecondaryButton(stringResource(R.string.btn_abandon), onAbandon)
         }) {
-            Callout(
-                vector(Icons.Default.Warning), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer,
-                Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
-            ) { Text(stringResource(R.string.save_result_err), style = MaterialTheme.typography.titleMedium) }
+            InfoBanner(BannerKind.ERROR, Modifier.semantics { liveRegion = LiveRegionMode.Assertive }) {
+                Text(stringResource(R.string.save_result_err), style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }
@@ -190,7 +189,7 @@ fun ResultScreen(
     val passed = r.passed
     val failures = r.failures
     val scheme = MaterialTheme.colorScheme
-    ScreenScaffold(title = stringResource(R.string.result_title), bottom = {
+    ScreenScaffold(title = stringResource(R.string.result_title), pinBottom = false, bottom = {
         if (passed) {
             when (val c = st.credential) {
                 is CredentialPhase.Ready -> PrimaryButton(stringResource(R.string.btn_see_credential), { onSeeCredential(c) })
@@ -242,19 +241,19 @@ fun ResultScreen(
         if (passed) {
             Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
                 when (st.credential) {
-                    is CredentialPhase.Ready -> Callout(drawable(R.drawable.ic_id_card), scheme.primaryContainer, scheme.onPrimaryContainer) {
+                    is CredentialPhase.Ready -> InfoBanner(BannerKind.SUCCESS) {
                         Text(stringResource(R.string.passed_next), style = MaterialTheme.typography.bodyLarge)
                     }
-                    CredentialPhase.Pending -> Callout(vector(Icons.Default.Warning), scheme.errorContainer, scheme.onErrorContainer) {
+                    CredentialPhase.Pending -> InfoBanner(BannerKind.ERROR) {
                         Text(stringResource(R.string.cred_pending), style = MaterialTheme.typography.bodyLarge)
                     }
-                    else -> Callout(vector(Icons.Default.Info), scheme.surfaceContainerHigh, scheme.onSurface) {
+                    else -> InfoBanner(BannerKind.NEUTRAL) {
                         Text(stringResource(R.string.cred_issuing), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
         } else {
-            Callout(vector(Icons.Default.Info), scheme.secondaryContainer, scheme.onSecondaryContainer) {
+            InfoBanner(BannerKind.NEUTRAL) {
                 Text(stringResource(R.string.failed_next), style = MaterialTheme.typography.bodyLarge)
             }
         }
@@ -287,8 +286,8 @@ private fun qStatus(s: QState): String = stringResource(
 private fun StatusBadge(s: QState) {
     val scheme = MaterialTheme.colorScheme
     when (s) {
-        QState.RIGHT -> IconBadge(vector(Icons.Default.Check), scheme.primaryContainer, scheme.onPrimaryContainer)
-        QState.WRONG -> IconBadge(vector(Icons.Default.Close), scheme.errorContainer, scheme.onErrorContainer)
+        QState.RIGHT -> IconBadge(vector(Icons.Outlined.Check), scheme.primaryContainer, scheme.onPrimaryContainer)
+        QState.WRONG -> IconBadge(vector(Icons.Outlined.Close), scheme.errorContainer, scheme.onErrorContainer)
         QState.EMPTY -> IconBadge(drawable(R.drawable.ic_remove), scheme.surfaceContainerHighest, scheme.onSurfaceVariant)
     }
 }
@@ -314,10 +313,10 @@ fun ReviewScreen(
             bottom = if (list.size > 1) {
                 {
                     val prev: @Composable (Modifier) -> Unit = { m ->
-                        SecondaryButton(stringResource(R.string.btn_prev_q), { onOpen(pos - 1) }, m, icon = vector(Icons.AutoMirrored.Filled.KeyboardArrowLeft))
+                        SecondaryButton(stringResource(R.string.btn_prev_q), { onOpen(pos - 1) }, m, icon = vector(Icons.AutoMirrored.Outlined.KeyboardArrowLeft))
                     }
                     val next: @Composable (Modifier) -> Unit = { m ->
-                        PrimaryButton(stringResource(R.string.btn_next), { onOpen(pos + 1) }, m, icon = vector(Icons.AutoMirrored.Filled.KeyboardArrowRight))
+                        PrimaryButton(stringResource(R.string.btn_next), { onOpen(pos + 1) }, m, icon = vector(Icons.AutoMirrored.Outlined.KeyboardArrowRight))
                     }
                     // En los extremos el botón que no aplica se OCULTA (no se deshabilita al 38 %).
                     if (isLargeText()) {
@@ -375,7 +374,7 @@ private fun ReviewItem(index: Int, total: Int, q: QuestionResult, onClick: () ->
             Text("$title · $status", style = MaterialTheme.typography.labelMedium, color = scheme.onSurfaceVariant)
             Text(q.text, style = MaterialTheme.typography.bodyLarge)
         }
-        ArbIcon(vector(Icons.AutoMirrored.Filled.KeyboardArrowRight), null, tint = scheme.onSurfaceVariant)
+        ArbIcon(vector(Icons.AutoMirrored.Outlined.KeyboardArrowRight), null, tint = scheme.onSurfaceVariant)
     }
 }
 
@@ -417,7 +416,7 @@ private fun QuestionDetail(index: Int, total: Int, q: QuestionResult) {
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
         ) {
             ArbIcon(
-                when (state) { QState.RIGHT -> vector(Icons.Default.Check); QState.WRONG -> vector(Icons.Default.Close); QState.EMPTY -> drawable(R.drawable.ic_remove) },
+                when (state) { QState.RIGHT -> vector(Icons.Outlined.Check); QState.WRONG -> vector(Icons.Outlined.Close); QState.EMPTY -> drawable(R.drawable.ic_remove) },
                 null, tint = content, size = 20.sp.toScaledDp(),
             )
             Text(qStatus(state), style = MaterialTheme.typography.labelMedium, color = content)
@@ -429,7 +428,7 @@ private fun QuestionDetail(index: Int, total: Int, q: QuestionResult) {
     }
     Text(q.text, style = ArbText.question)
     if (!q.isCorrect) {
-        Callout(vector(Icons.Default.Info), scheme.secondaryContainer, scheme.onSecondaryContainer) {
+        InfoBanner(BannerKind.NEUTRAL) {
             Text(reasonText(q), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
         }
     } else Body(reasonText(q), color = scheme.onSurfaceVariant)
@@ -483,9 +482,9 @@ private fun ResolvedOption(text: String, marked: Boolean, correct: Boolean) {
     ) {
         val d = 28.sp.toScaledDp(max = 40.dp)
         when {
-            correct && marked -> ArbIcon(vector(Icons.Default.CheckCircle), stringResource(R.string.icon_correct), tint = scheme.primary, size = d)
-            correct -> ArbIcon(vector(Icons.Default.Check), stringResource(R.string.icon_correct), tint = onContainer, size = d)
-            marked -> ArbIcon(vector(Icons.Default.Close), stringResource(R.string.icon_wrong), tint = scheme.error, size = d)
+            correct && marked -> ArbIcon(vector(Icons.Default.CheckCircle), stringResource(R.string.icon_correct), tint = MaterialTheme.arb.correct, size = d)
+            correct -> ArbIcon(vector(Icons.Outlined.Check), stringResource(R.string.icon_correct), tint = onContainer, size = d)
+            marked -> ArbIcon(vector(Icons.Outlined.Close), stringResource(R.string.icon_wrong), tint = scheme.error, size = d)
             else -> Spacer(Modifier.size(d))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {

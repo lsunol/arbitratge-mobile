@@ -7,5 +7,5 @@
     <color name="arbitratge_tinta">#18241D</color>
     <color name="arbitratge_groc">#F2C230</color>
     <!-- Fons de finestra (abans que Compose pinti): coherent amb `background` de cada tema. -->
-    <color name="arbitratge_finestra">#F2F5F3</color>
+    <color name="arbitratge_finestra">#FFFFFF</color>
 </resources>

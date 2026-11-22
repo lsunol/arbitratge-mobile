@@ -28,63 +28,69 @@ import dev.lluissunol.arbitratge.R
 // Sense color dinàmic (04 §8.1): la identitat no ha de canviar amb el fons de pantalla.
 // ---------------------------------------------------------------------------------------------
 
-/** Rols M3 COMPLETS (cap rol queda al valor per defecte, que és el lila de Google). */
+/** Rols M3 COMPLETS (cap rol queda al valor per defecte, que és el lila de Google). Tokens: ui-designer-spec §3.1. */
 internal val LightScheme = lightColorScheme(
-    primary = Color(0xFF1D6F42), onPrimary = Color.White,
-    primaryContainer = Color(0xFFD7EEDF), onPrimaryContainer = Color(0xFF0A3A20),
-    inversePrimary = Color(0xFF86D7A4),
-    secondary = Color(0xFF3F5F4B), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD3E6D9), onSecondaryContainer = Color(0xFF0F2A1A),
+    primary = Color(0xFF0F3D26), onPrimary = Color.White, // [DESV-1] gespa com a botó primari
+    primaryContainer = Color(0xFFDCEBE1), onPrimaryContainer = Color(0xFF0F3D26),
+    inversePrimary = Color(0xFFA6DDB8),
+    secondary = Color(0xFF1D6F42), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE1EFE5), onSecondaryContainer = Color(0xFF0F3D26),
     tertiary = Color(0xFF7A5900), onTertiary = Color.White,
     tertiaryContainer = Color(0xFFFFE08A), onTertiaryContainer = Color(0xFF2B1F00),
-    background = Color(0xFFF2F5F3), onBackground = Color(0xFF18241D),
+    background = Color.White, onBackground = Color(0xFF18241D),
     surface = Color.White, onSurface = Color(0xFF18241D),
-    surfaceVariant = Color(0xFFDFE7E1), onSurfaceVariant = Color(0xFF4A5750),
-    surfaceTint = Color(0xFF1D6F42),
-    inverseSurface = Color(0xFF2B332E), inverseOnSurface = Color(0xFFEEF2EF),
+    surfaceVariant = Color(0xFFE3EAE5), onSurfaceVariant = Color(0xFF3F4B44),
+    surfaceTint = Color(0xFF0F3D26),
+    inverseSurface = Color(0xFF18241D), inverseOnSurface = Color(0xFFF2F5F3),
     error = Color(0xFFB3261E), onError = Color.White,
-    errorContainer = Color(0xFFFBE3E0), onErrorContainer = Color(0xFF5C0E09),
-    outline = Color(0xFF6B7770), outlineVariant = Color(0xFFC5CFC8), scrim = Color.Black,
-    surfaceBright = Color.White, surfaceDim = Color(0xFFD8DFDA),
+    errorContainer = Color(0xFFFCE4E1), onErrorContainer = Color(0xFF5C0E09),
+    outline = Color(0xFF66736B), outlineVariant = Color(0xFFD3DCD5), scrim = Color.Black,
+    surfaceBright = Color.White, surfaceDim = Color(0xFFDCE3DE),
     surfaceContainerLowest = Color.White, surfaceContainerLow = Color(0xFFF7F9F7),
-    surfaceContainer = Color(0xFFEEF2EF), surfaceContainerHigh = Color(0xFFE8EDE9),
-    surfaceContainerHighest = Color(0xFFE1E8E3),
+    surfaceContainer = Color(0xFFF2F5F3), surfaceContainerHigh = Color(0xFFE9EEEA),
+    surfaceContainerHighest = Color(0xFFDEE5E0),
 )
 
+/** Tema fosc «nit de camp» (§3.2): fons verd nit, no negre; botons de cal, no menta. */
 internal val DarkScheme = darkColorScheme(
-    primary = Color(0xFF86D7A4), onPrimary = Color(0xFF003920),
-    primaryContainer = Color(0xFF1A5235), onPrimaryContainer = Color(0xFFC6EED3),
-    inversePrimary = Color(0xFF1D6F42),
-    secondary = Color(0xFFB5CCBC), onSecondary = Color(0xFF213528),
-    secondaryContainer = Color(0xFF2E4637), onSecondaryContainer = Color(0xFFD3E6D9),
+    primary = Color(0xFFE3F1E7), onPrimary = Color(0xFF0F3D26),
+    primaryContainer = Color(0xFF1B4A31), onPrimaryContainer = Color(0xFFD5EEDD),
+    inversePrimary = Color(0xFF0F3D26),
+    secondary = Color(0xFF9FD8B1), onSecondary = Color(0xFF0A3A20),
+    secondaryContainer = Color(0xFF1B4A31), onSecondaryContainer = Color(0xFFD5EEDD),
     tertiary = Color(0xFFF0C64A), onTertiary = Color(0xFF3F2E00),
-    tertiaryContainer = Color(0xFF5B4300), onTertiaryContainer = Color(0xFFFFE08A),
-    background = Color(0xFF0F1512), onBackground = Color(0xFFE2EAE4),
-    surface = Color(0xFF151C18), onSurface = Color(0xFFE2EAE4),
-    surfaceVariant = Color(0xFF3A453E), onSurfaceVariant = Color(0xFFBAC6BE),
-    surfaceTint = Color(0xFF86D7A4),
-    inverseSurface = Color(0xFFE2EAE4), inverseOnSurface = Color(0xFF2B332E),
+    tertiaryContainer = Color(0xFFFFE08A), onTertiaryContainer = Color(0xFF2B1F00),
+    background = Color(0xFF0C1A12), onBackground = Color(0xFFE9F0EA),
+    surface = Color(0xFF12241A), onSurface = Color(0xFFE9F0EA),
+    surfaceVariant = Color(0xFF223C2D), onSurfaceVariant = Color(0xFFBCCBC0),
+    surfaceTint = Color(0xFFE3F1E7),
+    inverseSurface = Color(0xFFE9F0EA), inverseOnSurface = Color(0xFF18241D),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
-    errorContainer = Color(0xFF8C1D18), onErrorContainer = Color(0xFFFFDAD6),
-    outline = Color(0xFF87938B), outlineVariant = Color(0xFF3A453E), scrim = Color.Black,
-    surfaceBright = Color(0xFF333B36), surfaceDim = Color(0xFF0F1512),
-    surfaceContainerLowest = Color(0xFF0B100D), surfaceContainerLow = Color(0xFF151C18),
-    surfaceContainer = Color(0xFF1A221D), surfaceContainerHigh = Color(0xFF222B26),
-    surfaceContainerHighest = Color(0xFF2C3530),
+    errorContainer = Color(0xFF4E1A16), onErrorContainer = Color(0xFFFFDAD6),
+    outline = Color(0xFF8DA194), outlineVariant = Color(0xFF2C4536), scrim = Color.Black,
+    surfaceBright = Color(0xFF2A4535), surfaceDim = Color(0xFF0C1A12),
+    surfaceContainerLowest = Color(0xFF08130D), surfaceContainerLow = Color(0xFF0F2017),
+    surfaceContainer = Color(0xFF152A1E), surfaceContainerHigh = Color(0xFF1B3325),
+    surfaceContainerHighest = Color(0xFF223C2D),
 )
 
-/** Colors de marca fora dels rols M3 (especificació de marca §3). */
+/** Colors de marca fora dels rols M3 (especificació de marca §3; ui-designer-spec §3.3). */
 object BrandColors {
     val Pitch = Color(0xFF0F3D26)
-    val PitchLine = Color.White.copy(alpha = 0.16f)
-    val Chalk = Color(0xFFF2F5F3)
+
+    /** Línies de cal decoratives (a α 0,18 sobre la gespa). */
+    val Chalk = Color(0xFFFFFFFF)
+    val PitchSubtitle = Color(0xFFE2E8E5)
     val RefCard = Color(0xFFF2C230)
     val Green = Color(0xFF1D6F42)
+
+    /** Línies de camp decoratives (es retiren a la fase 2, quan `centreLines` substitueixi `pitchLines`). */
+    val PitchLine = Color.White.copy(alpha = 0.18f)
 
     /** El carnet és SEMPRE paper clar (document, QR sobre blanc, igual que el PDF). */
     val Paper = Color.White
     val PaperInk = Color(0xFF18241D)
-    val PaperMuted = Color(0xFF4A5750)
+    val PaperMuted = Color(0xFF3F4B44)
     val PaperLine = Color(0xFFC5CFC8)
     val PaperFoot = Color(0xFFEEF2EF)
 
@@ -94,30 +100,35 @@ object BrandColors {
 }
 
 /**
- * Colors semàntics de l'examen. La selecció (que NO és un veredicte) és neutra-blava; el verd queda reservat per a
- * «correcta» i el vermell per a «incorrecta» (UX F4: «marcada» no pot confondre's amb «encertada»).
+ * Colors semàntics de l'examen. «Marca de bolígraf»: el que l'usuari marca es pinta en tinta ([mark]), que NO és un
+ * veredicte; el verd queda per a «correcta» i el vermell per a «incorrecta» (UX F4). Sense blau.
  */
 @Immutable
 class ArbColors(
-    val selection: Color,
-    val selectionContainer: Color,
+    val mark: Color,
+    val onMark: Color,
     val correct: Color,
     val correctContainer: Color,
     val onCorrectContainer: Color,
+    val wrong: Color,
+    val wrongContainer: Color,
+    val onWrongContainer: Color,
 )
 
 internal val LightArbColors = ArbColors(
-    selection = Color(0xFF2B5C8A), selectionContainer = Color(0xFFE3EEF9),
-    correct = Color(0xFF1D6F42), correctContainer = Color(0xFFD7EEDF), onCorrectContainer = Color(0xFF0A3A20),
+    mark = Color(0xFF18241D), onMark = Color.White,
+    correct = Color(0xFF1D6F42), correctContainer = Color(0xFFDDF0E3), onCorrectContainer = Color(0xFF0A3A20),
+    wrong = LightScheme.error, wrongContainer = LightScheme.errorContainer, onWrongContainer = LightScheme.onErrorContainer,
 )
 internal val DarkArbColors = ArbColors(
-    selection = Color(0xFF9DC3EA), selectionContainer = Color(0xFF1F3447),
-    correct = Color(0xFF86D7A4), correctContainer = Color(0xFF1A5235), onCorrectContainer = Color(0xFFC6EED3),
+    mark = Color(0xFFE9F0EA), onMark = Color(0xFF0C1A12),
+    correct = Color(0xFF8FD6A6), correctContainer = Color(0xFF163F27), onCorrectContainer = Color(0xFFCFEFDA),
+    wrong = DarkScheme.error, wrongContainer = DarkScheme.errorContainer, onWrongContainer = DarkScheme.onErrorContainer,
 )
 
 val LocalArbColors = staticCompositionLocalOf { LightArbColors }
 
-/** Retícula de 8 dp i mides tàctils (4 §8.1). */
+/** Retícula de 8 dp i mides tàctils (4 §8.1). Ritme: 8 dins un component, 16 dins un grup, 32 entre grups. */
 object ArbDimens {
     val gutter = 20.dp
     val s4 = 4.dp
@@ -126,24 +137,27 @@ object ArbDimens {
     val s16 = 16.dp
     val s24 = 24.dp
     val s32 = 32.dp
-    val sectionGap = 24.dp
-    val itemGap = 12.dp
+    val sectionGap = 32.dp
+    val itemGap = 16.dp
     val touchMin = 48.dp
     val buttonMin = 56.dp
     val optionMin = 64.dp
-    val optionMinTf = 80.dp
+    val optionMinTf = 96.dp
+    val rowMin = 72.dp
     val indicator = 28.dp
     val iconInline = 24.dp
     val iconBadge = 40.dp
     val progressHeight = 8.dp
+    val topBar = 56.dp
 }
 
+/** *Shape lock* (§3.5): controls 12, blocs 20, diàlegs 28; píndola només per al rellotge i els xips d'estat. */
 val ArbShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(14.dp),
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(12.dp),
     large = RoundedCornerShape(20.dp),
-    extraLarge = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 private fun next(weight: Int) = Font(
@@ -162,22 +176,25 @@ val AtkinsonMono = FontFamily(mono(400), mono(600))
 
 /** Cap rol baixa de 16 sp (04 §8.1). */
 internal fun arbTypography(): Typography {
-    fun t(size: Int, line: Int, weight: Int) =
-        TextStyle(fontFamily = Atkinson, fontSize = size.sp, lineHeight = line.sp, fontWeight = FontWeight(weight))
+    fun t(size: Int, line: Int, weight: Int, tnum: Boolean = false) =
+        TextStyle(
+            fontFamily = Atkinson, fontSize = size.sp, lineHeight = line.sp, fontWeight = FontWeight(weight),
+            fontFeatureSettings = if (tnum) "tnum" else null,
+        )
     return Typography(
-        displayLarge = t(44, 52, 700), displayMedium = t(40, 48, 700), displaySmall = t(34, 42, 700),
-        headlineLarge = t(30, 38, 800), headlineMedium = t(28, 36, 700), headlineSmall = t(24, 32, 600),
-        titleLarge = t(22, 28, 600), titleMedium = t(20, 28, 400), titleSmall = t(18, 26, 600),
-        bodyLarge = t(18, 27, 400), bodyMedium = t(16, 24, 400), bodySmall = t(16, 24, 400),
-        labelLarge = t(18, 24, 600), labelMedium = t(16, 20, 500), labelSmall = t(16, 20, 500),
+        displayLarge = t(56, 64, 700, tnum = true), displayMedium = t(40, 48, 700), displaySmall = t(34, 42, 700),
+        headlineLarge = t(34, 40, 800), headlineMedium = t(30, 38, 700), headlineSmall = t(28, 36, 700),
+        titleLarge = t(24, 32, 700), titleMedium = t(20, 28, 600), titleSmall = t(18, 26, 700),
+        bodyLarge = t(18, 28, 400), bodyMedium = t(16, 24, 400), bodySmall = t(16, 24, 400),
+        labelLarge = t(18, 24, 700), labelMedium = t(16, 22, 600), labelSmall = t(16, 22, 600),
     )
 }
 
 /** Estils propis fora de `Typography`. */
 object ArbText {
     /** L'enunciat és el més gran de l'examen (la jerarquia ja no la lidera la capçalera). */
-    val question = TextStyle(fontFamily = Atkinson, fontSize = 24.sp, lineHeight = 33.sp, fontWeight = FontWeight(600))
-    val progressLabel = TextStyle(fontFamily = Atkinson, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight(600))
+    val question = TextStyle(fontFamily = Atkinson, fontSize = 24.sp, lineHeight = 34.sp, fontWeight = FontWeight(600))
+    val progressLabel = TextStyle(fontFamily = Atkinson, fontSize = 18.sp, lineHeight = 24.sp, fontWeight = FontWeight(700))
     val option = TextStyle(fontFamily = Atkinson, fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight(400))
     val optionTf = TextStyle(fontFamily = Atkinson, fontSize = 22.sp, lineHeight = 30.sp, fontWeight = FontWeight(600))
     val timer = TextStyle(

@@ -31,7 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,12 +40,20 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,9 +89,14 @@ import dev.lluissunol.arbitratge.credential.QrMatrix
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Estructura comuna (04 §2): barra superior pròpia (sense alçada fixa: títols llargs al 200 %), contingut amb
+ * Estructura comuna (04 §2): barra superior pròpia de 56 dp (només «Enrere» i, al resum, el rellotge), el **títol com a
+ * primer element del contingut** (I5: es desplaça amb el contingut, així al 200 % no ocupa espai fix), contingut amb
  * scroll i barra d'accions ancorada a baix amb separador quan el contingut es pot desplaçar. Respecta els insets
  * (edge-to-edge, 03 §10.3).
+ *
+ * Amb [pinBottom] = false les accions baixen al **final del contingut** quan la lletra és extra-gran (≥ 1,5×), perquè la
+ * barra fixa no es mengi el 25-30 % de l'alçada (I9). Es fan servir a benvinguda, inici, normes, resultat i credencial;
+ * pregunta, resum, detall de repàs i nom les mantenen fixes.
  */
 @Composable
 fun ScreenScaffold(
@@ -94,23 +107,35 @@ fun ScreenScaffold(
     /** El estado de scroll es PROPIO de cada clave (p. ej. el índice de la pregunta): no se reutiliza entre preguntas. */
     scrollKey: Any? = null,
     spacing: Dp = ArbDimens.itemGap,
+    pinBottom: Boolean = true,
+    bottomVPad: Dp = ArbDimens.s12,
+    /** Banda a sangre (I3) por detrás de la barra de estado: va FUERA del margen lateral y de los insets superiores. */
+    header: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = key(scrollKey) { rememberScrollState() }
+    val pinned = pinBottom || !isExtraLargeText()
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
         containerColor = MaterialTheme.colorScheme.background,
+        // Con banda, el inset superior lo gestiona la propia banda (edge-to-edge): el contenido arranca en y = 0.
+        contentWindowInsets = if (header != null) WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+        else ScaffoldDefaults.contentWindowInsets,
         topBar = {
-            if (topBar != null) topBar() else if (title != null) ArbTopBar(title, onBack)
+            when {
+                topBar != null -> topBar()
+                onBack != null -> ArbTopBar(onBack)
+                title != null -> StatusInset()
+            }
         },
         bottomBar = {
-            if (bottom != null) {
+            if (bottom != null && pinned) {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     Column {
                         if (scroll.canScrollForward) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Column(
                             Modifier.fillMaxWidth().navigationBarsPadding()
-                                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.s12),
+                                .padding(horizontal = ArbDimens.gutter, vertical = bottomVPad),
                             verticalArrangement = Arrangement.spacedBy(ArbDimens.s8),
                         ) { bottom() }
                     }
@@ -118,45 +143,55 @@ fun ScreenScaffold(
             }
         },
     ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(scroll)
-                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.s12),
-            verticalArrangement = Arrangement.spacedBy(spacing),
-            content = content,
-        )
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll)) {
+            header?.invoke()
+            Column(
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = ArbDimens.gutter)
+                    .padding(top = if (header != null) ArbDimens.s24 else ArbDimens.s12, bottom = ArbDimens.s12),
+                verticalArrangement = Arrangement.spacedBy(spacing),
+            ) {
+                if (title != null) ScreenTitle(title)
+                content()
+                if (bottom != null && !pinned) {
+                    Spacer(Modifier.height(ArbDimens.s16))
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(ArbDimens.s8)) { bottom() }
+                }
+            }
+        }
     }
 }
 
+/** Títol de pantalla dins del contingut (28 sp/700, en tinta, `heading()`): 8 dp a dalt i 16 a baix (via `spacing`). */
+@Composable
+fun ScreenTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground,
+        modifier = modifier.fillMaxWidth().padding(top = ArbDimens.s8).semantics { heading() },
+    )
+}
+
 /**
- * Barra superior del color del fons, títol 22/600 que pot ocupar diverses línies (lletra gran). Les accions (cronòmetre) van
- * a la dreta amb el marge de 20 dp; amb text gran baixen a una segona fila perquè el títol no s'aixafi.
+ * Barra superior de 56 dp: només el botó d'enrere (48 dp) i, al resum, el rellotge a la dreta amb el marge de 20 dp.
+ * El títol ja no hi viu (I5).
  */
 @Composable
-fun ArbTopBar(title: String, onBack: (() -> Unit)?, actions: (@Composable () -> Unit)? = null) {
-    val stacked = actions != null && isLargeText()
+fun ArbTopBar(onBack: (() -> Unit)?, actions: (@Composable () -> Unit)? = null) {
     Surface(color = MaterialTheme.colorScheme.background) {
-        Column(
+        Row(
             Modifier.fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                .heightIn(min = ArbDimens.topBar)
+                .padding(start = if (onBack != null) 4.dp else ArbDimens.gutter, end = if (actions != null) ArbDimens.gutter else ArbDimens.s8),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .padding(start = if (onBack != null) 4.dp else ArbDimens.gutter, end = if (actions != null) ArbDimens.gutter else ArbDimens.s8),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (onBack != null) {
-                    IconButton(onClick = onBack, Modifier.size(ArbDimens.touchMin)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                    Spacer(Modifier.size(ArbDimens.s4))
+            if (onBack != null) {
+                IconButton(onClick = onBack, Modifier.size(ArbDimens.touchMin)) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.back))
                 }
-                Text(
-                    title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.weight(1f).padding(vertical = ArbDimens.s8).semantics { heading() },
-                )
-                if (!stacked) actions?.invoke()
             }
-            if (stacked) Box(Modifier.padding(start = ArbDimens.gutter, end = ArbDimens.gutter, bottom = ArbDimens.s8)) { actions?.invoke() }
+            Spacer(Modifier.weight(1f))
+            actions?.invoke()
         }
     }
 }
@@ -191,8 +226,12 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
         onClick = onClick,
         enabled = enabled,
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.5.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+        // I9: borde de 2 dp en `primary`; desactivat, vora i text a `onSurface` α 0,38 (es llegeix com a inactiu).
+        border = BorderStroke(2.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        ),
         modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
         contentPadding = PaddingValues(horizontal = hPad, vertical = 14.dp),
     ) { ButtonLabel(text, icon, maxLines) }
@@ -203,6 +242,7 @@ fun TertiaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modif
     TextButton(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
         modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier).heightIn(min = ArbDimens.touchMin),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
     ) { ButtonLabel(text, icon) }
@@ -292,6 +332,30 @@ fun Callout(
     }
 }
 
+/** Gramàtica dels avisos (UX P3.1): cada tipus té color I icona propis (mai només color). */
+enum class BannerKind { NEUTRAL, SUCCESS, WARNING, ERROR }
+
+/**
+ * Avís amb tipus: neutre (cal + «i»), èxit (verd clar + ✓), avís (ambre + ⚠) i error (vermell clar + ⚠). [icon] permet
+ * una icona pròpia del mateix estil (p. ex. bateria) sense canviar els colors.
+ */
+@Composable
+fun InfoBanner(
+    kind: BannerKind,
+    modifier: Modifier = Modifier,
+    icon: Painter? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val (container, onContainer, glyph) = when (kind) {
+        BannerKind.NEUTRAL -> Triple(scheme.surfaceContainer, scheme.onSurface, Icons.Outlined.Info)
+        BannerKind.SUCCESS -> Triple(scheme.primaryContainer, scheme.onPrimaryContainer, Icons.Outlined.CheckCircle)
+        BannerKind.WARNING -> Triple(scheme.tertiaryContainer, scheme.onTertiaryContainer, Icons.Outlined.Warning)
+        BannerKind.ERROR -> Triple(scheme.errorContainer, scheme.onErrorContainer, Icons.Outlined.Warning)
+    }
+    Callout(icon ?: vector(glyph), container, onContainer, modifier, content)
+}
+
 /**
  * Diàleg amb accions apilades a tot l'ample: la SEGURA és el primari ple; la irreversible, el secundari (04 §2.4).
  * Amb [dismissible] = false (fallada de desat) ni Enrere ni el toc a fora el tanquen.
@@ -313,10 +377,16 @@ fun ArbDialog(
         onDismissRequest = onDismissRequest,
         properties = DialogProperties(dismissOnBackPress = dismissible, dismissOnClickOutside = dismissible, usePlatformDefaultWidth = false),
     ) {
+        // Scrim α 0,6 (I1), explícit: no depèn del tema de la plataforma.
+        val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+        SideEffect {
+            dialogWindow?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            dialogWindow?.setDimAmount(0.6f)
+        }
         Surface(
             modifier = Modifier.fillMaxWidth().padding(horizontal = ArbDimens.s24),
             shape = MaterialTheme.shapes.extraLarge,
-            // Clar: blanc (surfaceContainerLowest); fosc: surfaceContainerHigh (visual review §4.4).
+            // Clar: blanc (surfaceContainerLowest); fosc: surfaceContainerHigh; radi 28 (I1).
             color = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) MaterialTheme.colorScheme.surfaceContainerHigh
             else MaterialTheme.colorScheme.surfaceContainerLowest,
             shadowElevation = 6.dp,
@@ -331,6 +401,7 @@ fun ArbDialog(
                     CompositionLocalProvidesBody(body)
                 }
                 Spacer(Modifier.height(ArbDimens.s8))
+                // Un únic botó ple (la via segura); la irreversible, amb vora.
                 PrimaryButton(primaryText, onPrimary)
                 SecondaryButton(secondaryText, onSecondary)
             }
