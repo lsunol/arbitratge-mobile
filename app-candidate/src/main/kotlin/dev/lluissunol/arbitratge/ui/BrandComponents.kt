@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
@@ -49,6 +50,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import dev.lluissunol.arbitratge.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -71,18 +74,13 @@ fun Modifier.centreLines(onlyTop: Boolean = false, upLength: Float = 4000f): Mod
     if (!onlyTop) drawLine(color, Offset(c.x, c.y + r), Offset(c.x, c.y + 4000f), strokeWidth = w)
 }
 
-/**
- * Banda de marca «Centre del camp» (I3): gespa a sangre, per darrere de la barra d'estat (els icones de la barra van en
- * clar mentre és a la vista). Símbol de 64 dp + «Arbitratge» + subtítol; amb lletra ≥ 1,5× el símbol va a dalt. Amb
- * [minHeightFraction] > 0 (només a l'inici i amb lletra < 1,3×) té una alçada mínima i el contingut centrat.
- */
+/** Icones de la barra d'estat en clar mentre hi ha una banda de gespa darrere; en sortir es restaura l'estat previ. */
 @Composable
-fun BrandBand(title: String, subtitle: String, modifier: Modifier = Modifier, minHeightFraction: Float = 0f) {
+fun LightStatusBarIcons(light: Boolean = true) {
     val view = LocalView.current
-    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    DisposableEffect(view) {
+    DisposableEffect(view, light) {
         val window = (view.context as? Activity)?.window
-        if (window == null) {
+        if (window == null || !light) {
             onDispose { }
         } else {
             val controller = WindowCompat.getInsetsController(window, view)
@@ -91,6 +89,17 @@ fun BrandBand(title: String, subtitle: String, modifier: Modifier = Modifier, mi
             onDispose { controller.isAppearanceLightStatusBars = previous }
         }
     }
+}
+
+/**
+ * Banda de marca «Centre del camp» (I3): gespa a sangre, per darrere de la barra d'estat (els icones de la barra van en
+ * clar mentre és a la vista). Símbol de 64 dp + «Arbitratge» + subtítol; amb lletra ≥ 1,5× el símbol va a dalt. Amb
+ * [minHeightFraction] > 0 (només a l'inici i amb lletra < 1,3×) té una alçada mínima i el contingut centrat.
+ */
+@Composable
+fun BrandBand(title: String, subtitle: String, modifier: Modifier = Modifier, minHeightFraction: Float = 0f) {
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    // Los iconos de la barra de estado los gestiona ScreenScaffold (según la banda esté o no tras la barra).
     val stacked = isExtraLargeText()
     val insetPx = WindowInsets.statusBars.getTop(LocalDensity.current).toFloat()
     var bandCoords by remember { mutableStateOf<LayoutCoordinates?>(null) }
@@ -150,6 +159,11 @@ fun FactStrip(cells: List<FactCell>, spoken: String, modifier: Modifier = Modifi
         shape = MaterialTheme.shapes.large, color = scheme.surfaceContainer,
     ) {
         if (isLargeText()) {
+            // Columna de valors d'amplada comuna (el valor més ample, mínim 56 dp): totes les etiquetes comencen a la mateixa x.
+            val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+            val style = MaterialTheme.typography.headlineSmall
+            val density = LocalDensity.current
+            val valueW = with(density) { maxOf(56.dp, cells.maxOf { measurer.measure(it.value, style).size.width }.toDp()) }
             Column {
                 cells.forEachIndexed { i, c ->
                     if (i > 0) HorizontalDivider(color = scheme.outlineVariant)
@@ -158,7 +172,7 @@ fun FactStrip(cells: List<FactCell>, spoken: String, modifier: Modifier = Modifi
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(ArbDimens.s16),
                     ) {
-                        Text(c.value, style = MaterialTheme.typography.headlineSmall, color = scheme.onSurface, modifier = Modifier.widthIn(min = 56.dp))
+                        Text(c.value, style = MaterialTheme.typography.headlineSmall, color = scheme.onSurface, modifier = Modifier.width(valueW))
                         Text(c.label, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                     }
                 }
@@ -197,5 +211,48 @@ fun ActionRow(icon: Painter, title: String, support: String?, onClick: () -> Uni
             if (support != null) Text(support, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
         }
         ArbIcon(vector(Icons.AutoMirrored.Outlined.KeyboardArrowRight), null, tint = scheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * Banda del carnet (I8): gespa, mínim 88 dp, símbol de 48 dp amb les línies de camp, «Credencial d'aptitud» (24 sp) i el
+ * subtítol, i a sota un **filet groc de 4 dp** (`RefCard`, ús exclusiu del carnet). Amb lletra ≥ 1,5× el símbol va a
+ * dalt (sense línies, que tocarien el text). [topInset]: a sang per darrere de la barra d'estat (mode presentació);
+ * [compact]: sense subtítol (presentació). No és cap marca de validesa.
+ */
+@Composable
+fun CredentialBand(modifier: Modifier = Modifier, topInset: Boolean = false, compact: Boolean = false) {
+    if (topInset) LightStatusBarIcons()
+    val stacked = isExtraLargeText()
+    Column(modifier.fillMaxWidth()) {
+        Box(
+            Modifier.fillMaxWidth().background(BrandColors.Pitch).heightIn(min = 88.dp).clipToBounds(),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            val pad = (if (topInset) Modifier.windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)) else Modifier)
+                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.gutter)
+            val text: @Composable (Modifier) -> Unit = { m ->
+                Column(m) {
+                    Text(
+                        stringResource(R.string.cred_title), style = MaterialTheme.typography.titleLarge, color = Color.White,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    if (!compact) Text(stringResource(R.string.cred_subtitle), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PitchSubtitle)
+                }
+            }
+            if (stacked) {
+                Column(pad, verticalArrangement = Arrangement.spacedBy(ArbDimens.s12)) {
+                    BrandMark(48.dp, onPitch = true)
+                    text(Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(pad, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                    // A sang (presentació) sense línies de camp: la vertical creuaria l'hora de la barra d'estat.
+                    Box(if (topInset) Modifier.size(48.dp) else Modifier.size(48.dp).centreLines()) { BrandMark(48.dp, onPitch = true) }
+                    text(Modifier.weight(1f))
+                }
+            }
+        }
+        Box(Modifier.fillMaxWidth().height(4.dp).background(BrandColors.RefCard))
     }
 }

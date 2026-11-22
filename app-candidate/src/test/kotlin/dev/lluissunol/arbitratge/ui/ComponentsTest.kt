@@ -19,6 +19,9 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
@@ -74,7 +77,7 @@ class ComponentsTest {
         rule.onNodeWithContentDescription("Enrere").assertIsDisplayed()
     }
 
-    @Test fun topBarIs56dpHigh() {
+    @Test fun backButtonIsAtLeast48dpTall() {
         rule.setContent { ArbitratgeTheme { ScreenScaffold(title = "T", onBack = {}) { Text("Cos") } } }
         val back = rule.onNodeWithContentDescription("Enrere").fetchSemanticsNode().boundsInRoot
         assertTrue(back.width >= 48f * 3 - 1f && back.height >= 48f * 3 - 1f, "objectiu tàctil ≥ 48 dp: ${back.width}x${back.height}")
@@ -116,7 +119,7 @@ class ComponentsTest {
 
     // ------------------------------------------------------------------ InfoBanner
 
-    @Test fun everyBannerKindRendersItsTextWithAnIconAndDistinctContainers() {
+    @Test fun everyBannerKindRendersItsText() {
         rule.setContent {
             ArbitratgeTheme {
                 Column {
@@ -176,13 +179,13 @@ class ComponentsTest {
 
     // ------------------------------------------------------------------ fase 2: banda, FactStrip, ActionRow, normes
 
-    @Test fun brandBandShowsTitleAsHeadingAndStacksTheMarkAtExtraLargeText() {
+    @Test fun brandBandShowsTitleAsHeadingAndSubtitleAt200Percent() {
         rule.setContent { Scaled(2f) { BrandBand("Arbitratge", "Subtítol") } }
         rule.onNode(isHeading and androidx.compose.ui.test.hasText("Arbitratge")).assertExists()
         rule.onNodeWithText("Subtítol").assertIsDisplayed()
     }
 
-    @Test fun factStripBecomesRowsAtLargeText() {
+    @Test fun factStripIsColumnsAtScale1() {
         val cells = listOf(FactCell("5", "preguntes"), FactCell("5", "minuts"))
         rule.setContent { Scaled(1f) { FactStrip(cells, "x") } }
         val a1 = rule.onNodeWithText("preguntes", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
@@ -207,7 +210,7 @@ class ComponentsTest {
         assertTrue(h >= 72f * 3 - 1f, "fila ≥ 72 dp: $h")
     }
 
-    @Test fun welcomeOffersContinuarAndNoCircleBadges() {
+    @Test fun welcomeOffersContinuarInsteadOfEntesos() {
         rule.setContent { ArbitratgeTheme { WelcomeScreen {} } }
         rule.onNodeWithText("Continuar").assertIsDisplayed()
         assertTrue(rule.onAllNodesWithText("Entesos").fetchSemanticsNodes().isEmpty())
@@ -221,5 +224,26 @@ class ComponentsTest {
         rule.onNodeWithText("Si surts de l'app, el temps continua passant.").assertExists()
         rule.onNodeWithText("Maria").assertExists()
         rule.onNodeWithText("Canviar").assertExists()
+    }
+
+    // ------------------------------------------------------------------ fase 3: fons fix sota la barra d'estat
+
+    @Test fun statusCapKeepsTheBandColourOnlyWhileTheBandCoversTheStatusBar() {
+        // banda de 300 px, barra d'estat de 72 px
+        assertTrue(isBandBehindStatusBar(300, 0, 72), "en repòs")
+        assertTrue(isBandBehindStatusBar(300, 228, 72), "just abans de deixar la barra al descobert")
+        assertTrue(!isBandBehindStatusBar(300, 229, 72), "la banda ja no cobreix la barra: fons de pantalla")
+        assertTrue(!isBandBehindStatusBar(300, 1000, 72), "contingut desplaçat (200 %): mai per sota de l'hora")
+        assertTrue(isBandBehindStatusBar(0, 0, 72), "primer frame, banda sense mesurar: es tracta com a darrere (sense parpelleig)")
+    }
+
+    @Test fun scaffoldWithAHeaderDrawsAFixedStatusCap() {
+        rule.setContent { ArbitratgeTheme { ScreenScaffold(title = null, header = { Text("Banda") }) { Text("Cos") } } }
+        rule.onNodeWithTag(STATUS_CAP_TAG).assertExists()
+    }
+
+    @Test fun scaffoldWithoutHeaderHasNoStatusCap() {
+        rule.setContent { ArbitratgeTheme { ScreenScaffold(title = "T") { Text("Cos") } } }
+        rule.onAllNodesWithTag(STATUS_CAP_TAG).assertCountEquals(0)
     }
 }

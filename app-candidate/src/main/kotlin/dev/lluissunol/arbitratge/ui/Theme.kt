@@ -84,15 +84,15 @@ object BrandColors {
     val RefCard = Color(0xFFF2C230)
     val Green = Color(0xFF1D6F42)
 
-    /** Línies de camp decoratives (es retiren a la fase 2, quan `centreLines` substitueixi `pitchLines`). */
-    val PitchLine = Color.White.copy(alpha = 0.18f)
-
     /** El carnet és SEMPRE paper clar (document, QR sobre blanc, igual que el PDF). */
     val Paper = Color.White
     val PaperInk = Color(0xFF18241D)
     val PaperMuted = Color(0xFF3F4B44)
     val PaperLine = Color(0xFFC5CFC8)
     val PaperFoot = Color(0xFFEEF2EF)
+
+    /** Xip «APTE» del carnet (sempre sobre paper blanc, també amb tema fosc). */
+    val PaperChip = Color(0xFFDCEBE1)
 
     /** Avís de temps (5 min): ambre als dos temes, perquè destaqui. */
     val WarnAmber = Color(0xFFFFE08A)

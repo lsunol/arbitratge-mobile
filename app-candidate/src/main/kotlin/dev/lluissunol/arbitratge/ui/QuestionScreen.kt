@@ -320,26 +320,28 @@ fun TimerPill(remainingMs: Long, hidden: Boolean, level: TimeBanner?, onToggle: 
     }
 }
 
+/**
+ * Avís de temps (5 i 1 min): `InfoBanner` d'AVÍS (ambre + ⚠) amb «Tancar l'avís» a la dreta (≥ 56 dp). L'últim minut ja
+ * té el rellotge en vermell; l'avís no es converteix en error (UX P3.1/P3.2).
+ */
 @Composable
 fun TimeBannerCard(b: TimeBanner, onDismiss: () -> Unit) {
-    val scheme = MaterialTheme.colorScheme
-    val container = if (b == TimeBanner.ONE_MIN) scheme.errorContainer else BrandColors.WarnAmber
-    val content = if (b == TimeBanner.ONE_MIN) scheme.onErrorContainer else BrandColors.OnWarnAmber
-    Surface(
-        Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Assertive },
-        shape = MaterialTheme.shapes.large, color = container, contentColor = content,
-    ) {
-        Row(Modifier.padding(start = ArbDimens.s16), verticalAlignment = Alignment.CenterVertically) {
-            ArbIcon(vector(Icons.Outlined.Warning), null)
-            Text(
-                stringResource(if (b == TimeBanner.ONE_MIN) R.string.warn_1 else R.string.warn_5),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f).padding(horizontal = ArbDimens.s12, vertical = ArbDimens.s12),
-            )
+    InfoBanner(
+        BannerKind.WARNING,
+        Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+        contentPadding = PaddingValues(start = ArbDimens.s16, top = ArbDimens.s4, bottom = ArbDimens.s4, end = ArbDimens.s4),
+        centered = true,
+        trailing = {
             IconButton(onClick = onDismiss, Modifier.size(ArbDimens.buttonMin)) {
                 Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.btn_dismiss))
             }
-        }
+        },
+    ) {
+        Text(
+            stringResource(if (b == TimeBanner.ONE_MIN) R.string.warn_1 else R.string.warn_5),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(vertical = ArbDimens.s8),
+        )
     }
 }
 
@@ -382,7 +384,7 @@ enum class OptionKind { RADIO, CHECK, TRUE_FALSE }
 
 /** Animacions de 120 ms, o canvi immediat si l'usuari ha reduït/eliminat les animacions del sistema. */
 @Composable
-private fun reduceMotion(): Boolean {
+internal fun reduceMotion(): Boolean {
     val ctx = LocalContext.current
     return remember(ctx) { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }

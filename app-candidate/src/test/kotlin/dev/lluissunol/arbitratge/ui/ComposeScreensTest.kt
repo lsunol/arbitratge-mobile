@@ -7,6 +7,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
@@ -352,19 +354,79 @@ class ComposeScreensTest {
         assertEquals(3, r.correct); assertEquals(1, r.wrong); assertEquals(1, r.unanswered)
         rule.setContent { Scaled(2f, dark = true) { ResultScreen(Stage.Result("s1", r, CredentialPhase.Ready(cred)), {}, {}, {}, {}, {}) } }
         rule.onNodeWithText("Has aprovat").assertIsDisplayed()
-        rule.onNodeWithText("Veure la credencial").assertIsDisplayed()
-        rule.onNodeWithText("Fallades").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("1 sense resposta").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("1 min 46 s").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Veure la credencial").performScrollTo().assertIsDisplayed()
+        // Incorrectes = només les contestades malament (1, singular); «Sense resposta» apareix a part perquè n'hi ha
+        rule.onNodeWithText("Incorrecta").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Sense resposta").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("1:46").performScrollTo().assertIsDisplayed()
         rule.onNodeWithContentDescription("3 encerts de 5").assertExists()
+        // sense el títol «Resultat»: el veredicte fa d'encapçalament
+        assertTrue(rule.onAllNodesWithText("Resultat").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test fun passedResultOffersTheCredentialMiniAboveTheFullWidthButtonsAndNoBanner() {
+        val q = questions
+        val r = resultOf(q.indices.associateWith { q[it].correctIds })
+        rule.setContent { ArbitratgeTheme { ResultScreen(Stage.Result("s1", r, CredentialPhase.Ready(cred)), {}, {}, {}, {}, {}) } }
+        rule.onNodeWithText("Has aprovat").assertIsDisplayed()
+        rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
+        // sense fallades ni preguntes en blanc: només Incorrectes (0) i Temps; «Sense resposta» no es mostra
+        assertTrue(rule.onAllNodesWithText("Sense resposta").fetchSemanticsNodes().isEmpty())
+        rule.onNodeWithContentDescription("5 encerts de 5").assertExists()
+        val mini = rule.onNodeWithText("Maria Puig Vila").fetchSemanticsNode().boundsInRoot.top
+        val primary = rule.onNodeWithText("Veure la credencial").fetchSemanticsNode().boundsInRoot.top
+        assertTrue(mini < primary, "la miniatura de la credencial va damunt del botó")
+    }
+
+    @Test fun resultVerdictIsTheScreenHeadingFitsOnOneLineAndButtonsAreFullWidth() {
+        val r = resultOf(emptyMap())
+        rule.setContent { ArbitratgeTheme { ResultScreen(Stage.Result("s1", r, null), {}, {}, {}, {}, {}) } }
+        rule.onNode(hasText("No has aprovat") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Et van faltar", substring = true).fetchSemanticsNodes().isEmpty())
+        // «No has aprovat» en UNA línia (TextLayoutResult)
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithText("No has aprovat").fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        assertEquals(1, layouts.single().lineCount, "«No has aprovat» ocupa una sola línia")
+        // tres botons a tot l'ample del contingut (amplada de la pantalla − 2 × marge) i ≥ 56 dp
+        val root = rule.onRoot().fetchSemanticsNode().boundsInRoot.width
+        val expected = root - 2 * ArbDimens.gutter.value * 3f
+        listOf("Repassar les 5 preguntes fallades", "Tornar-ho a provar", "Tornar a l'inici").forEach { t ->
+            val b = rule.onNode(hasClickAction() and hasText(t)).fetchSemanticsNode().boundsInRoot
+            assertEquals(expected, b.width, 2f, "«$t» a tot l'ample")
+            assertTrue(b.height >= 56f * 3f - 1f, "«$t» ≥ 56 dp")
+        }
+    }
+
+    @Test fun resultNumbersNeverContradictEachOtherWhenTimeRanOut() {
+        // temps esgotat: cap resposta → 0 incorrectes, 5 sense resposta, botó de 5 (el filtre «Fallades 5» del repàs no es comprova aquí)
+        val r = resultOf(emptyMap())
+        assertEquals(0, r.wrong); assertEquals(5, r.unanswered); assertEquals(5, r.failures)
+        rule.setContent { ArbitratgeTheme { ResultScreen(Stage.Result("s1", r, null), {}, {}, {}, {}, {}) } }
+        rule.onNodeWithText("Incorrectes").assertExists()
+        rule.onNodeWithText("Sense resposta").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Repassar les 5 preguntes fallades").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("Fallades", substring = true).fetchSemanticsNodes().isEmpty(), "el bloc de xifres no diu «Fallades»")
+        rule.onNodeWithContentDescription("0 incorrectes, 5 sense resposta. Temps: 1 min 46 s").assertExists()
+    }
+
+    @Test fun resultWithOneWrongAnswerUsesSingularForms() {
+        val q = questions
+        val answers = mutableMapOf<Int, List<String>>()
+        for (i in 1..4) answers[i] = q[i].correctIds
+        answers[0] = listOf(q[0].options.first { it.id !in q[0].correctIds }.id)
+        val r = resultOf(answers)
+        rule.setContent { ArbitratgeTheme { ResultScreen(Stage.Result("s1", r, CredentialPhase.Ready(cred)), {}, {}, {}, {}, {}) } }
+        rule.onNodeWithText("Incorrecta").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Repassar la pregunta fallada").assertIsDisplayed()
+        rule.onNodeWithContentDescription("4 encerts de 5").assertExists()
     }
 
     @Test fun failedResultKeepsAHopefulToneAndReviewIsPrimary() {
         val r = resultOf(emptyMap())
         rule.setContent { ArbitratgeTheme { ResultScreen(Stage.Result("s1", r, null), {}, {}, {}, {}, {}) } }
-        rule.onNodeWithText("No has aprovat, de moment").assertIsDisplayed()
+        rule.onNodeWithText("No has aprovat").assertIsDisplayed()
         rule.onNodeWithText("Repassar les 5 preguntes fallades").assertIsDisplayed()
-        rule.onNodeWithText("5 sense resposta").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Sense resposta").performScrollTo().assertIsDisplayed()
         assertTrue(rule.onAllNodesWithText("Cap fallada", substring = true).fetchSemanticsNodes().isEmpty())
     }
 
@@ -385,6 +447,19 @@ class ComposeScreensTest {
         rule.onAllNodesWithText("Correcta · no la vas marcar").onFirst().performScrollTo().assertIsDisplayed()
         q.options.forEach { rule.onNodeWithText(it.text).performScrollTo().assertIsDisplayed() }
         assertTrue(rule.onAllNodesWithText("Incorrecta · no la vas marcar").fetchSemanticsNodes().isNotEmpty(), "també es veuen les incorrectes no marcades")
+    }
+
+    @Test fun reviewDetailOfASingleChoiceMistakeHasNoBannerAndNoAmber() {
+        val single = questions.indexOfFirst { it.type == QuestionType.SINGLE_CHOICE }
+        val q = questions[single]
+        val wrong = q.options.first { it.id !in q.correctIds }.id
+        val r = resultOf(mapOf(single to listOf(wrong)))
+        val st = Stage.Review("s1", r, onlyWrong = true, openIndex = r.items.filter { !it.isCorrect }.indexOfFirst { it.questionId == q.id }, fromResult = true)
+        rule.setContent { ArbitratgeTheme { ReviewScreen(st, {}, {}, {}) } }
+        rule.onNodeWithText("Fallada").assertIsDisplayed()
+        assertTrue(rule.onAllNodesWithText("La teva resposta no era la correcta", substring = true).fetchSemanticsNodes().isEmpty())
+        rule.onNodeWithText("Incorrecta · la vas marcar").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Correcta · no la vas marcar").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun reviewListAt200PercentDarkIsInNaturalOrderWithStatusAndNoDisabledNavigation() {
@@ -417,6 +492,41 @@ class ComposeScreensTest {
         rule.onNodeWithText("No és un certificat oficial ni una garantia forta.").performScrollTo().assertIsDisplayed()
         assertTrue(rule.onAllNodesWithText("VÀLIDA", substring = true, ignoreCase = true).fetchSemanticsNodes().isEmpty())
         rule.onNodeWithText("Mostrar a un organitzador").assertIsDisplayed()
+    }
+
+    @Test fun credentialFollowsTheOrderNameApteQrDetailsNotice() {
+        rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}, {}) } }
+        fun top(n: androidx.compose.ui.test.SemanticsNodeInteraction) = n.performScrollTo().fetchSemanticsNode().boundsInRoot.top
+        val name = top(rule.onNodeWithText("Maria Puig Vila"))
+        val apte = top(rule.onNodeWithText("APTE"))
+        val qr = top(rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila"))
+        val exam = top(rule.onNodeWithText("reglament sample-1"))
+        val notice = top(rule.onNodeWithText("No és un certificat oficial ni una garantia forta."))
+        assertTrue(name < apte && apte < qr && qr < exam && exam < notice, "nom < APTE < QR < detalls < avís")
+        rule.onNodeWithText("Credencial d'aptitud").assertExists()
+    }
+
+    @Test fun timeUpScreenHasASingleCtaAndReportsTheClick() {
+        var seen = 0
+        rule.setContent { ArbitratgeTheme { TimeUpScreen(Stage.TimeUp(3, 5, away = false)) { seen++ } } }
+        rule.onNodeWithText("S'ha acabat el temps").assertIsDisplayed()
+        rule.onNodeWithText("Has respost 3 de 5 preguntes.").assertIsDisplayed()
+        rule.onNodeWithText("Veure el resultat").performClick()
+        assertEquals(1, seen)
+        rule.onAllNodes(hasClickAction()).assertCountEquals(1)
+    }
+
+    @Test fun timeUpAwayShowsTheAwayNotice() {
+        rule.setContent { ArbitratgeTheme { TimeUpScreen(Stage.TimeUp(3, 5, away = true)) {} } }
+        rule.onNodeWithText("El temps ja s'havia acabat mentre eres fora.").assertIsDisplayed()
+    }
+
+    @Test fun oneMinuteWarningShowsItsTextAndTheDismissButtonCloses() {
+        var closed = 0
+        rule.setContent { ArbitratgeTheme { TimeBannerCard(TimeBanner.ONE_MIN) { closed++ } } }
+        rule.onNodeWithText("Només queda 1 minut.").assertIsDisplayed()
+        rule.onNodeWithContentDescription("Tancar l'avís").performClick()
+        assertEquals(1, closed)
     }
 
     @Test fun credentialAt200PercentDarkStillShowsTheDocument() {

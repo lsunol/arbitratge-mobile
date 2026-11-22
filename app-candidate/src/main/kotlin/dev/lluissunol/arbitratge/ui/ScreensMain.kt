@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
@@ -106,21 +108,22 @@ private fun RulesFactStrip(r: RulesSummary) {
     )
 }
 
-/** Miniatura del carnet (no és la credencial: només la recorda). Sense cap marca de validesa. */
+/** Miniatura del carnet (no és la credencial: només la recorda). Banda de gespa amb filet groc de 3 dp i símbol de 28 dp. Sense cap marca de validesa. */
 @Composable
-private fun CredentialMini(name: String) {
+internal fun CredentialMini(name: String) {
     Surface(
-        Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = BrandColors.Paper,
+        Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = BrandColors.Paper,
         border = BorderStroke(1.dp, BrandColors.PaperLine),
     ) {
         Column {
             Row(
-                Modifier.fillMaxWidth().background(BrandColors.Pitch).pitchLines().padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
+                Modifier.fillMaxWidth().background(BrandColors.Pitch).padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
             ) {
                 BrandMark(28.dp, onPitch = true)
                 Text(stringResource(R.string.cred_title), style = MaterialTheme.typography.titleSmall, color = Color.White)
             }
+            Box(Modifier.fillMaxWidth().height(3.dp).background(BrandColors.RefCard))
             Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
                 Text(name, style = MaterialTheme.typography.titleSmall, color = BrandColors.PaperInk)
                 Text(stringResource(R.string.home_has_cred), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PaperMuted)

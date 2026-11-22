@@ -27,6 +27,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -111,6 +119,9 @@ fun ScreenScaffold(
     bottomVPad: Dp = ArbDimens.s12,
     /** Banda a sangre (I3) por detrás de la barra de estado: va FUERA del margen lateral y de los insets superiores. */
     header: (@Composable () -> Unit)? = null,
+    /** Color de la banda [header] y si sus iconos de la barra de estado van en claro (banda oscura). */
+    headerColor: Color = BrandColors.Pitch,
+    headerLightIcons: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scroll = key(scrollKey) { rememberScrollState() }
@@ -143,8 +154,16 @@ fun ScreenScaffold(
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(scroll)) {
-            header?.invoke()
+        // Con banda: un fondo FIJO de la altura de la barra de estado por encima del scroll. Mientras la banda sigue por
+        // detrás de la barra (scroll en reposo o casi) es del color de la banda y los iconos se adaptan a ella; cuando ya
+        // ha salido, es el fondo de pantalla y los iconos vuelven al tema (el contenido nunca pasa bajo la hora).
+        var headerH by remember { mutableIntStateOf(0) }
+        val statusH = WindowInsets.statusBars.getTop(LocalDensity.current)
+        val bandBehind = header != null && isBandBehindStatusBar(headerH, scroll.value, statusH)
+        if (header != null) LightStatusBarIcons(light = bandBehind && headerLightIcons)
+        Box(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
+            if (header != null) Box(Modifier.onSizeChanged { headerH = it.height }) { header() }
             Column(
                 Modifier.fillMaxWidth()
                     .padding(horizontal = ArbDimens.gutter)
@@ -159,8 +178,25 @@ fun ScreenScaffold(
                 }
             }
         }
+        if (header != null) {
+            Box(
+                Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars)
+                    .background(if (bandBehind) headerColor else MaterialTheme.colorScheme.background)
+                    .testTag(STATUS_CAP_TAG),
+            )
+        }
+        }
     }
 }
+
+const val STATUS_CAP_TAG = "status_cap"
+
+/**
+ * La banda (de alto [headerH] px) cubre aún toda la barra de estado (alto [statusH] px) con el scroll en [scroll] px.
+ * Antes de medirla (`headerH == 0`, primer frame) se asume que está detrás, para no parpadear al color de pantalla.
+ */
+internal fun isBandBehindStatusBar(headerH: Int, scroll: Int, statusH: Int): Boolean = headerH == 0 || headerH - scroll >= statusH
+
 
 /** Títol de pantalla dins del contingut (28 sp/700, en tinta, `heading()`): 8 dp a dalt i 16 a baix (via `spacing`). */
 @Composable
@@ -201,12 +237,17 @@ fun ArbTopBar(onBack: (() -> Unit)?, actions: (@Composable () -> Unit)? = null) 
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-private fun ButtonLabel(text: String, icon: Painter?, maxLines: Int = Int.MAX_VALUE) {
+private fun androidx.compose.foundation.layout.RowScope.ButtonLabel(text: String, icon: Painter?, maxLines: Int = Int.MAX_VALUE) {
     if (icon != null) {
         ArbIcon(icon, null, size = 22.sp.toScaledDp())
         Spacer(Modifier.size(ArbDimens.s8))
     }
-    Text(text, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+    // Con icono, el texto ocupa el resto de la fila (a 200 % en 2 líneas queda a la derecha del icono, no desalineado).
+    Text(
+        text, style = MaterialTheme.typography.labelLarge, textAlign = if (icon != null) TextAlign.Start else TextAlign.Center,
+        maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        modifier = if (icon != null) Modifier.weight(1f, fill = false) else Modifier,
+    )
 }
 
 @Composable
@@ -238,12 +279,12 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
 }
 
 @Composable
-fun TertiaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: Painter? = null, fillWidth: Boolean = true) {
+fun TertiaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: Painter? = null, fillWidth: Boolean = true, minHeight: Dp = ArbDimens.touchMin) {
     TextButton(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-        modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier).heightIn(min = ArbDimens.touchMin),
+        modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier).heightIn(min = minHeight),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
     ) { ButtonLabel(text, icon) }
 }
@@ -315,19 +356,26 @@ fun ArbCard(
     }
 }
 
-/** Avís amb icona (informació, temps, bateria…). */
+/** Avís amb icona (informació, temps, bateria…). [trailing]: acció a la dreta (p. ex. «Tancar l'avís»). */
 @Composable
 fun Callout(
     icon: Painter,
     container: Color,
     contentColor: Color,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(ArbDimens.s16),
+    centered: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = container, contentColor = contentColor) {
-        Row(Modifier.padding(ArbDimens.s16), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12), verticalAlignment = Alignment.Top) {
+        Row(
+            Modifier.padding(contentPadding), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+            verticalAlignment = if (centered) Alignment.CenterVertically else Alignment.Top,
+        ) {
             ArbIcon(icon, null)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4), content = content)
+            trailing?.invoke()
         }
     }
 }
@@ -344,6 +392,9 @@ fun InfoBanner(
     kind: BannerKind,
     modifier: Modifier = Modifier,
     icon: Painter? = null,
+    contentPadding: PaddingValues = PaddingValues(ArbDimens.s16),
+    centered: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scheme = MaterialTheme.colorScheme
@@ -353,7 +404,7 @@ fun InfoBanner(
         BannerKind.WARNING -> Triple(scheme.tertiaryContainer, scheme.onTertiaryContainer, Icons.Outlined.Warning)
         BannerKind.ERROR -> Triple(scheme.errorContainer, scheme.onErrorContainer, Icons.Outlined.Warning)
     }
-    Callout(icon ?: vector(glyph), container, onContainer, modifier, content)
+    Callout(icon ?: vector(glyph), container, onContainer, modifier, contentPadding, centered, trailing, content)
 }
 
 /**
@@ -443,14 +494,6 @@ fun BrandMark(size: Dp, modifier: Modifier = Modifier, contentDescription: Strin
         drawCircle(BrandColors.Chalk, radius = 10.5f * k, center = c, style = Stroke(6f * k))
         drawCircle(BrandColors.RefCard, radius = 4.5f * k, center = c)
     }
-}
-
-/** Línies de cal decoratives (mig camp + cercle central) al darrere d'un contenidor; sense semàntica. */
-fun Modifier.pitchLines(): Modifier = this.clipToBounds().drawBehind {
-    val x = size.width * 0.80f
-    val w = 1.5.dp.toPx()
-    drawLine(BrandColors.PitchLine, Offset(x, 0f), Offset(x, size.height), strokeWidth = w)
-    drawCircle(BrandColors.PitchLine, radius = size.height * 0.85f, center = Offset(x, size.height / 2), style = Stroke(w))
 }
 
 // ---------------------------------------------------------------------------------------------

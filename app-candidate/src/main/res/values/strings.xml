@@ -10,7 +10,6 @@
     <!-- Etiquetes CURTES (una sola línia a 1×); les completes són per a lletra gran i per a TalkBack. -->
     <string name="home_fact_questions">preg.</string>
     <string name="home_fact_minutes">min</string>
-    <string name="home_fact_pass">encerts</string>
     <string name="home_fact_questions_full">preguntes</string>
     <string name="home_fact_minutes_full">minuts</string>
     <string name="home_fact_pass_full">encerts per aprovar</string>
@@ -149,25 +148,39 @@
     <string name="recovering">Recuperant el teu examen…</string>
 
     <!-- C8/C9 Resultat -->
-    <string name="result_title">Resultat</string>
     <string name="passed_title">Has aprovat</string>
     <string name="passed_zero">Cap fallada. Enhorabona!</string>
-    <string name="failed_title">No has aprovat, de moment</string>
-    <string name="score_of">de %1$d</string>
-    <string name="score_a11y">%1$d encerts de %2$d</string>
+    <string name="failed_title">No has aprovat</string>
+    <plurals name="score_of">
+        <item quantity="one">de %1$d encert</item>
+        <item quantity="other">de %1$d encerts</item>
+    </plurals>
+    <plurals name="score_a11y">
+        <item quantity="one">%1$d encert de %2$d</item>
+        <item quantity="other">%1$d encerts de %2$d</item>
+    </plurals>
     <string name="result_min">Mínim per aprovar: %1$d</string>
-    <string name="stat_failures">Fallades</string>
-    <string name="stat_unanswered_part">%1$d sense resposta</string>
+    <plurals name="stat_failures">
+        <item quantity="one">Incorrecta</item>
+        <item quantity="other">Incorrectes</item>
+    </plurals>
+    <plurals name="stat_failures_a11y">
+        <item quantity="one">%1$d incorrecta</item>
+        <item quantity="other">%1$d incorrectes</item>
+    </plurals>
+    <string name="stat_unanswered">Sense resposta</string>
     <string name="stat_time">Temps</string>
-    <string name="result_missing">Et van faltar %1$d encerts.</string>
     <string name="result_time">%1$d min %2$d s</string>
+    <string name="result_time_clock">%1$d:%2$02d</string>
     <string name="passed_next">La teva credencial ja està preparada.</string>
     <string name="failed_next">Repassa les teves fallades: així aprendràs el reglament.</string>
     <string name="cred_pending">Encara no s\'ha pogut crear la credencial. Torna-ho a provar.</string>
     <string name="cred_issuing">Creant la credencial…</string>
     <string name="btn_see_credential">Veure la credencial</string>
-    <string name="btn_review_n">Repassar les %1$d preguntes fallades</string>
-    <string name="btn_review_n_one">Repassar la pregunta fallada</string>
+    <plurals name="btn_review_n">
+        <item quantity="one">Repassar la pregunta fallada</item>
+        <item quantity="other">Repassar les %1$d preguntes fallades</item>
+    </plurals>
     <string name="btn_home">Tornar a l\'inici</string>
 
     <!-- C10 Repàs -->
@@ -189,7 +202,6 @@
         <item quantity="other">Vas marcar %1$d respostes incorrectes.</item>
     </plurals>
     <string name="review_both">Vas marcar %1$d d\'incorrecta(es) i no vas marcar %2$d de correcta(es).</string>
-    <string name="review_wrong_single">La teva resposta no era la correcta.</string>
     <string name="why">Per què?</string>
     <string name="opt_right_marked">Correcta · la vas marcar</string>
     <string name="opt_right_missed">Correcta · no la vas marcar</string>

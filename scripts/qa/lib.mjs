@@ -26,7 +26,18 @@ export function adb(...args) {
 export function sh(...args) { return adb('shell', ...args); }
 
 export function layout() {
-  const buf = execFileSync(ANDROID, ['--no-metrics', 'layout', '--device', SERIAL], { maxBuffer: 64e6, timeout: CMD_TIMEOUT });
+  // `layout` falla a vegades amb «Could not obtain idle state» (animacions en curs): es reintenta i, si persisteix, `--no-idle`.
+  let buf;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const extra = attempt >= 3 ? ['--no-idle'] : [];
+      buf = execFileSync(ANDROID, ['--no-metrics', 'layout', ...extra, '--device', SERIAL], { maxBuffer: 64e6, timeout: CMD_TIMEOUT, stdio: ['ignore', 'pipe', 'pipe'] });
+      break;
+    } catch (e) {
+      if (attempt >= 5 || !/idle state/.test(String(e.stdout ?? '') + String(e.stderr ?? '') + e.message)) throw e;
+      sleepSync(700);
+    }
+  }
   const wins = JSON.parse(dec.decode(buf));
   const out = [];
   const walk = (n, w) => {

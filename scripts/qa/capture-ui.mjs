@@ -46,7 +46,9 @@ const watchdog = setTimeout(() => {
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { restore(); process.exit(130); });
 
 const { shoot, shootScroll } = L.makeShooter(out, `${scale}`, theme);
-const ALLOW200 = new Set(['01', '02', '06', '10', '11', '14', '30', '31', '50', '60']);
+const ALLOW200 = new Set(['01', '02', '06', '10', '11', '14', '30', '31', '50', '60']); // 11 i 60 inclosos a 200 % (revisió 2026-11-22)
+// El resultat ja no té títol «Resultat»: el veredicte (encapçalament) el substitueix.
+const RESULT = /^(Has aprovat|No has aprovat)$/;
 const ok = (nn) => scale === '100' || (scale === '200' ? ALLOW200 : SCALE_ALLOW).has(nn.replace(/b$/, ''));
 const S = (nn, name) => { if (ok(nn)) shoot(nn, name); };
 const SS = (nn, name) => { if (ok(nn)) shootScroll(nn, name); };
@@ -171,7 +173,7 @@ async function finish(nnOverview, nnDialog) {
   await L.tap(/^Avaluar$/); await L.waitFor(/Vols avaluar l'examen/); await wait(400);
   if (nnDialog) S(nnDialog, 'finalitzar-dialeg-complet');
   await dialogBtn(/^Avaluar$/);
-  await L.waitFor(/^Resultat$/, 15000); await wait(900);
+  await L.waitFor(RESULT, 15000); await wait(900);
 }
 async function retakeToQuestions() {
   await L.tap(/^Tornar a fer l'examen$|^Començar l'examen$/);
@@ -215,9 +217,9 @@ async function main() {
     SS('40', 'repas-llista-fallades');
     await L.tap(/^Totes \d+/); await wait(700);
     SS('41', 'repas-llista-totes');
-    await L.tap(/^Pregunta 1 de 5 · /); await L.waitFor(/Per què\?|La teva resposta|No la vas respondre/); await wait(500);
+    await L.tap(/^Pregunta 1 de 5 · /); await L.waitFor(/Correcta · |Incorrecta · |No la vas respondre/); await wait(500);
     SS('42', 'repas-detall-fallada');
-    L.back(); await wait(500); L.back(); await L.waitFor(/^Resultat$/); await wait(500);
+    L.back(); await wait(500); L.back(); await L.waitFor(RESULT); await wait(500);
     await L.tap(/^Tornar a l'inici$/); await L.waitFor(/Últim examen/); await wait(500);
     SS('61', 'inici-ultim-suspes');
     // R2: examen APROVAT + credencial
@@ -256,10 +258,13 @@ async function main() {
       await at(5 * 60 + 6);
       await L.waitFor(/S'ha acabat el temps/, 30000); await wait(800);
       S('32', 'temps-esgotat');
-      await L.tap(/^Veure el resultat$/); await L.waitFor(/^Resultat$/, 15000); await wait(600);
+      await L.tap(/^Veure el resultat$/); await L.waitFor(RESULT, 15000); await wait(600);
       S('34', 'resultat-temps-esgotat');
     } else {
       L.sh('input', 'keyevent', 'KEYCODE_HOME');
+      await wait(1500);
+      // Mata el procés en segon pla (només aquest paquet): en reobrir, el temps ja és esgotat i el ViewModel recupera amb away = true.
+      L.sh('am', 'kill', L.PKG);
       await at(5 * 60 + 20);
       L.launch();
       await L.waitFor(/S'ha acabat el temps/, 30000); await wait(800);
