@@ -1,0 +1,97 @@
+# Despliega la web (landing de descàrrega + PWA verificadora) a GitHub Pages.
+# Manual: se lanza con el tag de una release YA PUBLICADA (no borrador). El workflow descarga el APK de esa release,
+# calcula su SHA-256 real y estampa la web con `scripts/stamp-web.mjs --production` (falla cerrado ante cualquier incoherencia).
+# No compila nada ni toca el banco de preguntas: el APK se construye y firma en local (docs/design/05, vía "L").
+name: pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de la release publicada (vX.Y.Z)"
+        required: true
+        type: string
+      bank_version:
+        description: "bank_version del banco incluido en el APK (p. ej. 2026.11-pilot)"
+        required: true
+        type: string
+      custom_domain:
+        description: "Publicar con el dominio propio de web/CNAME (solo cuando el DNS esté configurado)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # SHA-256 del certificado de firma dev.lluissunol (skill lluissunol-apk-signing). Es público.
+  CERT_SHA256: 3406875c7b46172a6ba324a028c855fe23825c473f03ef132f97db8397c6d330
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Metadatos de la release (descarga el APK y calcula el SHA-256)
+        env:
+          TAG: ${{ inputs.tag }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo "tag no válido"; exit 1; }
+          ASSET="$(gh release view "$TAG" --json assets --jq '.assets[] | select(.name | endswith(".apk")) | .name' | head -n1)"
+          [ -n "$ASSET" ] || { echo "la release no tiene APK"; exit 1; }
+          echo "ASSET=$ASSET" >> "$GITHUB_ENV"
+          node scripts/fetch-release-metadata.mjs --tag "$TAG" --asset "$ASSET" --out release.json
+
+      - name: Estampar la web
+        env:
+          TAG: ${{ inputs.tag }}
+          BANK_VERSION: ${{ inputs.bank_version }}
+          CUSTOM_DOMAIN: ${{ inputs.custom_domain }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          IFS=. read -r X Y Z <<< "$VERSION"
+          CODE=$(( X*100000 + Y*1000 + Z*10 + 9 ))
+          SHA="$(node -p "require('./release.json').asset.sha256")"
+          PUBLISHED="$(node -p "require('./release.json').published_at.slice(0,10)")"
+          HOST_ARGS=()
+          if [ "$CUSTOM_DOMAIN" != "true" ]; then HOST_ARGS=(--host lsunol.github.io/arbitratge-mobile); fi
+          node scripts/stamp-web.mjs --production "${HOST_ARGS[@]}" \
+            --version "$VERSION" --version-code "$CODE" \
+            --apk-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}" \
+            --sha256 "$SHA" --cert-sha256 "$CERT_SHA256" --published "$PUBLISHED" \
+            --bank-version "$BANK_VERSION" \
+            --release-notes-url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" \
+            --release-metadata release.json --out _site
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
