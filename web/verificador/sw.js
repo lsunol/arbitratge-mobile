@@ -7,7 +7,7 @@
 //   avisa y solo se activa cuando el usuario lo pide (mensaje SKIP_WAITING). Nunca a mitad de
 //   una verificación.
 // Cambiar VERSION cada vez que cambie cualquier fichero (tools/gen-manifest.mjs lo lee de aquí).
-const VERSION = "0.1.4";
+const VERSION = "0.1.5";
 const CACHE = "verificador-" + VERSION;
 const MANIFEST = "precache-manifest.json";
 

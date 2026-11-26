@@ -72,3 +72,9 @@ SHA256SUMS.txt
 # Mockups Claude Design: solo los .dc.html y README; sin vendor ni zip
 new-designs/**/vendor/
 new-designs/*.zip
+
+# Claves de sello ARB1 (privadas, PKCS#8 DER). La de producción vive FUERA del repo
+# (~/.arbitratge-seal/, ver docs/development/seal-key.md); esto es un cinturón de seguridad.
+.arbitratge-seal/
+*.der
+!app-candidate/src/debug/seal/dev-seal-key.der

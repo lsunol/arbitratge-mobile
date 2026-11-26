@@ -122,7 +122,7 @@ t("referencias locales existen (href/src/url()) y licencias OFL presentes", () =
   for (const f of ["fonts/OFL-Atkinson-Next.txt", "fonts/OFL-Atkinson-Mono.txt"]) assert.match(read(f), /SIL OPEN FONT LICENSE/);
 });
 t("CNAME de un solo dominio, .nojekyll, latest.json con marcadores", () => {
-  assert.equal(read("CNAME"), "arbitratge-app.futbolbotons.cat\n");
+  assert.equal(read("CNAME"), "arbitratge.futbolbotons.cat\n");
   assert.ok(existsSync(join(web, ".nojekyll")));
   assert.deepEqual(JSON.parse(read("latest.json")), { schema: 1, app: "candidate", versionName: "__VERSION__", versionCode: "__VERSION_CODE__", apk_sha256: "__SHA256__", download_page: "https://__HOST__/" });
 });
@@ -150,6 +150,7 @@ const fakeKey = (kid, over = {}) => {
 };
 const withKeys = (name, entries, listed = entries.map((e) => e.kid + ".json")) => {
   const w = copyWeb(name);
+  for (const f of readdirSync(join(w, "verificador/keys"))) if (f !== "index.json" && f.endsWith(".json")) rmSync(join(w, "verificador/keys", f)); // quita las claves reales de la copia
   for (const e of entries) writeFileSync(join(w, "verificador/keys", e.kid + ".json"), JSON.stringify(e));
   writeFileSync(join(w, "verificador/keys/index.json"), JSON.stringify({ files: listed }));
   writeFileSync(join(w, "verificador/precache-manifest.json"), JSON.stringify(buildManifest(join(w, "verificador")), null, 2) + "\n");
@@ -159,20 +160,30 @@ const withKeys = (name, entries, listed = entries.map((e) => e.kid + ".json")) =
 t("stamp preview: sin marcadores, latest.json según 05 §6.5, sin URL del APK, lista blanca exacta", () => {
   const out = newOut();
   const r = stage({ ...GOOD, out });
-  assert.equal(r.host, "arbitratge-app.futbolbotons.cat");
+  assert.equal(r.host, "arbitratge.futbolbotons.cat");
   const o = readFileSync(join(out, "index.html"), "utf8");
   assert.ok(!/__[A-Z0-9_]+__|\{\{|<!--\/?(CERT|PUBLISHED|NOTES)/.test(o));
   assert.ok(o.includes(`href="${GOOD.apkUrl}"`) && o.includes("Versió 1.2.3. Només") && o.includes(GOOD.sha256));
   assert.ok(!o.includes("Empremta") && !o.includes("Notes de la versió") && !o.includes("Publicada"), "lo que falta no se publica");
-  assert.deepEqual(JSON.parse(readFileSync(join(out, "latest.json"), "utf8")), { schema: 1, app: "candidate", versionName: "1.2.3", versionCode: 102039, apk_sha256: GOOD.sha256, download_page: "https://arbitratge-app.futbolbotons.cat/" });
+  assert.deepEqual(JSON.parse(readFileSync(join(out, "latest.json"), "utf8")), { schema: 1, app: "candidate", versionName: "1.2.3", versionCode: 102039, apk_sha256: GOOD.sha256, download_page: "https://arbitratge.futbolbotons.cat/" });
   assert.ok(!/apk_url|\.apk/.test(readFileSync(join(out, "latest.json"), "utf8")));
   const fl = files(out);
   assert.ok(fl.includes(MARKER));
   for (const f of ["sw.js", "manifest.webmanifest"]) assert.ok(!fl.includes(f), "raíz: " + f);
   assert.ok(!fl.some((f) => /(^|\/)(test|tools|fixtures|test-vectors)\//.test(f) || /README/.test(f)));
-  assert.deepEqual(fl.filter((f) => f.startsWith("verificador/keys/")), ["verificador/keys/index.json"]);
+  assert.deepEqual(fl.filter((f) => f.startsWith("verificador/keys/")), ["verificador/keys/index.json", "verificador/keys/s1.json"]); // clave de producción real
   assert.deepEqual(fl.filter((f) => !f.startsWith("verificador/")), [...new Set([MARKER, ...LANDING_FILES, ...BRAND_FILES, ...FONT_FILES, "latest.json"])].sort());
   for (const f of JSON.parse(readFileSync(join(out, "verificador/precache-manifest.json"), "utf8")).files) assert.ok(fl.includes("verificador/" + f.path), f.path);
+});
+t("stamp con --host de Pages (sin dominio propio): landing y latest.json con esa URL, sin CNAME; otros hosts se rechazan", () => {
+  const out = newOut();
+  const r = stage({ ...GOOD, host: "lsunol.github.io/arbitratge-mobile", out });
+  assert.equal(r.host, "lsunol.github.io/arbitratge-mobile");
+  const o = readFileSync(join(out, "index.html"), "utf8");
+  assert.ok(o.includes('href="https://lsunol.github.io/arbitratge-mobile/"') && !o.includes("futbolbotons"));
+  assert.equal(JSON.parse(readFileSync(join(out, "latest.json"), "utf8")).download_page, "https://lsunol.github.io/arbitratge-mobile/");
+  assert.ok(!files(out).includes("CNAME"), "el CNAME no se publica sin dominio propio");
+  for (const h of ["evil.github.io/arbitratge-mobile", "lsunol.github.io/otro", "example.com"]) assert.throws(() => stage({ ...GOOD, host: h, out: newOut() }), /--host solo puede ser/, h);
 });
 t("stamp con cert, fecha y notas: la landing los muestra y latest.json los incluye", () => {
   const out = newOut();
@@ -223,7 +234,7 @@ const trusted = (name, entries) => {
 const PROD = () => ({ ...FULL, mode: "production", bankVersion: "2027.01.0", releaseMetadata: metaFile("meta-ok") });
 t("--production exige cert, fecha, bank-version, notas, release-metadata y claves no vacías; --preview las admite vacías", () => {
   for (const k of ["certSha256", "published", "releaseNotesUrl", "bankVersion", "releaseMetadata"]) assert.throws(() => stage({ ...PROD(), [k]: undefined, out: newOut() }), /production exige/, k);
-  assert.throws(() => stage({ ...PROD(), out: newOut() }), /lista de claves de producción está vacía/);
+  assert.throws(() => stage({ ...PROD(), web: withKeys("vacia", []), out: newOut() }), /lista de claves de producción está vacía/);
   stage({ ...FULL, mode: "preview", out: newOut() });
   const k1 = fakeKey("p1");
   const w = withKeys("prodok", [k1]);
@@ -257,8 +268,8 @@ t("--production liga las claves desplegadas a trusted-keys/ (mismo conjunto y by
   const out = newOut();
   stage({ ...FULL, mode: "preview", web: w, trustedKeysDir: join(tmp, "no-existe-trusted"), out });
   assert.deepEqual(files(out).filter((x) => x.startsWith("verificador/keys/")), ["verificador/keys/index.json", "verificador/keys/p1.json"]);
-  // sin trustedKeysDir explícito se usa <repo>/trusted-keys (hoy sin claves aprobadas)
-  assert.throws(() => stage({ ...PROD(), web: w, out: newOut() }), /no contiene claves aprobadas/);
+  // sin trustedKeysDir explícito se usa <repo>/trusted-keys (real): el despliegue de prueba (p1) no coincide con las claves aprobadas
+  assert.throws(() => stage({ ...PROD(), web: w, out: newOut() }), /no coincide con trusted-keys/);
 });
 t("bank-version: formato exacto [0-9A-Za-z._+-]{1,24}; opcional en preview y se emite si se da", () => {
   for (const b of ["", "a b", "x".repeat(25), "ñ", "a/b", "a;b"]) assert.throws(() => stage({ ...GOOD, bankVersion: b, out: newOut() }), /bank-version/, JSON.stringify(b));

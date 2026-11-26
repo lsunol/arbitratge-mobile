@@ -1,6 +1,6 @@
 {
-  "version": "0.1.4",
-  "cache": "verificador-0.1.4",
+  "version": "0.1.5",
+  "cache": "verificador-0.1.5",
   "files": [
     {
       "path": "app.js",
@@ -32,7 +32,11 @@
     },
     {
       "path": "keys/index.json",
-      "sha256": "fe74a7b2fc2cd6a167a7bb81f9a02e29c38aa3b72a1df63cd52d860799790696"
+      "sha256": "c529432120579f4aad740a0d57cd2bca78fd597d0dd7ce77af864854a7f4f00b"
+    },
+    {
+      "path": "keys/s1.json",
+      "sha256": "f20278c6172c8ca22d6c0f8b94b26150db02f451098569e688b969539da7bb91"
     },
     {
       "path": "lib/arb1.js",

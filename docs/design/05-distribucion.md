@@ -31,7 +31,7 @@
    [ADR-0001]). El digest que se publica y se fija en el pipeline es el del keystore; la
    verificación de credenciales usa la huella de la **clave pública** del sello (`kid`; contrato y puertas en §5.8).
 4. **Publicación**: GitHub Releases (enlace a la versión concreta `releases/download/vX.Y.Z/…`, alias `latest` secundario) + GitHub Pages
-   en un subdominio propuesto **`arbitratge-app.futbolbotons.cat`** (una sola web: descarga en
+   en un subdominio propuesto **`arbitratge.futbolbotons.cat`** (una sola web: descarga en
    `/` y verificador PWA en `/verificador/`). `latest.json` estático para avisos de versión, sin
    URL de APK ni datos sensibles.
 5. **Coste**: todo en planes gratuitos previsiblemente (repos públicos, Releases, Pages,
@@ -138,7 +138,7 @@ arbitratge-mobile/                         PÚBLICO
 │  ├─ index.html                           página de descarga (sin JS)
 │  ├─ privacitat.html                      aviso de privacidad (catalán)
 │  ├─ verificador/                         PWA estática (ver §6.7)
-│  ├─ CNAME                                arbitratge-app.futbolbotons.cat
+│  ├─ CNAME                                arbitratge.futbolbotons.cat
 │  └─ .nojekyll
 ├─ scripts/
 │  ├─ release.mjs                          secuencia de release local (Node, sin dependencias)
@@ -603,13 +603,14 @@ Reglas:
 
 | Decisión | Propuesta [S] | Alternativas |
 |---|---|---|
-| **Subdominio** | **`arbitratge-app.futbolbotons.cat`** (descarga en `/`, verificador en `/verificador/`) | `descarrega.futbolbotons.cat` (si se prefiere lenguaje llano); `verifica.futbolbotons.cat` solo con **repo de Pages separado** (un repo solo sirve un dominio personalizado) |
-| Por qué no `arbitratge.futbolbotons.cat` | Ya lo usa el **proyecto base** (`CNAME`, H2) | — |
-| Repo que sirve Pages | `cfbbarcelona/arbitratge-mobile` | — |
-| DNS | Registro **CNAME** `arbitratge-app` → `cfbbarcelona.github.io` [S, forma habitual de GitHub Pages; PV] | — |
-| Verificación de dominio | Verificar `futbolbotons.cat` a nivel de **organización** `cfbbarcelona` (registro TXT de desafío que indica GitHub) antes de añadirlo al repo (H11) | — |
+| **Subdominio** | **`arbitratge.futbolbotons.cat`** (descarga en `/`, verificador en `/verificador/`) | `descarrega.futbolbotons.cat` (si se prefiere lenguaje llano); `verifica.futbolbotons.cat` solo con **repo de Pages separado** (un repo solo sirve un dominio personalizado) |
+| Estado del dominio (decisión del usuario, 2026-11-26) | Dominio definitivo **`arbitratge.futbolbotons.cat`**; `arbitratge-app.` descartado. **Pendiente de DNS/Hostalia**: hoy lo sirve el **proyecto base** (`CNAME`, H2), así que hay que decidir cómo se sustituye o se reparte antes de apuntarlo aquí | — |
+| Fase piloto | Se publica en la URL de Pages del repo, **`https://lsunol.github.io/arbitratge-mobile/`**, sin dominio propio. `stamp-web --host lsunol.github.io/arbitratge-mobile` estampa esa dirección (landing, `og:url`, `latest.json`) y no publica el `CNAME`. Al migrar: omitir `--host` | — |
+| Repo que sirve Pages | `lsunol/arbitratge-mobile` (propietario: usuario personal, no la org `cfbbarcelona`) | `cfbbarcelona/arbitratge-mobile` si se transfiere |
+| DNS (cuando se configure) | Registro **CNAME** `arbitratge` → `lsunol.github.io` (cuenta personal) [S; PV]. Ojo: un mismo dominio solo lo sirve un sitio de Pages | — |
+| Verificación de dominio | Opcional en cuenta personal: verificar `futbolbotons.cat` en los ajustes de Pages del usuario (TXT de desafío) para evitar *takeover* (H11) | — |
 | HTTPS | Forzar HTTPS en Pages cuando emita el certificado (H11) | — |
-| `CNAME` | En `web/CNAME` y copiado al artefacto de Pages | — |
+| `CNAME` | En `web/CNAME` (`arbitratge.futbolbotons.cat`); se copia al artefacto solo cuando se publica con ese dominio | — |
 
 Sin cambios en el proyecto base. El DNS de `futbolbotons.cat` lo gestiona el usuario [supuesto].
 
@@ -663,11 +664,11 @@ en Pages), SBOM, `test-vectors/` con tokens de prueba (se usan en CI, no en prod
 
 | Qué | URL | Cambia? |
 |---|---|---|
-| Web de entrada (para pasar a los aspirantes) | `https://arbitratge-app.futbolbotons.cat/` | No |
-| Verificador | `https://arbitratge-app.futbolbotons.cat/verificador/` | No |
+| Web de entrada (para pasar a los aspirantes) | `https://arbitratge.futbolbotons.cat/` | No |
+| Verificador | `https://arbitratge.futbolbotons.cat/verificador/` | No |
 | Alias de la última versión (secundario) | `https://github.com/cfbbarcelona/arbitratge-mobile/releases/latest/download/arbitratge-candidat.apk` (H10) | Cambia con cada release publicada y puede adelantarse al despliegue de Pages. **No** es la fuente del hash mostrado (I5) |
 | APK de una versión concreta | `…/releases/download/vX.Y.Z/arbitratge-candidat-vX.Y.Z.apk` | No |
-| Metadatos de versión | `https://arbitratge-app.futbolbotons.cat/latest.json` | Se regenera en cada release |
+| Metadatos de versión | `https://arbitratge.futbolbotons.cat/latest.json` | Se regenera en cada release |
 
 **Decisión sobre el APK en Pages** [S]: se recomienda **enlazar desde Releases y no copiar el APK
 a Pages**. Motivos: no se duplica el tráfico contra el límite soft de Pages; el dominio de GitHub
@@ -688,7 +689,7 @@ del propio dominio (más cómodo, más tráfico y dos fuentes que mantener).
   "published": "2027-03-14",
   "apk_sha256": "<hex>",
   "cert_sha256": "<hex>",
-  "download_page": "https://arbitratge-app.futbolbotons.cat/",
+  "download_page": "https://arbitratge.futbolbotons.cat/",
   "notes": { "ca": "Correccions en el feedback de resultats." }
 }
 ```
@@ -728,7 +729,7 @@ los fija 04; aquí, los códigos de `core-credential`).
 | Offline | `sw.js` precachea la lista completa generada en el despliegue (HTML, JS, CSS, vendor, keys, iconos), con un manifiesto de hashes por fichero. Nombre de caché = versión del verificador (`verificador-1.2.0`). Actualización: aviso «nova versió disponible» y recarga (detalle 04). **Preparada** solo si todos los ficheros del manifiesto están en caché; «instal·lada» no basta [PV: API del service worker]. Prueba: inicio en modo avión tras cerrar y reabrir el navegador, y tras borrar la caché (qué mensaje se muestra) |
 | Compatibilidad y versiones antiguas (I4) | Una PWA antigua no conoce `kid` ni formatos nuevos y debe **rechazarlos**, nunca aceptarlos por defecto. Orden: primero `trusted-keys/` y la PWA desplegadas; después el APK que emite con el `kid` nuevo (§5.5). Los `kid` no se retiran sin política de revocación (fase 2, 02 §8.1). **Caducidad**: el MVP no la define y ninguna pantalla ni documento la promete; si se añade, separar firma válida de vigencia (la fecha del candidato y el reloj del verificador son manipulables) |
 | Versión visible | Pie de página con `versionName` y `kid` aceptados (transparencia para el organizador) |
-| Dominio | Solo `arbitratge-app.futbolbotons.cat` (el organizador debe usar la dirección oficial; 02 T15). Sin enlaces que acepten QR como URL (02 §6.4) |
+| Dominio | Solo `arbitratge.futbolbotons.cat` (el organizador debe usar la dirección oficial; 02 T15). Sin enlaces que acepten QR como URL (02 §6.4) |
 | Pruebas | Vectores de §3.7.11 de `02` con código exacto (G1) y cadena Android→PWA (G5); prueba manual en Android con Chrome/Edge: instalación, offline en modo avión, cámara, importar imagen, pegar texto (condición de ADR-0001) |
 | Riesgo | Un verificador falso que diga siempre "VÀLIDA" (02 T15): mitigado por procedimiento (verificar en el móvil del organizador, dominio oficial), no técnicamente |
 
@@ -901,7 +902,7 @@ los fija 04; aquí, los códigos de `core-credential`).
 **ADRs propuestos** (no escritos aquí; los cierra el usuario):
 
 - **ADR-0003 — Repositorios y distribución**: repo público `arbitratge-mobile`, privado `arbitratge-bank`,
-  Pages en `arbitratge-app.futbolbotons.cat`, Releases como canal del APK.
+  Pages en `arbitratge.futbolbotons.cat`, Releases como canal del APK.
 - **ADR-0004 — Firma del APK y clave del sello**: separación de claves (§5.1), F1 vs F2, política de rotación
   y digest pineado.
 
@@ -912,7 +913,7 @@ los fija 04; aquí, los códigos de `core-credential`).
 1. **Organización y repos**: ¿confirmas `cfbbarcelona/arbitratge-mobile` (público) y
    `cfbbarcelona/arbitratge-bank` (privado)? ¿Tienes permisos de *owner* en la org para la verificación
    de dominio, los environments y los rulesets?
-2. **Subdominio**: ¿`arbitratge-app.futbolbotons.cat` (recomendado) u otro nombre? ¿Quién gestiona el DNS
+2. **Subdominio**: ¿`arbitratge.futbolbotons.cat` (recomendado) u otro nombre? ¿Quién gestiona el DNS
    de `futbolbotons.cat`?
 3. **Inyección del banco y firma en fase 1**: ¿empezamos con firma y banco **en local** (recomendado) y
    pasamos a CI con environment protegido cuando haya segunda persona? ¿O quieres CI desde el principio?

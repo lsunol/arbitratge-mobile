@@ -1,0 +1,8 @@
+{
+  "kid": "s1",
+  "alg": "ES256",
+  "spki": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIpL0NQRaHGHNcyxQZKOoBWDxGs2N-R8qylCHOtOgLzs1k-Ffh8ptdpePPTvg55nrCyL78apkhsuG-xr8SuoVag",
+  "sha256_spki": "35fd2d522cc5bbb84136dff6e5d3b72381d8ff89042374c80be792beefef20bf",
+  "status": "active",
+  "valid_from": "2026-11-24"
+}

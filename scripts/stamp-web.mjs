@@ -8,7 +8,7 @@
 //     --apk-url https://github.com/lsunol/arbitratge-mobile/releases/download/v1.2.3/<fichero>.apk \
 //     --sha256 <64 hex> [--cert-sha256 <64 hex>] [--published YYYY-MM-DD] [--bank-version <id>] \
 //     [--release-notes-url https://github.com/lsunol/arbitratge-mobile/releases/tag/v1.2.3] \
-//     [--release-metadata release.json] (--production exige keys/*.json idénticas byte a byte a trusted-keys/*.json) [--download-page https://<CNAME>/] [--out _site] [--web web]
+//     [--release-metadata release.json] (--production exige keys/*.json idénticas byte a byte a trusted-keys/*.json) [--host <CNAME>|<owner>.github.io/<repo>] [--download-page https://<host>/] [--out _site] [--web web]
 //
 // - --production exige además --cert-sha256, --published, --bank-version, --release-notes-url,
 //   --release-metadata (generado por scripts/fetch-release-metadata.mjs: release no borrador ni
@@ -185,8 +185,14 @@ export function stage(o) {
     verifyReleaseMetadata(meta, { version, apkUrl, sha256, published, releaseNotesUrl });
   }
 
-  const host = readFileSync(safeFile(web, "CNAME"), "utf8").trim();
-  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host)) bad("web/CNAME no contiene un único dominio válido");
+  const cname = readFileSync(safeFile(web, "CNAME"), "utf8").trim();
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(cname)) bad("web/CNAME no contiene un único dominio válido");
+  // Host publicado: el dominio propio (CNAME) o, mientras no esté configurado el DNS, la URL de Pages de ESTE repo.
+  const [owner, repoName] = RELEASE_REPO.toLowerCase().split("/");
+  const pagesHost = `${owner}.github.io/${repoName}`;
+  const host = o.host ?? cname;
+  if (host !== cname && host !== pagesHost) bad(`--host solo puede ser ${cname} (web/CNAME) o ${pagesHost}`);
+  const usesCname = host === cname; // sin dominio propio, el CNAME no se publica en el artefacto
   const downloadPage = `https://${host}/`;
   if (o.downloadPage !== undefined && o.downloadPage !== downloadPage) bad(`--download-page debe ser ${downloadPage}`);
 
@@ -228,8 +234,8 @@ export function stage(o) {
   const allowed = new Set(vfiles);
   for (const f of declared.files) if (!allowed.has(f.path)) bad(`fichero del verificador no permitido (fuera de la lista blanca): ${f.path}`);
   if (JSON.stringify(declared) !== JSON.stringify(buildManifest(vroot))) bad("verificador/precache-manifest.json desactualizado (ejecuta web/verificador/tools/gen-manifest.mjs)");
-  const landing = [...LANDING_FILES, ...BRAND_FILES, ...FONT_FILES];
-  for (const f of ["latest.json", ...landing]) safeFile(web, f);
+  for (const f of ["latest.json", ...LANDING_FILES, ...BRAND_FILES, ...FONT_FILES]) safeFile(web, f);
+  const landing = [...LANDING_FILES.filter((f) => usesCname || f !== "CNAME"), ...BRAND_FILES, ...FONT_FILES];
 
   // Escritura
   if (existsSync(out)) rmSync(out, { recursive: true, force: true }); // solo <repo>/_site con marca o vacío (checkOut)
@@ -285,7 +291,7 @@ export function stage(o) {
 
 const VALUE_OPTS = {
   version: "version", "version-code": "versionCode", "apk-url": "apkUrl", sha256: "sha256", "cert-sha256": "certSha256", published: "published",
-  "bank-version": "bankVersion", "release-notes-url": "releaseNotesUrl", "release-metadata": "releaseMetadata", "download-page": "downloadPage", out: "out", web: "web",
+  "bank-version": "bankVersion", "release-notes-url": "releaseNotesUrl", "release-metadata": "releaseMetadata", "download-page": "downloadPage", host: "host", out: "out", web: "web",
 };
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const a = process.argv.slice(2);
