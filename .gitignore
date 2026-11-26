@@ -68,3 +68,7 @@ SHA256SUMS.txt
 # Salida de scripts/stamp-web.mjs (artefacto de Pages)
 /_site/
 **/.capture-ui.pid
+
+# Mockups Claude Design: solo los .dc.html y README; sin vendor ni zip
+new-designs/**/vendor/
+new-designs/*.zip

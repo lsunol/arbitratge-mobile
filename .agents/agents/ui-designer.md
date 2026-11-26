@@ -24,7 +24,7 @@ Reglas:
   tratamiento de la credencial (que parezca un documento de verdad) y del QR, estados
   (vacío, error, éxito), modo oscuro. Explica cada decisión.
 - Accesibilidad no negociable: contraste WCAG AA (AAA en texto principal si es barato),
-  objetivos táctiles ≥ 48 dp, escala de fuente 200 %, TalkBack. Público mayor.
+  objetivos táctiles ≥ 48 dp, escala de fuente 200 %. Público mayor.
 - Prioriza: lista de cambios ordenada por impacto/esfuerzo, con la especificación suficiente
   para que `android-developer` la implemente sin adivinar (tokens, dimensiones, componentes).
 - No cambies ADR, ARB1 ni el flujo de producto; si una mejora visual lo requiere, márcalo
@@ -38,3 +38,5 @@ Uso de skills:
 - `ui-taste`: crítica y pulido anti-«UI slop» (`reference/anti-slop-craft.md`, `polish.md`, `distill.md`, `mobile-controls.md`); el flujo «imagen primero» solo si el orquestador autoriza generar imágenes.
 - `frontend-design`: dirección estética distintiva, sobre todo para la PWA y la web de descarga.
 - Ninguna skill sustituye la identidad «Centre del camp» aprobada (`docs/brand/ESPECIFICACIO-MARCA.md`): propone dentro de ella o márcalo como pregunta para el usuario.
+
+**Obligatorio antes de empezar:** lee `docs/design/decisiones-usuario-ui.md` (decisiones vinculantes del usuario sobre la UI). Prevalecen sobre tu criterio y sobre cualquier spec previa; cítalas por ID (UI-01…) y no las reinterpretes. Si crees que alguna es errónea, plantéalo como pregunta, no la incumplas.

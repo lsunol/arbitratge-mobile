@@ -1,6 +1,23 @@
 package dev.lluissunol.arbitratge.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +43,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
@@ -101,9 +120,6 @@ fun formatClock(ms: Long): String {
     return "%02d:%02d".format(total / 60, total % 60)
 }
 
-/** Fracció de la barra: posició de navegació (índex + 1) / total. */
-internal fun navProgress(index: Int, total: Int): Float = (index + 1).toFloat() / total
-
 @Composable
 fun isLargeText(): Boolean = LocalDensity.current.fontScale >= 1.15f
 
@@ -115,32 +131,58 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
     KeepScreenOn()
     val multiple = st.question.type == QuestionType.MULTIPLE_CHOICE
     val tf = st.question.type == QuestionType.TRUE_FALSE
+    val density = LocalDensity.current
+    val scroll = key(st.index) { rememberScrollState() }
+
+    // Densitat adaptable (UI-04): nivell N (normal) per defecte; si el contingut no hi cap sense scroll, nivell C (compacte,
+    // 18/16 sp, mínim 16 sp). El nivell es recorda per pregunta i escala de lletra (no salta en tornar-hi). L'avís de temps
+    // NO compta en el càlcul (no ha de fer saltar el nivell a mig examen). Si C tampoc hi cap, queda l'scroll.
+    val levels = remember(density.fontScale) { mutableStateMapOf<Int, Boolean>() }
+    val compact = levels[st.index] == true
+    var bannerPx by remember { mutableIntStateOf(0) }
+    val bannerExtra = if (st.banner != null) bannerPx + with(density) { QDimens.sectionGap.roundToPx() } else 0
+    val bannerExtraNow by rememberUpdatedState(bannerExtra)
+    LaunchedEffect(st.index, density.fontScale) {
+        snapshotFlow { scroll.maxValue }.collect { max ->
+            // `maxValue` val Int.MAX_VALUE fins que es mesura el contingut.
+            if (max != Int.MAX_VALUE && max - bannerExtraNow > 0) levels[st.index] = true
+        }
+    }
+
     ScreenScaffold(
         title = null,
         topBar = { QuestionTopBar(st, a) },
         bottom = { NavBar(st, a) },
         scrollKey = st.index, // cada pregunta empieza arriba: el scroll no se reutiliza entre preguntas
-        spacing = ArbDimens.s12,
-        bottomVPad = 10.dp, // I9: la barra de la pregunta es més baixa
+        scrollState = scroll,
+        spacing = QDimens.sectionGap,
+        bottomVPad = QDimens.navVPad,
+        gutter = QDimens.gutter,
+        contentTop = QDimens.contentTop,
+        contentBottom = QDimens.contentBottom,
     ) {
-        if (isExtraLargeText()) QuestionSummaryRow(st, a)
-        st.banner?.let { b -> TimeBannerCard(b, a.onDismissBanner) }
-        // Enunciat + indicació juntets; l'aviso de múltiple va SOTA l'enunciat (només per a resposta múltiple).
-        Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
+        st.banner?.let { b -> Box(Modifier.onSizeChanged { bannerPx = it.height }) { TimeBannerCard(b, a.onDismissBanner) } }
+        // Pistes visibles retirades (spec-acceptada): el control ja diu «una» o «moltes»; la pista queda per a TalkBack.
+        val hint = when {
+            multiple -> null
+            tf -> stringResource(R.string.tf_hint)
+            else -> stringResource(R.string.single_hint)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            QuestionProgressLabel(st)
             Text(
                 st.question.text,
-                style = ArbText.question,
+                style = if (compact) ArbText.questionC else ArbText.questionN,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier.semantics {
+                    heading()
+                    if (hint != null) contentDescription = "${st.question.text}. $hint"
+                },
             )
-            when {
-                multiple -> MultiChip()
-                tf -> Body(stringResource(R.string.tf_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else -> Body(stringResource(R.string.single_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            if (multiple) Box(Modifier.padding(top = 4.dp)) { MultiAnswerBadge() }
         }
         val kind = when { multiple -> OptionKind.CHECK; tf -> OptionKind.TRUE_FALSE; else -> OptionKind.RADIO }
-        Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s12)) {
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(if (compact) QDimens.optionGapC else QDimens.optionGapN)) {
             st.question.options.forEach { opt ->
                 OptionCard(
                     text = displayOptionText(st.question.type, opt.text),
@@ -148,6 +190,7 @@ fun QuestionScreen(st: Stage.Question, a: QuestionActions) {
                     kind = kind,
                     enabled = st.saveError == null,
                     onClick = { a.onSelect(opt.id) },
+                    compact = compact,
                 )
             }
         }
@@ -167,34 +210,51 @@ private fun saveStateText(st: Stage.Question): String = when {
 }
 
 /**
- * Anterior / Següent (UX P1.3): «Següent» pesa 1,4 i «Anterior» 1; a la P1 no hi ha «Anterior» (no es mostra un botó
- * inactiu) i «Següent» ocupa tot l'ample. A l'última pregunta, «Revisar i finalitzar». Amb lletra extra-gran (≥ 1,5) una
- * sola fila: [fletxa «Anterior» 56 dp | Següent]; mai es parteix una paraula.
+ * Anterior / Següent (UI-01): dos botons `weight(1f)` idèntics (50 % exacte) i la mateixa alçada a TOTES les escales de
+ * lletra; la jerarquia és només d'estil (Següent ple, Anterior tonal). A la P1 «Anterior» es veu **deshabilitat** per
+ * conservar el 50/50. Una sola fila de 2 fills: l'ús d'`IntrinsicSize.Min` és barat i fa que, si un botó creix a 2 línies,
+ * l'altre l'iguali. L'etiqueta mai parteix una paraula: auto-mida de 18 a 16 sp i, si cal, 2 línies.
  */
 @Composable
 private fun NavBar(st: Stage.Question, a: QuestionActions) {
     val prev = stringResource(R.string.btn_prev_q)
     val next = stringResource(if (st.isLast) R.string.btn_review_finish else R.string.btn_next)
-    val scheme = MaterialTheme.colorScheme
-    if (isExtraLargeText()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8), verticalAlignment = Alignment.CenterVertically) {
-            if (st.canGoBack) {
-                OutlinedIconButton(
-                    onClick = a.onPrevious,
-                    modifier = Modifier.size(ArbDimens.buttonMin),
-                    shape = MaterialTheme.shapes.medium,
-                    border = BorderStroke(2.dp, scheme.primary),
-                ) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.btn_prev_q_a11y), tint = scheme.primary)
-                }
-            }
-            PrimaryButton(next, a.onNext, Modifier.weight(1f))
+    val pad = PaddingValues(horizontal = QDimens.navHPad, vertical = QDimens.navVPad)
+    val arb = MaterialTheme.arb
+    // Les fletxes van als DOS botons alhora i només amb lletra normal: l'alçada i l'ample són idèntics (UI-01).
+    val arrows = !isLargeText()
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(QDimens.navGap)) {
+        val mod = Modifier.weight(1f).fillMaxHeight().heightIn(min = QDimens.navButton)
+        OutlinedButton(
+            onClick = a.onPrevious, enabled = st.canGoBack, shape = ArbShape.pill, modifier = mod, contentPadding = pad,
+            border = BorderStroke(1.5.dp, if (st.canGoBack) arb.buttonOutline else arb.buttonOutline.copy(alpha = 0.5f)),
+            colors = ButtonDefaults.outlinedButtonColors(
+                containerColor = if (st.canGoBack) arb.card else Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.primary,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+            ),
+        ) { NavLabel(prev, if (arrows) vector(Icons.AutoMirrored.Outlined.ArrowBack) else null, leading = true) }
+        Button(onClick = a.onNext, shape = ArbShape.pill, modifier = mod, contentPadding = pad) {
+            NavLabel(next, if (arrows) vector(Icons.AutoMirrored.Outlined.ArrowForward) else null, leading = false)
         }
-    } else {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
-            if (st.canGoBack) SecondaryButton(prev, a.onPrevious, Modifier.weight(1f), maxLines = 1, hPad = 12.dp)
-            PrimaryButton(next, a.onNext, Modifier.weight(if (st.canGoBack) 1.4f else 1f), maxLines = 1, hPad = 12.dp)
-        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NavLabel(text: String, icon: androidx.compose.ui.graphics.painter.Painter?, leading: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (icon != null && leading) ArbIcon(icon, null, size = 20.dp)
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Clip,
+            autoSize = TextAutoSize.StepBased(minFontSize = 16.sp, maxFontSize = 18.sp),
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        if (icon != null && !leading) ArbIcon(icon, null, size = 20.dp)
     }
 }
 
@@ -202,94 +262,82 @@ private fun NavBar(st: Stage.Question, a: QuestionActions) {
 // Capçalera, cronòmetre i avisos
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * «Pregunta N de M» (antetítol de l'enunciat, UI-05): és l'encapçalament d'accessibilitat de la pantalla. Al canviar de
+ * pregunta (04 §8.2): 1) el foco d'ENTRADA hi va (FocusRequester: a Compose no hi ha API pública per al foco d'accessibilitat;
+ * TalkBack sol seguir el foco d'entrada) i 2) amb TalkBack actiu s'emet a més un anunci explícit «Pregunta N de M. Tipus.
+ * Estat». [PV] comprovar en dispositiu real amb TalkBack que no es llegeix dues vegades.
+ */
 @Composable
-private fun QuestionTopBar(st: Stage.Question, a: QuestionActions) {
-    val scheme = MaterialTheme.colorScheme
+private fun QuestionProgressLabel(st: Stage.Question) {
     val typeLabel = typeLabel(st.question.type)
     val stateLabel = saveStateText(st).ifEmpty { stringResource(R.string.q_state_empty) }
     val a11y = stringResource(R.string.q_status_a11y, st.index + 1, st.total, typeLabel, stateLabel)
+    val focus = remember { FocusRequester() }
+    val view = LocalView.current
+    val spoken by rememberUpdatedState(a11y)
+    LaunchedEffect(st.index) {
+        focus.requestFocus()
+        val am = view.context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+        @Suppress("DEPRECATION")
+        if (am != null && am.isEnabled && am.isTouchExplorationEnabled) view.announceForAccessibility(spoken)
+    }
+    Text(
+        stringResource(if (isExtraLargeText()) R.string.progress_short else R.string.progress, st.index + 1, st.total),
+        style = ArbText.qProgress,
+        color = MaterialTheme.colorScheme.secondary,
+        modifier = Modifier.focusRequester(focus).focusable().semantics {
+            heading()
+            contentDescription = a11y
+        },
+    )
+}
+
+/**
+ * Capçalera d'UNA fila (48 dp + 4/4): progrés segmentat (M ≤ 12 i lletra < 1,5×; amb M > 12, barra contínua fina; amb lletra
+ * ≥ 1,5× res) + rellotge + botó de resum (cercle blanc de 44 dp en una zona tàctil de 48). «Pregunta N de M» va a sobre de
+ * l'enunciat ([QuestionProgressLabel]).
+ */
+@Composable
+private fun QuestionTopBar(st: Stage.Question, a: QuestionActions) {
+    val scheme = MaterialTheme.colorScheme
     Surface(color = scheme.background) {
         // Edge-to-edge: esta barra propia no es TopAppBar, así que respeta ella misma la barra de estado y el recorte.
-        Column(
-            Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-                .padding(horizontal = ArbDimens.gutter).padding(top = ArbDimens.s8, bottom = ArbDimens.s8),
-            verticalArrangement = Arrangement.spacedBy(ArbDimens.s4),
+        Row(
+            Modifier.fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                .padding(horizontal = QDimens.gutter, vertical = QDimens.headerVPad)
+                .heightIn(min = QDimens.headerRow),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
         ) {
-            // Al cambiar de pregunta (04 §8.2): 1) el foco de ENTRADA va a la cabecera (FocusRequester: en Compose no hay
-            // API pública para el foco de accesibilidad; TalkBack suele seguir al foco de entrada) y 2) con TalkBack
-            // activo se emite además un anuncio explícito «Pregunta N de M. Tipus. Estat». [PV] comprobar en dispositivo
-            // real con TalkBack que no se lee dos veces y que el foco acaba en la cabecera.
-            val focus = remember { FocusRequester() }
-            val view = LocalView.current
-            val spoken by rememberUpdatedState(a11y)
-            LaunchedEffect(st.index) {
-                focus.requestFocus()
-                val am = view.context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
-                @Suppress("DEPRECATION")
-                if (am != null && am.isEnabled && am.isTouchExplorationEnabled) view.announceForAccessibility(spoken)
+            if (!isExtraLargeText()) {
+                SegmentedProgress(st.index, st.total, Modifier.weight(1f).padding(end = 4.dp), continuous = st.total > 12)
+            } else Spacer(Modifier.weight(1f))
+            TimerPill(st.remainingMs, st.timeHidden, st.level, a.onToggleTime)
+            val desc = stringResource(R.string.btn_overview_count_a11y, st.answeredCount, st.total)
+            val arb = MaterialTheme.arb
+            IconButton(onClick = a.onOverview, Modifier.size(QDimens.headerRow).testTag(OVERVIEW_TAG)) {
+                Box(
+                    Modifier.size(44.dp).softShadow(CircleShape, ShadowLevel.Option).clip(CircleShape).background(arb.card, CircleShape)
+                        .cardBorder(CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { Icon(drawable(R.drawable.ic_checklist), contentDescription = desc, modifier = Modifier.size(22.dp), tint = scheme.primary) }
             }
-            val label: @Composable (Modifier) -> Unit = { m ->
-                Text(
-                    stringResource(if (isExtraLargeText()) R.string.progress_short else R.string.progress, st.index + 1, st.total),
-                    style = ArbText.progressLabel,
-                    color = scheme.onBackground,
-                    modifier = m.focusRequester(focus).focusable().semantics {
-                        heading()
-                        contentDescription = a11y
-                    },
-                )
-            }
-            // Fila del títol: «Pregunta N de M» + rellotge (també al 200 %, UX P1.3: «N de M» curt, a11y sencer).
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                label(Modifier.weight(1f))
-                TimerPill(st.remainingMs, st.timeHidden, st.level, a.onToggleTime)
-            }
-            // Barra de POSICIÓ: va amb «Pregunta N de M», separada del recompte de respostes.
-            val progressA11y = stringResource(R.string.question_progress_a11y, st.index + 1, st.total)
-            LinearProgressIndicator(
-                progress = { navProgress(st.index, st.total) }, // POSICIÓN de navegación, no respuestas
-                modifier = Modifier.fillMaxWidth().height(ArbDimens.progressHeight).semantics {
-                    contentDescription = progressA11y
-                    progressBarRangeInfo = ProgressBarRangeInfo((st.index + 1).toFloat(), 0f..st.total.toFloat())
-                },
-                color = scheme.primary,
-                trackColor = scheme.surfaceContainerHighest,
-                strokeCap = StrokeCap.Round,
-                gapSize = 0.dp,
-                drawStopIndicator = {},
-            )
-            if (!isExtraLargeText()) QuestionSummaryRow(st, a)
         }
     }
 }
 
-@Composable
-private fun QuestionSummaryRow(st: Stage.Question, a: QuestionActions) {
-    val scheme = MaterialTheme.colorScheme
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            stringResource(R.string.answered_progress, st.answeredCount, st.total),
-            style = MaterialTheme.typography.bodyMedium,
-            color = scheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        val desc = stringResource(R.string.btn_overview_a11y)
-        TextButton(
-            onClick = a.onOverview,
-            contentPadding = PaddingValues(start = 12.dp, end = 0.dp, top = 0.dp, bottom = 0.dp),
-            modifier = Modifier.heightIn(min = ArbDimens.touchMin).semantics { contentDescription = desc },
-        ) { Text(stringResource(R.string.btn_overview), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center) }
-    }
-}
+const val OVERVIEW_TAG = "overview_button"
 
 @Composable
 fun TimerPill(remainingMs: Long, hidden: Boolean, level: TimeBanner?, onToggle: () -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
     val (bg, fg) = when {
-        hidden -> scheme.surfaceContainerHigh to scheme.onSurfaceVariant
+        hidden -> scheme.primaryContainer to scheme.onPrimaryContainer
         level == TimeBanner.ONE_MIN -> scheme.error to scheme.onError
         level == TimeBanner.FIVE_MIN -> BrandColors.WarnAmber to BrandColors.OnWarnAmber
-        else -> scheme.surfaceContainerHigh to scheme.onSurface
+        else -> scheme.primaryContainer to scheme.onPrimaryContainer
     }
     val minutes = (remainingMs / 60_000L).toInt()
     val seconds = ((remainingMs / 1000L) % 60L).toInt()
@@ -304,19 +352,24 @@ fun TimerPill(remainingMs: Long, hidden: Boolean, level: TimeBanner?, onToggle: 
         level != null || lastMinute -> null
         else -> R.drawable.ic_timer
     }
-    Row(
-        modifier.heightIn(min = ArbDimens.touchMin).clip(CircleShape).background(bg)
+    // Zona tàctil de 48 dp; la píndola visual en fa 36 (spec-acceptada: el rellotge no competeix amb l'enunciat).
+    Box(
+        modifier.heightIn(min = ArbDimens.touchMin)
             // No se anuncia cada segundo (sin liveRegion): el usuario consulta tocando. Pista de la acción (F8/F16).
             .clickable(onClickLabel = action, role = Role.Button, onClick = onToggle)
-            .semantics(mergeDescendants = true) { contentDescription = if (hidden) action.replaceFirstChar { it.uppercase() } else spoken }
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
+            .semantics(mergeDescendants = true) { contentDescription = if (hidden) action.replaceFirstChar { it.uppercase() } else spoken },
+        contentAlignment = Alignment.Center,
     ) {
-        if (icon != null) ArbIcon(drawable(icon), null, tint = fg, size = 22.sp.toScaledDp())
-        else ArbIcon(vector(Icons.Outlined.Warning), null, tint = fg, size = 22.sp.toScaledDp())
-        // Mono (xifres tabulars) només per a mm:ss; «N min» i el text van en Atkinson Next.
-        Text(text, style = if (lastMinute && !hidden) ArbText.timer else MaterialTheme.typography.labelLarge, color = fg)
+        Row(
+            Modifier.heightIn(min = 40.dp).clip(CircleShape).background(bg).padding(horizontal = 14.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            if (icon != null) ArbIcon(drawable(icon), null, tint = fg, size = 18.sp.toScaledDp())
+            else ArbIcon(vector(Icons.Outlined.Warning), null, tint = fg, size = 18.sp.toScaledDp())
+            // Mono (xifres tabulars) només per a mm:ss; «N min» i el text van en Atkinson Next.
+            Text(text, style = if (lastMinute && !hidden) ArbText.timer.copy(fontSize = 16.sp, lineHeight = 22.sp) else MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = fg)
+        }
     }
 }
 
@@ -359,26 +412,35 @@ private fun typeLabel(t: QuestionType): String = stringResource(
 )
 
 /**
- * Xip compacte de la resposta múltiple, SOTA l'enunciat: casella **buida** + «Resposta múltiple» i una línia d'ajuda curta
- * (I2: una casella marcada sense res seleccionat enganyava). Transparent, vora d'1,5 dp en tinta. Les preguntes d'una
- * resposta i de cert/fals no porten etiqueta de tipus.
+ * Insígnia d'avís «Resposta múltiple» (UI-02): píndola plena en ambre (`warnBadge`) amb un disc fosc amb «!» (mateixa
+ * família d'icones; sense casella, sense vora d'opció). Ocupa NOMÉS l'ample del contingut, no és interactiva (cap rol ni
+ * clic) i el text d'ajuda llarg viu només a `contentDescription` (TalkBack). Dues línies a 200 % (mai es trunca).
  */
 @Composable
-private fun MultiChip() {
-    val scheme = MaterialTheme.colorScheme
-    Column(verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
-        Row(
-            Modifier.clip(MaterialTheme.shapes.medium).border(BorderStroke(1.5.dp, scheme.onSurface), MaterialTheme.shapes.medium)
-                .padding(horizontal = ArbDimens.s12, vertical = ArbDimens.s8),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
+private fun MultiAnswerBadge() {
+    val arb = MaterialTheme.arb
+    val a11y = stringResource(R.string.multi_badge_a11y)
+    Row(
+        Modifier.testTag(MULTI_BADGE_TAG)
+            .background(arb.warnBadge, RoundedCornerShape(QDimens.badgeRadius))
+            .heightIn(min = 32.dp)
+            .padding(start = 6.dp, end = 12.dp, top = 4.dp, bottom = 4.dp)
+            .semantics(mergeDescendants = true) { contentDescription = a11y },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            Modifier.testTag(MULTI_BADGE_ICON_TAG).size(20.sp.toScaledDp(max = 32.dp)).background(arb.onWarnBadge, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
-            ArbIcon(drawable(R.drawable.ic_check_box_outline), null, tint = scheme.onSurface, size = 20.sp.toScaledDp())
-            Text(stringResource(R.string.q_type_multi), style = MaterialTheme.typography.labelMedium, color = scheme.onSurface)
+            Icon(drawable(R.drawable.ic_priority_high), contentDescription = null, modifier = Modifier.size(14.sp.toScaledDp(max = 24.dp)), tint = arb.warnBadge)
         }
-        Text(stringResource(R.string.multi_helper), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+        Text(stringResource(R.string.q_type_multi), style = ArbText.badge, color = arb.onWarnBadge, maxLines = 2)
     }
 }
+
+const val MULTI_BADGE_TAG = "multi_badge"
+const val MULTI_BADGE_ICON_TAG = "multi_badge_icon"
 
 enum class OptionKind { RADIO, CHECK, TRUE_FALSE }
 
@@ -390,72 +452,69 @@ internal fun reduceMotion(): Boolean {
 }
 
 /**
- * Targeta de resposta: tota la fila és el destí tàctil (≥ 64 dp, V/F ≥ 96 dp), contingut CENTRAT verticalment, indicador
- * de 28 dp. «Marca de bolígraf» (I2): marcada = bloc en tinta (`mark`), vora de 3 dp i text `onMark` a 600; sense marcar =
- * `surface` amb vora d'1,5 dp `outline`. La vora es dibuixa cap a dins i el padding es compensa: la targeta no canvia de mida.
- * A més del color canvien el pes, el control i el rol (mai només el color, 04 §8.2). El rol natiu (RadioButton/Checkbox)
- * anuncia l'estat; la semàntica no canvia.
+ * Targeta de resposta (UI-05): tota la fila és el destí tàctil (≥ 52-56 dp, V/F ≥ 64 dp). Sense marcar = `card` amb ombra suau
+ * (al fosc, filet d'1 dp); marcada = `selectContainer` + vora de 2 dp `select`, sense ombra, + indicador ple. La vora es dibuixa
+ * amb `Modifier.border` (no ocupa layout), el pes del text és sempre 400 i el padding és fix: la targeta no salta en marcar-la.
+ * A més del color canvien el gruix de vora, l'indicador i el rol (mai només el color, 04 §8.2).
+ * [compact] = nivell C de densitat (16 sp, mínim 52 dp, padding vertical 8 dp).
  */
 @Composable
-fun OptionCard(text: String, selected: Boolean, kind: OptionKind, enabled: Boolean, onClick: () -> Unit) {
+fun OptionCard(text: String, selected: Boolean, kind: OptionKind, enabled: Boolean, onClick: () -> Unit, compact: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     val arb = MaterialTheme.arb
-    val shape = MaterialTheme.shapes.medium
-    val spec = if (reduceMotion()) snap<Color>() else tween<Color>(120)
-    val container by animateColorAsState(if (selected) arb.mark else scheme.surface, spec, label = "optionBg")
-    val borderColor by animateColorAsState(if (selected) arb.mark else scheme.outline, spec, label = "optionBorder")
-    val textColor by animateColorAsState(if (selected) arb.onMark else scheme.onSurface, spec, label = "optionText")
-    val bw = if (selected) 3.dp else 1.5.dp
+    val shape = ArbShape.option
+    val reduce = reduceMotion()
+    val spec = if (reduce) snap<Color>() else tween<Color>(120)
+    val container by animateColorAsState(if (selected) arb.selectContainer else arb.card, spec, label = "optionBg")
+    val borderColor by animateColorAsState(if (selected) arb.select else arb.cardBorder, spec, label = "optionBorder")
+    val bw by animateDpAsState(if (selected) 2.dp else 1.dp, if (reduce) snap() else tween(120), label = "optionBorderW")
+    val tf = kind == OptionKind.TRUE_FALSE
+    val ts = when { tf -> ArbText.optionTf; compact -> ArbText.optionC; else -> ArbText.optionN }
     val base = Modifier.fillMaxWidth()
         .then(if (enabled) Modifier else Modifier.alpha(0.38f))
-        .heightIn(min = if (kind == OptionKind.TRUE_FALSE) ArbDimens.optionMinTf else ArbDimens.optionMin)
+        .then(if (selected) Modifier else Modifier.softShadow(shape, ShadowLevel.Option)) // la sombra va ANTES del clip
+        .heightIn(min = when { tf -> QDimens.optionMinTf; compact -> QDimens.optionMinC; else -> QDimens.optionMinN })
         .clip(shape).background(container, shape).border(BorderStroke(bw, borderColor), shape)
     val mod = if (kind == OptionKind.CHECK) {
         base.toggleable(value = selected, enabled = enabled, role = Role.Checkbox, onValueChange = { onClick() })
     } else {
         base.selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
     }
+    val firstLinePad = with(LocalDensity.current) { ((ts.lineHeight.toDp() - QDimens.indicator) / 2).coerceAtLeast(0.dp) }
     Box(
-        mod.padding(horizontal = ArbDimens.s16 - bw, vertical = ArbDimens.s12 - bw),
+        mod.padding(horizontal = QDimens.optionHPad, vertical = if (compact) QDimens.optionVPadC else QDimens.optionVPadN),
         contentAlignment = Alignment.CenterStart,
     ) {
         Row(
-            Modifier.fillMaxWidth().align(Alignment.CenterStart),
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+            horizontalArrangement = Arrangement.spacedBy(QDimens.indicatorGap),
         ) {
             // A l'esquerra per a tots els tipus; en text llarg, queda alineat amb la primera línia.
-            Box(Modifier.padding(top = ArbDimens.s4)) { Indicator(selected, kind == OptionKind.CHECK) }
-            val ts = if (kind == OptionKind.TRUE_FALSE) ArbText.optionTf else ArbText.option
-            Text(
-                text,
-                style = if (kind == OptionKind.TRUE_FALSE) ts else ts.copy(fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal),
-                color = textColor,
-                modifier = Modifier.weight(1f),
-            )
+            Box(Modifier.padding(top = firstLinePad)) { Indicator(selected, kind == OptionKind.CHECK) }
+            Text(text, style = ts, color = scheme.onSurface, modifier = Modifier.weight(1f))
         }
     }
 }
 
 /**
- * Control visual de 28 dp (sense semàntica pròpia: la posa la fila). Sense marcar: anell de 2,5 dp `outline`. Marcat: radi =
- * anell `onMark` amb punt de 14 dp; casella = quadrat de radi 6 ple en `onMark` amb ✓ de 20 dp en `mark`.
+ * Control visual de 24 dp (sense semàntica pròpia: la posa la fila). Sense marcar: anell/casella de 2 dp `optionRing` (≥ 3:1).
+ * Marcat: radi = anell `select` amb punt de 12 dp; casella (radi 8) plena en `select` amb ✓ de 18 dp en `onSelect`.
  */
 @Composable
 private fun Indicator(selected: Boolean, square: Boolean) {
     val arb = MaterialTheme.arb
-    val scheme = MaterialTheme.colorScheme
-    val shape = if (square) RoundedCornerShape(6.dp) else CircleShape
-    val ring = if (selected) arb.onMark else scheme.outline
+    val shape = if (square) MaterialTheme.shapes.extraSmall else CircleShape
+    val ring = if (selected) arb.select else arb.optionRing
     Box(
-        Modifier.size(ArbDimens.indicator).clip(shape)
-            .background(if (square && selected) arb.onMark else Color.Transparent, shape)
-            .border(2.5.dp, ring, shape).clearAndSetSemantics { },
+        Modifier.size(QDimens.indicator).clip(shape)
+            .background(if (square && selected) arb.select else Color.Transparent, shape)
+            .border(2.dp, ring, shape).clearAndSetSemantics { },
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {
-            if (square) Icon(Icons.Outlined.Check, null, Modifier.size(20.dp), tint = arb.mark)
-            else Box(Modifier.size(14.dp).clip(CircleShape).background(arb.onMark))
+            if (square) Icon(Icons.Outlined.Check, null, Modifier.size(18.dp), tint = arb.onSelect)
+            else Box(Modifier.size(12.dp).clip(CircleShape).background(arb.select))
         }
     }
 }

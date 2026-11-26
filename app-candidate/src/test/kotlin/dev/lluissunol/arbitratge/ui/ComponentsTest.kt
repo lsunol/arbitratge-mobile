@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -52,11 +53,59 @@ class ComponentsTest {
 
     @Test fun lightAndDarkSchemesKeepTheApprovedTokens() {
         assertEquals(Color(0xFF0F3D26), LightScheme.primary) // gespa [DESV-1]
-        assertEquals(Color.White, LightScheme.background)
+        assertEquals(Color(0xFFF3F6F2), LightScheme.background) // UI-05: fons del nou estil
+        assertEquals(Color.White, LightArbColors.card)
+        assertEquals(Color.Transparent, LightArbColors.cardBorder) // clar: ombra, no filet
+        assertNotEquals(Color.Transparent, DarkArbColors.cardBorder) // fosc: sense ombra → filet (UI-05)
+        assertNotEquals(DarkArbColors.card, DarkScheme.background, "al fosc la targeta es separa per to")
         assertTrue(DarkScheme.background.luminance() < 0.05f, "el fons fosc és verd nit, no blanc")
         assertNotEquals(DarkScheme.background, Color.Black, "no és negre pur")
         assertEquals(DarkScheme.error, DarkArbColors.wrong)
         assertEquals(LightScheme.errorContainer, LightArbColors.wrongContainer)
+    }
+
+    private fun contrast(a: Color, b: Color): Float {
+        val l1 = maxOf(a.luminance(), b.luminance()) + 0.05f
+        val l2 = minOf(a.luminance(), b.luminance()) + 0.05f
+        return l1 / l2
+    }
+
+    @Test fun newStyleControlsKeepWcagContrast() {
+        // 1.4.11: anell/casella sense marcar ≥ 3:1 sobre la targeta (UI-05, ui-designer-spec §1.2); text secundari ≥ 4,5:1.
+        assertTrue(contrast(LightArbColors.optionRing, LightArbColors.card) >= 3f, "anell clar")
+        assertTrue(contrast(DarkArbColors.optionRing, DarkArbColors.card) >= 3f, "anell fosc")
+        assertTrue(contrast(LightArbColors.select, LightArbColors.selectContainer) >= 4.5f, "selecció clara")
+        assertTrue(contrast(DarkArbColors.select, DarkArbColors.selectContainer) >= 4.5f, "selecció fosca")
+        assertTrue(contrast(LightScheme.onSurfaceVariant, LightScheme.background) >= 4.5f, "text secundari clar")
+        assertTrue(contrast(DarkScheme.onSurfaceVariant, DarkArbColors.card) >= 4.5f, "text secundari fosc")
+        assertTrue(contrast(BrandColors.PitchSoft, BrandColors.Pitch) >= 4.5f, "text del hero")
+    }
+
+    @Test fun segmentedProgressIsDecorativeAndDoesNotCrashWithManyOrFewSteps() {
+        rule.setContent { ArbitratgeTheme { androidx.compose.foundation.layout.Column {
+            SegmentedProgress(0, 1, androidx.compose.ui.Modifier.testTag("p1"))
+            SegmentedProgress(4, 5, androidx.compose.ui.Modifier.testTag("p5"))
+            SegmentedProgress(10, 30, androidx.compose.ui.Modifier.testTag("p30"), continuous = true)
+        } } }
+        listOf("p1", "p5", "p30").forEach { rule.onNodeWithTag(it, useUnmergedTree = true).assertExists() }
+    }
+
+    @Test fun scoreRingSpeaksTheScoreAndHeroSpeaksTheFactsOnce() {
+        rule.setContent { Scaled(1f) { androidx.compose.foundation.layout.Column {
+            ScoreRing(3, 5, true, "3 encerts de 5")
+            HeroCard(title = "Futbol", facts = listOf(HeroFact("5", "preguntes"), HeroFact("5", "minuts"), HeroFact("3", "per aprovar")), factsSpoken = "5 preguntes, 5 minuts, 3 per aprovar")
+        } } }
+        rule.onNodeWithContentDescription("3 encerts de 5").assertExists()
+        rule.onNodeWithContentDescription("5 preguntes, 5 minuts, 3 per aprovar").assertExists()
+        rule.onNode(isHeading and androidx.compose.ui.test.hasText("Futbol")).assertExists()
+    }
+
+    @Test fun heroFactsBecomeRowsAtLargeText() {
+        val facts = listOf(HeroFact("5", "preguntes"), HeroFact("5", "minuts"), HeroFact("3", "encerts per aprovar"))
+        rule.setContent { Scaled(1.3f) { HeroCard(title = "Futbol", facts = facts, factsSpoken = "x") } }
+        val a = rule.onNodeWithText("preguntes", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val b = rule.onNodeWithText("minuts", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertTrue(b.top > a.top, "files (valor · etiqueta) a ≥ 1,15×: cap paraula es parteix")
     }
 
     @Test fun typographyFollowsTheScaleAndNeverGoesBelow16sp() {
@@ -175,6 +224,25 @@ class ComponentsTest {
         val b = rule.onNodeWithText("Mateixa 2").fetchSemanticsNode().boundsInRoot
         assertEquals(a.height, b.height, 1f, "la vora de 3 dp es dibuixa cap a dins: la targeta no creix")
         assertEquals(a.width, b.width, 1f)
+    }
+
+    @Test fun optionCardWithLongTextKeepsItsSizeAndTextPositionWhenSelected() {
+        val long = "Una opció molt llarga que ocupa diverses línies dins la targeta de resposta, de manera que el canvi de marca no la pugui fer créixer ni moure el text. "
+        rule.setContent {
+            ArbitratgeTheme {
+                Column {
+                    OptionCard("A $long", selected = false, kind = OptionKind.RADIO, enabled = true, onClick = {})
+                    OptionCard("B $long", selected = true, kind = OptionKind.RADIO, enabled = true, onClick = {})
+                }
+            }
+        }
+        val a = rule.onNodeWithText("A $long").fetchSemanticsNode().boundsInRoot
+        val b = rule.onNodeWithText("B $long").fetchSemanticsNode().boundsInRoot
+        assertEquals(a.height, b.height, 1f, "marcada o no, la mateixa alçada (vora fora del layout, pes fix)")
+        val ta = rule.onNodeWithText("A $long", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val tb = rule.onNodeWithText("B $long", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(ta.left - a.left, tb.left - b.left, 1f, "el text no es mou en marcar")
+        assertEquals(ta.height, tb.height, 1f, "el text no guanya una línia en marcar")
     }
 
     // ------------------------------------------------------------------ fase 2: banda, FactStrip, ActionRow, normes

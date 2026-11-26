@@ -47,9 +47,13 @@ import dev.lluissunol.arbitratge.data.StoredCredential
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private fun shortCode(cid: String) = cid.substring(0, 4).uppercase() + "-" + cid.substring(4, 8).uppercase()
+private fun shortCode(cid: String) = credentialShortCode(cid)
 
-private fun displayDate(iat: String): String =
+private fun displayDate(iat: String): String = credentialDisplayDate(iat)
+
+internal fun credentialShortCode(cid: String) = cid.substring(0, 4).uppercase() + "-" + cid.substring(4, 8).uppercase()
+
+internal fun credentialDisplayDate(iat: String): String =
     runCatching { LocalDate.parse(iat).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) }.getOrDefault(iat)
 
 /** Fila etiqueta | valor del carnet (I8, una sola columna). Amb lletra ≥ 1,3× l'etiqueta va a sobre del valor. */
@@ -90,15 +94,13 @@ fun CredentialScreen(c: StoredCredential, onPresent: () -> Unit, onHome: () -> U
     val qr = remember(c.token) { QrEncoder.encode(c.token) }
     val dark = androidx.compose.foundation.isSystemInDarkTheme()
     ScreenScaffold(title = stringResource(R.string.cred_screen_title), onBack = onBack, pinBottom = false, bottom = {
-        PrimaryButton(stringResource(R.string.btn_show_org), onPresent, icon = drawable(R.drawable.ic_id_card))
+        PrimaryButton(stringResource(R.string.btn_show_org), onPresent, icon = drawable(R.drawable.ic_qr_code))
         TertiaryButton(stringResource(R.string.btn_home), onHome, minHeight = ArbDimens.buttonMin)
     }) {
         Surface(
-            Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp), // un document té les cantonades petites (shape lock)
+            Modifier.fillMaxWidth().softShadow(ArbShape.document),
+            shape = ArbShape.document, // un document té les cantonades petites (shape lock)
             color = BrandColors.Paper,
-            border = if (dark) null else BorderStroke(1.dp, BrandColors.PaperLine),
-            shadowElevation = if (dark) 0.dp else 2.dp,
         ) {
             Column {
                 CredentialBand()
@@ -168,7 +170,7 @@ fun PresentationScreen(c: StoredCredential, onClose: () -> Unit) {
                 }
                 OutlinedButton(
                     onClick = onClose,
-                    shape = MaterialTheme.shapes.medium,
+                    shape = ArbShape.pill,
                     border = BorderStroke(2.dp, BrandColors.Pitch),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandColors.Pitch),
                     modifier = Modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),

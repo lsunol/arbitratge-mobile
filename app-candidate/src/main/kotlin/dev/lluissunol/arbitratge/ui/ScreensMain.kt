@@ -22,6 +22,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import dev.lluissunol.arbitratge.data.StoredCredential
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Edit
@@ -70,28 +74,25 @@ fun StatusInset() {
     Spacer(Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)).height(ArbDimens.s8))
 }
 
-/** Fila d'una llista informativa (I4): icona de contorn de 24 dp sense cercle, alineada amb la 1a línia; text en tinta. */
-@Composable
-private fun InfoRow(icon: Painter, text: String, modifier: Modifier = Modifier, tint: Color = MaterialTheme.colorScheme.secondary) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(ArbDimens.s16)) {
-        ArbIcon(icon, null, Modifier.padding(top = 2.dp), tint = tint)
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-    }
-}
-
 @Composable
 fun WelcomeScreen(onUnderstood: () -> Unit) {
     ScreenScaffold(
         title = null, pinBottom = false,
-        header = { BrandBand(stringResource(R.string.brand_name), stringResource(R.string.home_title)) },
-        bottom = { PrimaryButton(stringResource(R.string.btn_understood), onUnderstood) },
+        topBar = { BrandTopRow() },
+        contentTop = ArbDimens.s8,
+        bottom = { PrimaryButton(stringResource(R.string.btn_understood), onUnderstood, trailingIcon = vector(Icons.AutoMirrored.Outlined.ArrowForward)) },
     ) {
-        Heading(stringResource(R.string.welcome_title))
-        Body(stringResource(R.string.welcome_intro), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        InfoRow(vector(Icons.Outlined.Check), stringResource(R.string.welcome_b1))
-        InfoRow(drawable(R.drawable.ic_menu_book), stringResource(R.string.welcome_b2))
-        InfoRow(drawable(R.drawable.ic_id_card), stringResource(R.string.welcome_b3))
-        InfoRow(drawable(R.drawable.ic_wifi_off), stringResource(R.string.welcome_b4))
+        HeroCard(
+            title = stringResource(R.string.welcome_title),
+            overline = stringResource(R.string.hero_overline),
+            body = stringResource(R.string.welcome_intro),
+        )
+        ArbCard {
+            FeatureRow(vector(Icons.Outlined.Check), stringResource(R.string.welcome_b1), tileSize = 40.dp)
+            FeatureRow(drawable(R.drawable.ic_menu_book), stringResource(R.string.welcome_b2), tileSize = 40.dp)
+            FeatureRow(drawable(R.drawable.ic_id_card), stringResource(R.string.welcome_b3), tileSize = 40.dp)
+            FeatureRow(drawable(R.drawable.ic_wifi_off), stringResource(R.string.welcome_b4), tileSize = 40.dp)
+        }
     }
 }
 
@@ -108,33 +109,45 @@ private fun RulesFactStrip(r: RulesSummary) {
     )
 }
 
-/** Miniatura del carnet (no és la credencial: només la recorda). Banda de gespa amb filet groc de 3 dp i símbol de 28 dp. Sense cap marca de validesa. */
+/**
+ * Miniatura del carnet (no és la credencial: només la recorda; no és escanejable). Targeta blanca de radi 24 amb capçalera de
+ * gespa, filet groc de 4 dp (ús exclusiu del carnet), nom, codi i data. Sense cap marca de validesa. [caption]: frase opcional
+ * al peu (a l'Inici, «Tens la credencial d'aptitud.»).
+ */
 @Composable
-internal fun CredentialMini(name: String) {
+internal fun CredentialMini(c: StoredCredential, caption: String? = null) {
+    val shape = MaterialTheme.shapes.large
     Surface(
-        Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = BrandColors.Paper,
-        border = BorderStroke(1.dp, BrandColors.PaperLine),
+        Modifier.fillMaxWidth().softShadow(shape).cardBorder(shape), shape = shape, color = MaterialTheme.arb.card,
     ) {
         Column {
             Row(
-                Modifier.fillMaxWidth().background(BrandColors.Pitch).padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+                Modifier.fillMaxWidth().background(BrandColors.Pitch).padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                BrandMark(28.dp, onPitch = true)
-                Text(stringResource(R.string.cred_title), style = MaterialTheme.typography.titleSmall, color = Color.White)
+                BrandMark(36.dp, onPitch = true)
+                Column {
+                    Text(stringResource(R.string.cred_title), style = MaterialTheme.typography.titleSmall, color = Color.White)
+                    Text(stringResource(R.string.cred_subtitle), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PitchSoft)
+                }
             }
-            Box(Modifier.fillMaxWidth().height(3.dp).background(BrandColors.RefCard))
-            Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
-                Text(name, style = MaterialTheme.typography.titleSmall, color = BrandColors.PaperInk)
-                Text(stringResource(R.string.home_has_cred), style = MaterialTheme.typography.bodyMedium, color = BrandColors.PaperMuted)
+            Box(Modifier.fillMaxWidth().height(4.dp).background(BrandColors.RefCard))
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(c.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    stringResource(R.string.cred_code, credentialShortCode(c.cid)),
+                    style = ArbText.code.copy(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(credentialDisplayDate(c.iat), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (caption != null) Text(caption, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
 /**
- * Inici. Banda I3 (34 % de la finestra amb lletra < 1,3× si encara no hi ha historial) + `FactStrip`. Amb historial, l'ordre és el de UX P2.1:
- * 1) estat de l'últim examen, 2) miniatura de la credencial si n'hi ha, 3) fila «Repassar l'últim examen».
+ * Inici (UI-05). Fila de marca + hero de gespa amb les 3 dades; sense historial, targeta de 3 característiques. Amb historial,
+ * l'ordre és el de UX P2.1: 1) estat de l'últim examen, 2) miniatura de la credencial si n'hi ha, 3) fila «Repassar l'últim examen».
  */
 @Composable
 fun HomeScreen(
@@ -146,37 +159,57 @@ fun HomeScreen(
 ) {
     ScreenScaffold(
         title = null, pinBottom = false,
-        header = { BrandBand(stringResource(R.string.brand_name), stringResource(R.string.home_title), minHeightFraction = if (st.last == null && st.credential == null) 0.34f else 0f) },
+        topBar = { BrandTopRow() },
+        contentTop = ArbDimens.s8,
         bottom = {
             if (st.credential != null) {
                 PrimaryButton(stringResource(R.string.btn_see_credential), onShowCredential)
                 SecondaryButton(stringResource(R.string.btn_retake), onStart)
             } else {
-                PrimaryButton(stringResource(R.string.btn_start), onStart)
+                PrimaryButton(stringResource(R.string.btn_start), onStart, trailingIcon = vector(Icons.AutoMirrored.Outlined.ArrowForward))
             }
         },
     ) {
-        RulesFactStrip(st.rules)
+        HeroCard(
+            title = stringResource(R.string.hero_title),
+            overline = stringResource(R.string.hero_overline),
+            facts = listOf(
+                HeroFact(st.rules.questions.toString(), stringResource(R.string.home_fact_questions_full)),
+                HeroFact(st.rules.minutes.toString(), stringResource(R.string.home_fact_minutes_full)),
+                HeroFact(st.rules.threshold.toString(), stringResource(R.string.home_fact_pass_full)),
+            ),
+            factsSpoken = stringResource(R.string.home_facts_a11y, st.rules.questions, st.rules.minutes, st.rules.threshold),
+        )
         val last = st.last
         if (last != null) {
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = ArbDimens.touchMin),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s12),
-            ) {
-                ArbIcon(vector(if (last.passed) Icons.Outlined.CheckCircle else Icons.Outlined.Info), null, tint = MaterialTheme.colorScheme.secondary)
-                Text(
-                    stringResource(if (last.passed) R.string.last_passed else R.string.last_failed, last.correct, last.total),
-                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f),
-                )
+            ArbCard {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = ArbDimens.touchMin),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    IconTile(vector(if (last.passed) Icons.Outlined.CheckCircle else Icons.Outlined.Info))
+                    Text(
+                        stringResource(if (last.passed) R.string.last_passed else R.string.last_failed, last.correct, last.total),
+                        style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
-        st.credential?.let { CredentialMini(it.name) }
+        st.credential?.let { CredentialMini(it, caption = stringResource(R.string.home_has_cred)) }
         if (last != null) {
             ActionRow(
                 drawable(R.drawable.ic_menu_book), stringResource(R.string.btn_review_last), null, onReviewLast,
             )
         } else if (st.credential == null) {
-            Body(stringResource(R.string.home_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ArbCard(padding = 16.dp, gap = 12.dp) {
+                FeatureRow(drawable(R.drawable.ic_wifi_off), stringResource(R.string.home_f1_t), subtitle = stringResource(R.string.home_f1_s))
+                FeatureRow(drawable(R.drawable.ic_menu_book), stringResource(R.string.home_f2_t), subtitle = stringResource(R.string.home_f2_s))
+                FeatureRow(drawable(R.drawable.ic_id_card), stringResource(R.string.home_f3_t), subtitle = stringResource(R.string.home_f3_s))
+            }
+            Text(
+                stringResource(R.string.home_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+            )
         }
         st.pending?.let { p ->
             InfoBanner(BannerKind.ERROR) {
@@ -225,9 +258,10 @@ fun NameScreen(st: Stage.Name, onChange: (String) -> Unit, onContinue: () -> Uni
             singleLine = false,
             shape = MaterialTheme.shapes.medium,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                errorContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.arb.card,
+                unfocusedContainerColor = MaterialTheme.arb.card,
+                errorContainerColor = MaterialTheme.arb.card,
+                focusedBorderColor = MaterialTheme.arb.select,
             ),
             textStyle = MaterialTheme.typography.titleMedium,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
@@ -247,7 +281,8 @@ private fun NameCard(nom: String, onChangeName: () -> Unit) {
     val change: @Composable (Modifier) -> Unit = { m ->
         TertiaryButton(stringResource(R.string.btn_change), onChangeName, modifier = m, icon = vector(Icons.Outlined.Edit), fillWidth = false)
     }
-    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = scheme.surface, border = BorderStroke(1.5.dp, scheme.outline)) {
+    val cardShape = MaterialTheme.shapes.large
+    Surface(Modifier.fillMaxWidth().softShadow(cardShape).cardBorder(cardShape), shape = cardShape, color = MaterialTheme.arb.card) {
         if (isLargeText()) {
             Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
                 Text(stringResource(R.string.rules_name_label), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
@@ -280,10 +315,12 @@ fun RulesScreen(st: Stage.Rules, onChangeName: () -> Unit, onBegin: () -> Unit, 
             verticalArrangement = Arrangement.spacedBy(ArbDimens.s16),
         ) {
             RulesFactStrip(st.summary)
-            InfoRow(drawable(R.drawable.ic_swap_horiz), stringResource(R.string.rules_nav))
-            InfoRow(drawable(R.drawable.ic_checklist), stringResource(R.string.rules_types))
-            InfoRow(drawable(R.drawable.ic_remove), stringResource(R.string.rules_unanswered))
-            InfoRow(vector(Icons.Outlined.Check), stringResource(R.string.rules_autosave))
+            ArbCard {
+                FeatureRow(drawable(R.drawable.ic_swap_horiz), stringResource(R.string.rules_nav), tileSize = 40.dp)
+                FeatureRow(drawable(R.drawable.ic_checklist), stringResource(R.string.rules_types), tileSize = 40.dp)
+                FeatureRow(drawable(R.drawable.ic_remove), stringResource(R.string.rules_unanswered), tileSize = 40.dp)
+                FeatureRow(vector(Icons.Outlined.Check), stringResource(R.string.rules_autosave), tileSize = 40.dp)
+            }
             InfoBanner(BannerKind.WARNING) { Text(stringResource(R.string.rules_leave), style = MaterialTheme.typography.bodyLarge) }
         }
         NameCard(st.nom, onChangeName)

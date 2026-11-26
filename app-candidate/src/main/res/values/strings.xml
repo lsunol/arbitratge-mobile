@@ -15,6 +15,15 @@
     <string name="home_fact_pass_full">encerts per aprovar</string>
     <string name="home_facts_a11y">%1$d preguntes, %2$d minuts, %3$d encerts per aprovar</string>
     <string name="home_empty">Encara no has fet cap examen. El pots fer tantes vegades com vulguis.</string>
+    <!-- UI-05 (nou estil): hero i característiques d'Inici -->
+    <string name="hero_overline">Examen d\'àrbitre</string>
+    <string name="hero_title">Futbol amb Botons</string>
+    <string name="home_f1_t">Funciona sense internet</string>
+    <string name="home_f1_s">Es corregeix al moment, al teu mòbil.</string>
+    <string name="home_f2_t">Aprens de cada error</string>
+    <string name="home_f2_s">Veuràs la resposta correcta de cada pregunta.</string>
+    <string name="home_f3_t">Credencial si aproves</string>
+    <string name="home_f3_s">La pots mostrar a un organitzador.</string>
     <string name="home_has_cred">Tens la credencial d\'aptitud.</string>
     <string name="btn_start">Començar l\'examen</string>
     <string name="btn_retake">Tornar a fer l\'examen</string>
@@ -61,22 +70,19 @@
     <string name="progress">Pregunta %1$d de %2$d</string>
     <string name="progress_short">%1$d de %2$d</string>
     <string name="q_number">Pregunta %1$d</string>
-    <string name="answered_progress">Respostes:\u00A0%1$d\u00A0de\u00A0%2$d</string>
-    <string name="question_progress_a11y">Posició de l\'examen: pregunta %1$d de %2$d</string>
-    <string name="btn_overview">Veure-les totes</string>
-    <string name="btn_overview_a11y">Veure totes les preguntes</string>
+    <string name="btn_overview_count_a11y">Veure el resum: %1$d de %2$d respostes</string>
     <string name="btn_prev_q">Anterior</string>
     <string name="btn_prev_q_a11y">Pregunta anterior</string>
     <string name="btn_next">Següent</string>
     <string name="btn_review">Revisar</string>
     <string name="tf_true_display">Cert</string>
-    <string name="btn_review_finish">Revisar i finalitzar</string>
+    <string name="btn_review_finish">Revisar</string>
     <string name="q_type_single">Una resposta</string>
     <string name="q_type_multi">Resposta múltiple</string>
     <string name="q_type_tf">Cert o fals</string>
     <string name="single_hint">Tria una resposta.</string>
     <string name="tf_hint">Aquesta afirmació és certa o falsa?</string>
-    <string name="multi_helper">N\'hi ha més d\'una resposta correcta. Marca-les totes.</string>
+    <string name="multi_badge_a11y">Resposta múltiple: pot haver-hi més d\'una resposta correcta. Marca-les totes.</string>
     <string name="q_status_a11y">Pregunta %1$d de %2$d. %3$s. %4$s</string>
 
     <!-- Cronòmetre -->
@@ -148,7 +154,7 @@
     <string name="recovering">Recuperant el teu examen…</string>
 
     <!-- C8/C9 Resultat -->
-    <string name="passed_title">Has aprovat</string>
+    <string name="passed_title">Has aprovat!</string>
     <string name="passed_zero">Cap fallada. Enhorabona!</string>
     <string name="failed_title">No has aprovat</string>
     <plurals name="score_of">
@@ -160,6 +166,10 @@
         <item quantity="other">%1$d encerts de %2$d</item>
     </plurals>
     <string name="result_min">Mínim per aprovar: %1$d</string>
+    <plurals name="stat_correct">
+        <item quantity="one">Encert</item>
+        <item quantity="other">Encerts</item>
+    </plurals>
     <plurals name="stat_failures">
         <item quantity="one">Incorrecta</item>
         <item quantity="other">Incorrectes</item>

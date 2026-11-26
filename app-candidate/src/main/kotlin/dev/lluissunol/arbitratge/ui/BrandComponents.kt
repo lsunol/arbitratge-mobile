@@ -154,9 +154,11 @@ class FactCell(val value: String, val label: String)
 @Composable
 fun FactStrip(cells: List<FactCell>, spoken: String, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
+    val cardShape = MaterialTheme.shapes.large
+    // UI-05: bloc blanc amb ombra suau (`surfaceContainer` sobre el fons nou quedaria invisible).
     Surface(
-        modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = spoken },
-        shape = MaterialTheme.shapes.large, color = scheme.surfaceContainer,
+        modifier.fillMaxWidth().softShadow(cardShape).cardBorder(cardShape).semantics(mergeDescendants = true) { contentDescription = spoken },
+        shape = cardShape, color = MaterialTheme.arb.card,
     ) {
         if (isLargeText()) {
             // Columna de valors d'amplada comuna (el valor més ample, mínim 56 dp): totes les etiquetes comencen a la mateixa x.
@@ -191,21 +193,21 @@ fun FactStrip(cells: List<FactCell>, spoken: String, modifier: Modifier = Modifi
     }
 }
 
-/** Fila tocable de 72 dp (I4): `surface`, vora d'1,5 dp `outline`, radi 12, rol Botó; icona, titular, suport i xeron. */
+/** Fila tocable de 72 dp (UI-05): targeta blanca de radi 18, ombra suau, sense vora; requadre d'icona i xeró. */
 @Composable
 fun ActionRow(icon: Painter, title: String, support: String?, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val scheme = MaterialTheme.colorScheme
-    val shape = MaterialTheme.shapes.medium
+    val shape = ArbShape.option
     Row(
-        modifier.fillMaxWidth().heightIn(min = ArbDimens.rowMin).clip(shape).background(scheme.surface, shape)
-            .border(1.5.dp, scheme.outline, shape)
+        modifier.fillMaxWidth().softShadow(shape, ShadowLevel.Option).heightIn(min = ArbDimens.rowMin).clip(shape)
+            .background(MaterialTheme.arb.card, shape).cardBorder(shape)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) {}
             .padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(ArbDimens.s16),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        ArbIcon(icon, null, tint = scheme.secondary)
+        IconTile(icon)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = scheme.onSurface)
             if (support != null) Text(support, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)

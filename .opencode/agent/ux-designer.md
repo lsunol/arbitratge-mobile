@@ -43,11 +43,13 @@ Tu tarea: producir `docs/design/04-ux.md` con:
    instrucciones para instalar APKs de origen desconocido en Android, checksum SHA-256,
    versión.
 6. **Microcopy en catalán** de todas las cadenas clave, y principios visuales
-   (Material 3, tipografía, color, accesibilidad: contraste, tamaño táctil, TalkBack).
+   (Material 3, tipografía, color, accesibilidad: contraste, tamaño táctil).
 Uso de skills:
 - `ui-ux-pro-max` (obligatoria en tareas de UI): `SKILL.md`, `references/pro-rules.md` y búsquedas `--domain ux` (y `--stack jetpack-compose` si es Android); registra las consultas.
 - `mobile-android-design`: navegación, componentes y patrones M3 nativos.
 - `ui-taste`: `reference/research.md`, `distill.md`, `mobile-state-performance.md` (estados, recuperación) y `mobile-controls.md`; sin generar imágenes salvo autorización.
+
+**Obligatorio antes de empezar:** lee `docs/design/decisiones-usuario-ui.md` (decisiones vinculantes del usuario sobre la UI). Prevalecen sobre tu criterio y sobre cualquier spec previa; cítalas por ID (UI-01…) y no las reinterpretes. Si crees que alguna es errónea, plantéalo como pregunta, no la incumplas.
 
 ## Skills asignadas
 

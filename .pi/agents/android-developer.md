@@ -29,6 +29,8 @@ Uso de skills (cárgalas al empezar la tarea que coincida, no todas siempre):
 - **Procesos y dispositivos (obligatorio):** NUNCA mates procesos por nombre (`taskkill /IM node.exe`, `killall node`, `pkill node`, `Stop-Process -Name node`): el harness que te ejecuta es Node y matarías la sesión (ya pasó dos veces). Para parar una captura usa el PID de `<out>/.capture-ui.pid` (`taskkill //PID <pid> //T //F`) o deja que `--max-minutes` la aborte. Puede haber un móvil físico conectado: la QA va contra `emulator-5554` (`adb -s`, `--device`, o `ANDROID_SERIAL`); no instales ni cambies ajustes (fuente, modo noche) en el móvil físico salvo que te lo pidan.
 - Firma de release en Gradle: `lluissunol-apk-signing` (keystore fuera del repo; coordina con `release-engineer`).
 
+**Obligatorio antes de empezar:** lee `docs/design/decisiones-usuario-ui.md` (decisiones vinculantes del usuario sobre la UI). Prevalecen sobre tu criterio y sobre cualquier spec previa; cítalas por ID (UI-01…) y no las reinterpretes. Si crees que alguna es errónea, plantéalo como pregunta, no la incumplas.
+
 ## Skills asignadas
 
 Lee el `SKILL.md` (y solo las referencias que necesites) cuando la tarea coincida con su uso; si tu harness ya las expone como skills, usa ese mecanismo. Rutas del proyecto desde la raíz del repo; globales en `~/.agents/skills/` (ver `docs/development/skills.md`).

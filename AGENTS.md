@@ -84,13 +84,15 @@ propaga a todos los harnesses. Catálogo, evidencia, ubicación y descartes en
 Flujo habitual: scout/worker → implementador especializado → `reviewer` independiente →
 corrección → tests. No cambies ARB1 o un ADR dentro de una tarea de implementación.
 
+**Decisiones del usuario sobre UI (vinculantes):** [`docs/design/decisiones-usuario-ui.md`](docs/design/decisiones-usuario-ui.md). Prevalecen sobre cualquier spec de agente; cada una tiene comprobación mecánica y el `reviewer` da FAIL si falta. Se registran en el mismo turno en que el usuario las pide. Las capturas con el banco real nunca van al repo.
+
 **Tareas que afectan a la UI (obligatorio):** (0) cargar la skill `ui-ux-pro-max`, leer
 `references/pro-rules.md` y ejecutar búsquedas pertinentes al stack Jetpack Compose/UX; `ux-designer`,
 `ui-designer` y `android-developer` la usan y registran las consultas; (1) `ux-designer` y `ui-designer`
 revisan/especifican **en paralelo** ANTES de implementar y se acepta su resultado; (2) implementa
 el implementador (`android-developer` o `pwa-developer`); (3) después `reviewer` independiente **y** QA visual
 con capturas de dispositivo; (4) corrección y tests. La QA visual rutinaria se hace primero en emulador
-(normal/130 %/200 %, claro y oscuro); el dispositivo físico queda para validación final y TalkBack. Ninguna
+(normal/130 %/200 %, claro y oscuro); el dispositivo físico queda para validación final. Ninguna
 tarea de UI se da por cerrada sin las dos revisiones de diseño previas, el checklist de `ui-ux-pro-max` y
 la QA posterior.
 
@@ -103,7 +105,7 @@ Checklist adicional de `reviewer` para cambios de UI: (a) constan las revisiones
 fuente, alineación, truncados, contraste real) es válida sin una captura de dispositivo** (o emulador) adjunta: los
 tests de semántica Robolectric no demuestran el aspecto; si no hay captura, el informe lo marca «no verificado
 visualmente» y no puede dar PASS en ese punto; (c) textos en catalán y contrato del banco intacto (los cambios de
-etiqueta son solo de presentación); (d) accesibilidad con TalkBack marcada [PV] hasta probarse en dispositivo.
+etiqueta son solo de presentación); (d) TalkBack/lectores de pantalla quedan fuera de alcance (decisión del usuario, 2026-11-24): no se prueban ni se exigen; se mantienen contraste, tamaño táctil y escala de fuente.
 
 ## Convenciones
 
@@ -124,6 +126,12 @@ de sello ARB1 existe en el APK final por ADR 0001, pero su material de build sig
   retroceso" de `01` §1.3 / `03` §4.3. La persistencia antes de avanzar se mantiene.
 - Paquete y `applicationId`: `dev.lluissunol.arbitratge` (decidido). La firma de release
   usa el keystore compartido `dev.lluissunol` (skill global `lluissunol-apk-signing`).
+- **Actualizar el móvil (decisión del usuario, 2026-11-24):** cuando pida «actualiza el móvil», instala **siempre la build
+  release de revisión, no la debug**. Procedimiento (todo fuera del repo, en `arbitratge-bank/work/`, hermano de este repo):
+  `ARB_BANK_FILE=<work>/review-bank.json ARB_SEAL_KEY_FILE=<work>/review-seal.der ARB_SEAL_KID=review ./gradlew :app-candidate:assembleRelease --no-build-cache`,
+  luego `zipalign -p 4` y `apksigner sign --ks <work>/review.jks --ks-pass file:<work>/ks.pass` → `<work>/arbitratge-review.apk`,
+  verificar con `apksigner verify` e `adb -s <serial> install -r`. Nunca imprimir contraseñas ni contenido del banco. La debug
+  (otra firma) da `INSTALL_FAILED_UPDATE_INCOMPATIBLE`; no desinstales sin permiso (borra los datos).
 - Cada tarea termina con pruebas ejecutadas, riesgos/pendientes y rutas tocadas.
 - **Nunca mates procesos por nombre** (`taskkill /IM node.exe`, `killall node`, `pkill node`): pi y
   opencode corren en Node y se mataría la sesión. Solo por PID (p. ej. `.capture-ui.pid` de

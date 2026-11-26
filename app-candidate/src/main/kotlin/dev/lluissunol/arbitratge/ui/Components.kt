@@ -122,9 +122,17 @@ fun ScreenScaffold(
     /** Color de la banda [header] y si sus iconos de la barra de estado van en claro (banda oscura). */
     headerColor: Color = BrandColors.Pitch,
     headerLightIcons: Boolean = true,
+    /** Margen lateral del contenido y de la barra inferior (la pantalla de pregunta usa 16 dp). */
+    gutter: Dp = ArbDimens.gutter,
+    /** Relleno superior/inferior del contenido (por defecto 12/12; 24 con banda). */
+    contentTop: Dp? = null,
+    contentBottom: Dp = ArbDimens.s12,
+    /** Estado de scroll externo (la pantalla de pregunta lo necesita para elegir densidad); si es null, uno propio por [scrollKey]. */
+    scrollState: androidx.compose.foundation.ScrollState? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val scroll = key(scrollKey) { rememberScrollState() }
+    val ownScroll = key(scrollKey) { rememberScrollState() }
+    val scroll = scrollState ?: ownScroll
     val pinned = pinBottom || !isExtraLargeText()
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding(),
@@ -146,7 +154,7 @@ fun ScreenScaffold(
                         if (scroll.canScrollForward) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Column(
                             Modifier.fillMaxWidth().navigationBarsPadding()
-                                .padding(horizontal = ArbDimens.gutter, vertical = bottomVPad),
+                                .padding(horizontal = gutter, vertical = bottomVPad),
                             verticalArrangement = Arrangement.spacedBy(ArbDimens.s8),
                         ) { bottom() }
                     }
@@ -166,8 +174,8 @@ fun ScreenScaffold(
             if (header != null) Box(Modifier.onSizeChanged { headerH = it.height }) { header() }
             Column(
                 Modifier.fillMaxWidth()
-                    .padding(horizontal = ArbDimens.gutter)
-                    .padding(top = if (header != null) ArbDimens.s24 else ArbDimens.s12, bottom = ArbDimens.s12),
+                    .padding(horizontal = gutter)
+                    .padding(top = contentTop ?: if (header != null) ArbDimens.s24 else ArbDimens.s12, bottom = contentBottom),
                 verticalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 if (title != null) ScreenTitle(title)
@@ -237,56 +245,71 @@ fun ArbTopBar(onBack: (() -> Unit)?, actions: (@Composable () -> Unit)? = null) 
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.ButtonLabel(text: String, icon: Painter?, maxLines: Int = Int.MAX_VALUE) {
+private fun androidx.compose.foundation.layout.RowScope.ButtonLabel(
+    text: String, icon: Painter?, maxLines: Int = Int.MAX_VALUE, trailingIcon: Painter? = null,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.labelLarge,
+) {
     if (icon != null) {
         ArbIcon(icon, null, size = 22.sp.toScaledDp())
         Spacer(Modifier.size(ArbDimens.s8))
     }
     // Con icono, el texto ocupa el resto de la fila (a 200 % en 2 líneas queda a la derecha del icono, no desalineado).
     Text(
-        text, style = MaterialTheme.typography.labelLarge, textAlign = if (icon != null) TextAlign.Start else TextAlign.Center,
+        text, style = style, textAlign = if (icon != null) TextAlign.Start else TextAlign.Center,
         maxLines = maxLines, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-        modifier = if (icon != null) Modifier.weight(1f, fill = false) else Modifier,
+        modifier = if (icon != null || trailingIcon != null) Modifier.weight(1f, fill = false) else Modifier,
     )
+    // La fletxa final només es dibuixa amb lletra normal (UI-05: a ≥ 1,15× es queda sense, com Anterior/Següent).
+    if (trailingIcon != null && !isLargeText()) {
+        Spacer(Modifier.size(ArbDimens.s8))
+        ArbIcon(trailingIcon, null, size = 22.sp.toScaledDp())
+    }
 }
 
+/** Botó principal: píndola de 58 dp (UI-05). [icon] a l'esquerra (p. ex. QR); [trailingIcon] a la dreta (fletxa). */
 @Composable
-fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null, maxLines: Int = Int.MAX_VALUE, hPad: Dp = 20.dp) {
+fun PrimaryButton(
+    text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null,
+    maxLines: Int = Int.MAX_VALUE, hPad: Dp = 24.dp, trailingIcon: Painter? = null,
+) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = MaterialTheme.shapes.medium,
-        modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
+        shape = ArbShape.pill,
+        modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.cta),
         contentPadding = PaddingValues(horizontal = hPad, vertical = 14.dp),
-    ) { ButtonLabel(text, icon, maxLines) }
+    ) { ButtonLabel(text, icon, maxLines, trailingIcon) }
 }
 
+/** Secundari: fons `card`, vora d'1,5 dp `buttonOutline`, text `primary`, píndola (UI-05). */
 @Composable
-fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null, maxLines: Int = Int.MAX_VALUE, hPad: Dp = 20.dp) {
+fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, icon: Painter? = null, maxLines: Int = Int.MAX_VALUE, hPad: Dp = 24.dp) {
+    val arb = MaterialTheme.arb
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        shape = MaterialTheme.shapes.medium,
-        // I9: borde de 2 dp en `primary`; desactivat, vora i text a `onSurface` α 0,38 (es llegeix com a inactiu).
-        border = BorderStroke(2.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)),
+        shape = ArbShape.pill,
+        border = BorderStroke(1.5.dp, if (enabled) arb.buttonOutline else arb.buttonOutline.copy(alpha = 0.5f)),
         colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (enabled) arb.card else Color.Transparent,
             contentColor = MaterialTheme.colorScheme.primary,
             disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         ),
-        modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.buttonMin),
+        modifier = modifier.fillMaxWidth().heightIn(min = ArbDimens.cta),
         contentPadding = PaddingValues(horizontal = hPad, vertical = 14.dp),
     ) { ButtonLabel(text, icon, maxLines) }
 }
 
+/** Terciari = enllaç (16 sp/700, `secondary`), ≥ 48 dp. */
 @Composable
 fun TertiaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: Painter? = null, fillWidth: Boolean = true, minHeight: Dp = ArbDimens.touchMin) {
     TextButton(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+        shape = ArbShape.pill,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
         modifier = (if (fillWidth) modifier.fillMaxWidth() else modifier).heightIn(min = minHeight),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-    ) { ButtonLabel(text, icon) }
+    ) { ButtonLabel(text, icon, style = ArbText.link) }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -343,16 +366,18 @@ fun IconBadge(painter: Painter, container: Color, content: Color, modifier: Modi
 // Targetes, avisos i diàlegs
 // ---------------------------------------------------------------------------------------------
 
-/** Targeta plana (sense ombra): es separa per to i per un filet d'1 dp. */
+/** Targeta del nou estil (UI-05): `card` sense vora i amb ombra suau (clar); al fosc, to + filet d'1 dp. Radi 24. */
 @Composable
 fun ArbCard(
     modifier: Modifier = Modifier,
-    container: Color = MaterialTheme.colorScheme.surface,
-    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    container: Color = MaterialTheme.arb.card,
+    padding: Dp = 20.dp,
+    gap: Dp = ArbDimens.s16,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Surface(modifier = modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = container, border = border) {
-        Column(Modifier.padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s8), content = content)
+    val shape = MaterialTheme.shapes.large
+    Surface(modifier = modifier.fillMaxWidth().softShadow(shape).cardBorder(shape), shape = shape, color = container) {
+        Column(Modifier.padding(padding), verticalArrangement = Arrangement.spacedBy(gap), content = content)
     }
 }
 
@@ -399,12 +424,14 @@ fun InfoBanner(
 ) {
     val scheme = MaterialTheme.colorScheme
     val (container, onContainer, glyph) = when (kind) {
-        BannerKind.NEUTRAL -> Triple(scheme.surfaceContainer, scheme.onSurface, Icons.Outlined.Info)
+        BannerKind.NEUTRAL -> Triple(MaterialTheme.arb.card, scheme.onSurface, Icons.Outlined.Info)
         BannerKind.SUCCESS -> Triple(scheme.primaryContainer, scheme.onPrimaryContainer, Icons.Outlined.CheckCircle)
         BannerKind.WARNING -> Triple(scheme.tertiaryContainer, scheme.onTertiaryContainer, Icons.Outlined.Warning)
         BannerKind.ERROR -> Triple(scheme.errorContainer, scheme.onErrorContainer, Icons.Outlined.Warning)
     }
-    Callout(icon ?: vector(glyph), container, onContainer, modifier, contentPadding, centered, trailing, content)
+    // NEUTRAL: `surfaceContainer` sobre el fons nou quedaria invisible (1,0:1) → targeta amb ombra (UI-05).
+    val m = if (kind == BannerKind.NEUTRAL) modifier.softShadow(MaterialTheme.shapes.large).cardBorder(MaterialTheme.shapes.large) else modifier
+    Callout(icon ?: vector(glyph), container, onContainer, m, contentPadding, centered, trailing, content)
 }
 
 /**

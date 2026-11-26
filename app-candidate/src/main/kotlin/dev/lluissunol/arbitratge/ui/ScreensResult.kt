@@ -120,80 +120,53 @@ fun GradingScreen(st: Stage.Grading, onRetry: () -> Unit, onAbandon: () -> Unit)
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Marcador de botons (I6): un disc de 24 dp per pregunta, primer els encerts (ple) i després la resta (aro de 2 dp), amb una
- * línia vertical després del disc [threshold] (el mínim per aprovar). Decoratiu: el pare ja descriu «N encerts de M».
- * Els discs s'omplen d'un en un (60 ms cadascun, 600 ms com a màxim); quiets si l'usuari ha reduït les animacions.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ButtonsMarker(correct: Int, total: Int, threshold: Int, fill: Color, ring: Color, line: Color) {
-    val d = 24.sp.toScaledDp(max = 32.dp)
-    val still = reduceMotion()
-    var shown by remember(correct) { mutableIntStateOf(if (still) correct else 0) }
-    LaunchedEffect(correct, still) {
-        if (!still) {
-            val step = if (correct > 0) minOf(60L, 600L / correct) else 0L
-            for (i in 1..correct) { delay(step); shown = i }
-        }
-    }
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8),
-        verticalArrangement = Arrangement.spacedBy(ArbDimens.s8),
-        itemVerticalAlignment = Alignment.CenterVertically,
-        maxItemsInEachRow = 10,
-    ) {
-        // Cada element és el disc (i, si toca, la línia del mínim enganxada): la línia no compta com a element de la fila.
-        for (i in 0 until total) {
-            Row(horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8), verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(d).then(
-                        if (i < shown) Modifier.background(fill, CircleShape) else Modifier.border(2.dp, ring, CircleShape),
-                    ),
-                )
-                if (i + 1 == threshold && threshold < total) Box(Modifier.width(2.dp).height(32.dp).background(line))
-            }
-        }
-    }
-}
-
-/**
- * Bloc de veredicte (I6), a sang per darrere de la barra d'estat. Aprovat: gespa amb text blanc; suspès: `surfaceContainer`
- * amb text en tinta i SENSE vermell (04 §2.8). El veredicte és l'encapçalament de la pantalla (heading + liveRegion polite).
+ * Targeta de resultat (UI-05): blanca, radi 28, amb l'anell d'encerts, el veredicte (encapçalament de la pantalla: heading +
+ * liveRegion polite), el mínim per aprovar i 3 requadres de dada. Suspès: sense vermell ni exclamació (04 §2.8).
  */
 @Composable
-private fun VerdictBlock(passed: Boolean, correct: Int, total: Int, threshold: Int) {
+private fun ResultCard(r: dev.lluissunol.arbitratge.exam.ExamResult, passed: Boolean) {
     val scheme = MaterialTheme.colorScheme
-    val bg = if (passed) BrandColors.Pitch else scheme.surfaceContainer
-    val ink = if (passed) Color.White else scheme.onSurface
-    val soft = if (passed) BrandColors.PitchSubtitle else scheme.onSurfaceVariant
-    val desc = pluralStringResource(R.plurals.score_a11y, correct, correct, total)
+    val shape = MaterialTheme.shapes.extraLarge
+    val ringDesc = pluralStringResource(R.plurals.score_a11y, r.correct, r.correct, r.total)
+    // Fallades = només les contestades malament; «Sense resposta» només si n'hi ha (UX P1.1). Sempre 3 requadres.
+    val secs = r.elapsedMs / 1000
+    val time = StatCell(stringResource(R.string.result_time_clock, secs / 60, secs % 60), stringResource(R.string.stat_time))
+    val wrong = StatCell(r.wrong.toString(), pluralStringResource(R.plurals.stat_failures, r.wrong))
+    val cells = if (r.unanswered > 0) {
+        listOf(wrong, StatCell(r.unanswered.toString(), stringResource(R.string.stat_unanswered)), time)
+    } else {
+        listOf(StatCell(r.correct.toString(), pluralStringResource(R.plurals.stat_correct, r.correct), accent = true), wrong, time)
+    }
+    // TalkBack: «N incorrectes, M sense resposta. Temps: …» (els encerts ja els diu l'anell).
+    val counts = buildList {
+        add(pluralStringResource(R.plurals.stat_failures_a11y, r.wrong, r.wrong))
+        if (r.unanswered > 0) add("${r.unanswered} ${stringResource(R.string.stat_unanswered).lowercase()}")
+    }.joinToString(", ")
+    val spoken = "$counts. ${stringResource(R.string.stat_time)}: ${stringResource(R.string.result_time, secs / 60, secs % 60)}"
     Column(
-        Modifier.fillMaxWidth().background(bg)
-            .windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
-            .padding(horizontal = ArbDimens.gutter).padding(top = ArbDimens.s24, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(ArbDimens.s12),
+        Modifier.fillMaxWidth().softShadow(shape).cardBorder(shape).clip(shape).background(MaterialTheme.arb.card, shape)
+            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        ScoreRing(r.correct, r.total, passed, ringDesc)
         Text(
             stringResource(if (passed) R.string.passed_title else R.string.failed_title),
-            style = MaterialTheme.typography.headlineMedium, color = ink,
-            modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite },
+            style = MaterialTheme.typography.headlineSmall, color = if (passed) scheme.primary else scheme.onSurface,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().semantics { heading(); liveRegion = LiveRegionMode.Polite },
         )
-        Column(Modifier.clearAndSetSemantics { contentDescription = desc }, verticalArrangement = Arrangement.spacedBy(ArbDimens.s12)) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(ArbDimens.s8)) {
-                Text(correct.toString(), style = MaterialTheme.typography.displayLarge, color = ink)
-                Text(
-                    pluralStringResource(R.plurals.score_of, total, total),
-                    style = MaterialTheme.typography.titleMedium, color = soft, modifier = Modifier.padding(bottom = ArbDimens.s12),
-                )
-            }
-            ButtonsMarker(
-                correct, total, threshold,
-                fill = if (passed) Color.White else scheme.primary,
-                ring = if (passed) Color.White.copy(alpha = 0.7f) else scheme.outline,
-                line = ink,
+        Text(
+            stringResource(R.string.result_min, r.threshold), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        StatTiles(cells, spoken)
+        if (!passed) {
+            Text(
+                stringResource(R.string.failed_next), style = MaterialTheme.typography.bodyLarge, color = scheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
-        Text(stringResource(R.string.result_min, threshold), style = MaterialTheme.typography.bodyLarge, color = soft)
     }
 }
 
@@ -209,16 +182,14 @@ fun ResultScreen(
     val r = st.result
     val passed = r.passed
     val failures = r.failures
-    val scheme = MaterialTheme.colorScheme
     ScreenScaffold(
         title = null, pinBottom = false,
-        header = { VerdictBlock(passed, r.correct, r.total, r.threshold) },
-        headerColor = if (passed) BrandColors.Pitch else scheme.surfaceContainer,
-        headerLightIcons = passed,
+        topBar = { StatusInset() },
+        contentTop = ArbDimens.s16,
         bottom = {
             if (passed) {
                 when (val c = st.credential) {
-                    is CredentialPhase.Ready -> PrimaryButton(stringResource(R.string.btn_see_credential), { onSeeCredential(c) })
+                    is CredentialPhase.Ready -> PrimaryButton(stringResource(R.string.btn_see_credential), { onSeeCredential(c) }, icon = drawable(R.drawable.ic_qr_code))
                     CredentialPhase.Pending -> PrimaryButton(stringResource(R.string.btn_retry), onRetryCredential)
                     else -> Unit
                 }
@@ -230,26 +201,13 @@ fun ResultScreen(
             TertiaryButton(stringResource(R.string.btn_home), onHome, minHeight = ArbDimens.buttonMin)
         },
     ) {
-        // Fallades = només les contestades malament; «Sense resposta» només si n'hi ha (UX P1.1).
-        val secs = r.elapsedMs / 1000
-        val cells = buildList {
-            add(FactCell(r.wrong.toString(), pluralStringResource(R.plurals.stat_failures, r.wrong)))
-            if (r.unanswered > 0) add(FactCell(r.unanswered.toString(), stringResource(R.string.stat_unanswered)))
-            add(FactCell(stringResource(R.string.result_time_clock, secs / 60, secs % 60), stringResource(R.string.stat_time)))
-        }
-        // TalkBack: «N incorrectes, M sense resposta. Temps: …»
-        val counts = buildList {
-            add(pluralStringResource(R.plurals.stat_failures_a11y, r.wrong, r.wrong))
-            if (r.unanswered > 0) add("${r.unanswered} ${stringResource(R.string.stat_unanswered).lowercase()}")
-        }.joinToString(", ")
-        val spoken = "$counts. ${stringResource(R.string.stat_time)}: ${stringResource(R.string.result_time, secs / 60, secs % 60)}"
-        FactStrip(cells, spoken)
+        ResultCard(r, passed)
         if (passed) {
             Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(ArbDimens.s12)) {
                 when (val c = st.credential) {
                     is CredentialPhase.Ready -> {
                         Text(stringResource(R.string.passed_next), style = MaterialTheme.typography.bodyLarge)
-                        CredentialMini(c.credential.name)
+                        CredentialMini(c.credential)
                     }
                     CredentialPhase.Pending -> InfoBanner(BannerKind.ERROR) {
                         Text(stringResource(R.string.cred_pending), style = MaterialTheme.typography.bodyLarge)
@@ -259,8 +217,6 @@ fun ResultScreen(
                     }
                 }
             }
-        } else {
-            Body(stringResource(R.string.failed_next), color = scheme.onSurfaceVariant)
         }
     }
 }
@@ -369,10 +325,10 @@ private fun ReviewItem(index: Int, total: Int, q: QuestionResult, onClick: () ->
     val state = qState(q)
     val status = qStatus(state)
     val title = stringResource(R.string.progress, index + 1, total)
-    val shape = MaterialTheme.shapes.medium
+    val shape = ArbShape.option
     Row(
-        Modifier.fillMaxWidth().heightIn(min = ArbDimens.rowMin).clip(shape).background(scheme.surface, shape)
-            .border(1.dp, scheme.outlineVariant, shape)
+        Modifier.fillMaxWidth().softShadow(shape, ShadowLevel.Option).heightIn(min = ArbDimens.rowMin).clip(shape)
+            .background(MaterialTheme.arb.card, shape).cardBorder(shape)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) {}
             .padding(ArbDimens.s16),
@@ -450,7 +406,7 @@ private fun QuestionDetail(index: Int, total: Int, q: QuestionResult) {
     // Sin `explanation`: ni bloque ni hueco. «Per què?»: cal con filete izquierdo de 4 dp `primary` (cita del reglamento).
     q.explanation?.takeIf { it.isNotBlank() }?.let {
         val shape = MaterialTheme.shapes.medium
-        Row(Modifier.fillMaxWidth().clip(shape).background(scheme.surfaceContainer, shape).height(IntrinsicSize.Min)) {
+        Row(Modifier.fillMaxWidth().softShadow(shape, ShadowLevel.Option).clip(shape).background(arb.card, shape).cardBorder(shape).height(IntrinsicSize.Min)) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(scheme.primary))
             Column(Modifier.weight(1f).padding(ArbDimens.s16), verticalArrangement = Arrangement.spacedBy(ArbDimens.s4)) {
                 Text(stringResource(R.string.why), style = MaterialTheme.typography.titleSmall, color = scheme.onSurface)
@@ -464,7 +420,7 @@ private fun QuestionDetail(index: Int, total: Int, q: QuestionResult) {
 private fun ResolvedOption(text: String, marked: Boolean, correct: Boolean) {
     val scheme = MaterialTheme.colorScheme
     val arb = MaterialTheme.arb
-    val shape = MaterialTheme.shapes.medium
+    val shape = ArbShape.option
     val label = stringResource(
         when {
             correct && marked -> R.string.opt_right_marked
@@ -486,12 +442,13 @@ private fun ResolvedOption(text: String, marked: Boolean, correct: Boolean) {
     }
     val textColor = if (container == scheme.surface) scheme.onSurface else if (correct) arb.onCorrectContainer else arb.onWrongContainer
     Row(
-        Modifier.fillMaxWidth().heightIn(min = ArbDimens.optionMin).clip(shape).background(container, shape)
+        Modifier.fillMaxWidth().then(if (container == scheme.surface) Modifier.softShadow(shape, ShadowLevel.Option) else Modifier)
+            .heightIn(min = ArbDimens.optionMin).clip(shape).background(container, shape)
             .drawBehind {
                 val w = borderWidth.dp.toPx()
                 drawRoundRect(
                     borderColor, topLeft = Offset(w / 2, w / 2), size = Size(size.width - w, size.height - w),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx()),
                     style = Stroke(w, pathEffect = if (dashed) PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx())) else null),
                 )
             }

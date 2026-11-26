@@ -81,14 +81,15 @@ fun OverviewScreen(
 private fun OverviewRow(item: OverviewItem, here: Boolean, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val arb = MaterialTheme.arb
-    val shape = MaterialTheme.shapes.medium
+    val shape = ArbShape.option
     val state = stringResource(if (item.answered) R.string.q_state_answered else R.string.q_state_empty)
     val spoken = if (here) state + ", " + stringResource(R.string.q_state_here) else state
     val desc = stringResource(R.string.overview_row_a11y, item.index + 1, spoken, item.text)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = ArbDimens.rowMin).clip(shape).background(scheme.surface, shape)
-            // Fila actual: vora de 3 dp `primary` (substitueix la vora negra); la resta, 1,5 dp `outline` (és tàctil).
-            .border(if (here) BorderStroke(3.dp, scheme.primary) else BorderStroke(1.5.dp, scheme.outline), shape)
+        Modifier.fillMaxWidth().then(if (here) Modifier else Modifier.softShadow(shape, ShadowLevel.Option))
+            .heightIn(min = ArbDimens.rowMin).clip(shape).background(if (here) arb.selectContainer else arb.card, shape)
+            // Fila actual: mateix llenguatge que l'opció marcada (2 dp `select` + vel); la resta, targeta amb ombra (UI-05).
+            .then(if (here) Modifier.border(BorderStroke(2.dp, arb.select), shape) else Modifier.cardBorder(shape))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = desc }
             .padding(horizontal = ArbDimens.s16, vertical = ArbDimens.s12),

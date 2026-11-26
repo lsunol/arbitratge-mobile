@@ -2,6 +2,7 @@
 // Captura reproducible de la app candidata en el emulador (bank-sample, ficticio).
 //   node scripts/qa/capture-ui.mjs --flow main   --theme clar|fosc [--out <dir>]   (escala 100 %)
 //   node scripts/qa/capture-ui.mjs --flow escala --scale 130|200 --theme clar        (inici, pregunta, resultat, credencial)
+//   node scripts/qa/capture-ui.mjs --flow pregunta --scale 100|130|200 --theme clar|fosc   (només pregunta única/múltiple/V-F, buida i marcada: 10-15)
 //   node scripts/qa/capture-ui.mjs --flow temps  --theme clar|fosc                   (avís d'1 min + temps esgotat; ~5 min)
 //   node scripts/qa/capture-ui.mjs --flow fora   --theme clar                        (temps esgotat mentre eres fora; ~5 min)
 // Opciones: --max-minutes N (por defecto 15; el script se aborta solo al superarlo).
@@ -46,12 +47,14 @@ const watchdog = setTimeout(() => {
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { restore(); process.exit(130); });
 
 const { shoot, shootScroll } = L.makeShooter(out, `${scale}`, theme);
-const ALLOW200 = new Set(['01', '02', '06', '10', '11', '14', '30', '31', '50', '60']); // 11 i 60 inclosos a 200 % (revisió 2026-11-22)
+const ALLOW200 = new Set(['01', '02', '06', '10', '11', '12', '13', '14', '15', '30', '31', '50', '60']); // 11 i 60 inclosos a 200 % (revisió 2026-11-22)
 // El resultat ja no té títol «Resultat»: el veredicte (encapçalament) el substitueix.
-const RESULT = /^(Has aprovat|No has aprovat)$/;
+const RESULT = /^(Has aprovat!?|No has aprovat)$/;
 const ok = (nn) => scale === '100' || (scale === '200' ? ALLOW200 : SCALE_ALLOW).has(nn.replace(/b$/, ''));
-const S = (nn, name) => { if (ok(nn)) shoot(nn, name); };
-const SS = (nn, name) => { if (ok(nn)) shootScroll(nn, name); };
+let quiet = false; // flujo 'pregunta': solo capturas de la pantalla de pregunta (10-15)
+const S = (nn, name) => { if (!quiet && ok(nn)) shoot(nn, name); };
+const SS = (nn, name) => { if (!quiet && ok(nn)) shootScroll(nn, name); };
+const SQ = (nn, name) => { if (ok(nn)) shoot(nn, name); };
 const wait = (ms) => L.sleep(ms);
 
 /** Botón dentro de un diálogo (ventana sin título). */
@@ -148,7 +151,7 @@ async function answerAll(policy, { rich = false, skipLast = false, shots = true 
       }
     }
     if (rich && i === 2) {
-      await L.tap(/^Veure-les totes$/); await L.waitFor(/^Preguntes$/); await wait(500);
+      await L.tap(/^Veure el resum: /); await L.waitFor(/^Preguntes$/); await wait(500);
       SS('20', 'resum-parcial');
       await L.tap(/^Avaluar$/); await L.waitFor(/Vols avaluar l'examen/); await wait(400);
       S('21', 'finalitzar-dialeg-amb-buides');
@@ -164,7 +167,7 @@ async function answerAll(policy, { rich = false, skipLast = false, shots = true 
       for (const t of chooseTexts(q, policy)) await tapOption(t);
       if (policy !== 'none' && !marked.has(type)) { marked.add(type); await wait(300); if (shots) S(nM, `pregunta-${tn}-marcada`); }
     }
-    await L.tap(last ? /^Revisar i finalitzar$/ : /^Següent$/);
+    await L.tap(last ? /^Revisar$/ : /^Següent$/);
   }
   await L.waitFor(/^Preguntes$/); await wait(500);
 }
@@ -226,13 +229,28 @@ async function main() {
     await retakeToQuestions();
     await answerAll('right', { shots: false });
     await passedAndCredential(true);
-    await L.tap(/^Repassar l'últim examen$/); await L.waitFor(/^Repàs$/); await wait(600);
+    try { await L.tap(/^Repassar l'últim examen$/); } catch { // la fila queda per sota de la barra fixa: es desplaça
+      L.sh('input', 'swipe', '540', '1700', '540', '700', '300'); await wait(500); await L.tap(/^Repassar l'últim examen$/);
+    }
+    await L.waitFor(/^Repàs$/); await wait(600);
     SS('43', 'repas-llista-aprovat-filtre-fallades');
     await L.tap(/^Totes \d+/); await wait(700);
     SS('45', 'repas-llista-totes-aprovat');
     const row = L.layout().find((n) => /^Pregunta 1 de 5 · /.test(L.lab(n)));
     if (row) { L.tapNode(row); await wait(700); SS('44', 'repas-detall-encertada'); L.back(); await wait(400); }
     L.back();
+  } else if (flow === 'pregunta') {
+    for (let attempt = 0; ; attempt++) {
+      quiet = true;
+      await toWelcome();
+      await welcomeToRules();
+      const seen = await beginAndScan();
+      console.log('Tipus de les preguntes:', seen.join(','));
+      if (['single', 'multi', 'tf'].every((t) => seen.includes(t)) || attempt >= 12) break;
+      console.log('  falta algun tipus: es reinicia');
+    }
+    quiet = false;
+    await answerAll('right');
   } else if (flow === 'escala') {
     await toWelcome();
     await welcomeToRules();
@@ -241,7 +259,7 @@ async function main() {
     await passedAndCredential(false);
     await retakeToQuestions();
     for (let i = 0; i < 4; i++) await L.tap(/^Següent$/);
-    await L.tap(/^Revisar i finalitzar$/); await L.waitFor(/^Preguntes$/); await wait(400);
+    await L.tap(/^Revisar$/); await L.waitFor(/^Preguntes$/); await wait(400);
     await finish(null, null);
     SS('31', 'resultat-suspes');
   } else if (flow === 'temps' || flow === 'fora') {
