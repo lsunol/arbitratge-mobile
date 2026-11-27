@@ -487,28 +487,30 @@ class ComposeScreensTest {
 
     // ------------------------------------------------------------------ credencial
 
-    @Test fun credentialScreenNeverClaimsValidityKeepsSelfIssuedNoticeAndShowsFields() {
+    // UI-08: sense barra superior, segell APTE (no chip), sense «Examen», «Codi» ni avís d'autoservei.
+    @Test fun credentialScreenHasNoTopBarShowsStampAndDateAndNeverClaimsValidity() {
         rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}, {}) } }
         rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
-        rule.onNodeWithText("7F3A-92C1").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("20/11/2026").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("APTE").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Data de l'examen").assertIsDisplayed()
+        rule.onNodeWithTag("apte_stamp").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithContentDescription("Resultat: APTE").assertExists()
         rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("Emesa en autoservei.", substring = true).performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("No és un certificat oficial ni una garantia forta.").performScrollTo().assertIsDisplayed()
+        for (gone in listOf("La teva credencial", "Examen", "reglament sample-1", "7F3A-92C1", "Emesa en autoservei", "No és un certificat oficial")) {
+            assertTrue(rule.onAllNodesWithText(gone, substring = true).fetchSemanticsNodes().isEmpty(), "ha d'haver desaparegut: $gone")
+        }
         assertTrue(rule.onAllNodesWithText("VÀLIDA", substring = true, ignoreCase = true).fetchSemanticsNodes().isEmpty())
         rule.onNodeWithText("Mostrar a un organitzador").assertIsDisplayed()
     }
 
-    @Test fun credentialFollowsTheOrderNameApteQrDetailsNotice() {
+    @Test fun credentialFollowsTheOrderNameStampQrAndTheStampNeverCoversTheQr() {
         rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}, {}) } }
-        fun top(n: androidx.compose.ui.test.SemanticsNodeInteraction) = n.performScrollTo().fetchSemanticsNode().boundsInRoot.top
-        val name = top(rule.onNodeWithText("Maria Puig Vila"))
-        val apte = top(rule.onNodeWithText("APTE"))
-        val qr = top(rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila"))
-        val exam = top(rule.onNodeWithText("reglament sample-1"))
-        val notice = top(rule.onNodeWithText("No és un certificat oficial ni una garantia forta."))
-        assertTrue(name < apte && apte < qr && qr < exam && exam < notice, "nom < APTE < QR < detalls < avís")
+        fun box(n: androidx.compose.ui.test.SemanticsNodeInteraction) = n.performScrollTo().fetchSemanticsNode().boundsInRoot
+        val name = box(rule.onNodeWithText("Maria Puig Vila"))
+        val stamp = box(rule.onNodeWithTag("apte_stamp"))
+        val qr = box(rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila"))
+        assertTrue(name.top < stamp.top && stamp.top < qr.top, "nom < segell < QR")
+        assertTrue(stamp.bottom <= qr.top, "el segell no pot tapar el QR (UI-08b)")
         rule.onNodeWithText("Credencial d'aptitud").assertExists()
     }
 
@@ -538,16 +540,18 @@ class ComposeScreensTest {
     @Test fun credentialAt200PercentDarkStillShowsTheDocument() {
         rule.setContent { Scaled(2f, dark = true) { CredentialScreen(cred, {}, {}, {}) } }
         rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
-        rule.onNodeWithText("7F3A-92C1").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("20/11/2026").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Mostrar a un organitzador").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun presentationShowsLargeQrNameCodeAndNoRemovePrefixHack() {
         rule.setContent { ArbitratgeTheme { PresentationScreen(cred, {}) } }
         rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila").assertIsDisplayed()
-        rule.onNode(hasText("Codi: 7F3A-92C1")).assertIsDisplayed()
-        rule.onNodeWithText("APTE · reglament sample-1").performScrollTo().assertIsDisplayed()
-        rule.onNodeWithText("Emesa en autoservei").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
+        rule.onNodeWithText("APTE").performScrollTo().assertIsDisplayed()
+        for (gone in listOf("Mantén la pantalla", "Per comprovar-la", "Emesa en autoservei", "Codi:", "reglament")) {
+            assertTrue(rule.onAllNodesWithText(gone, substring = true).fetchSemanticsNodes().isEmpty(), "ha d'haver desaparegut: $gone")
+        }
         rule.onNodeWithText("Tancar").assertIsDisplayed()
     }
 

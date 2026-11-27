@@ -104,6 +104,9 @@ object BrandColors {
     /** Xip «APTE» del carnet (sempre sobre paper blanc, també amb tema fosc). */
     val PaperChip = Color(0xFFE4F0E8)
 
+    /** Tinta del segell «APTE» (verd de marca accessible; sempre sobre paper blanc). */
+    val StampInk = Color(0xFF1D6F42)
+
     /** Avís de temps (5 min): ambre als dos temes, perquè destaqui. */
     val WarnAmber = Color(0xFFFFE08A)
     val OnWarnAmber = Color(0xFF2B1F00)
@@ -331,6 +334,8 @@ object ArbText {
     val qProgress = TextStyle(fontFamily = Atkinson, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight(700))
     val score = TextStyle(fontFamily = Atkinson, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight(700), fontFeatureSettings = "tnum")
     val link = TextStyle(fontFamily = Atkinson, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight(700))
+    val stamp = TextStyle(fontFamily = Atkinson, fontSize = 30.sp, lineHeight = 32.sp, fontWeight = FontWeight(800), letterSpacing = 3.sp)
+    val stampMicro = TextStyle(fontFamily = Atkinson, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight(700), letterSpacing = 1.sp)
     val code = TextStyle(
         fontFamily = AtkinsonMono, fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight(600),
         letterSpacing = 1.sp,

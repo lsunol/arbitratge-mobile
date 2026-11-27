@@ -58,7 +58,7 @@ class RootBackTest {
         rule.waitForIdle()
         rule.onNodeWithText("Veure la credencial").performClick()
         rule.waitForIdle()
-        rule.onNodeWithText("La teva credencial").assertIsDisplayed()
+        rule.onNodeWithText("Mostrar a un organitzador").assertIsDisplayed()
         pressBack()
         rule.onNodeWithText("Veure la credencial").assertIsDisplayed()
         assertFalse(rule.activity.isFinishing)

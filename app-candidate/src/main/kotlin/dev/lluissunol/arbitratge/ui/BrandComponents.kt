@@ -223,16 +223,16 @@ fun ActionRow(icon: Painter, title: String, support: String?, onClick: () -> Uni
  * [compact]: sense subtítol (presentació). No és cap marca de validesa.
  */
 @Composable
-fun CredentialBand(modifier: Modifier = Modifier, topInset: Boolean = false, compact: Boolean = false) {
+fun CredentialBand(modifier: Modifier = Modifier, topInset: Boolean = false, compact: Boolean = false, dense: Boolean = false) {
     if (topInset) LightStatusBarIcons()
     val stacked = isExtraLargeText()
     Column(modifier.fillMaxWidth()) {
         Box(
-            Modifier.fillMaxWidth().background(BrandColors.Pitch).heightIn(min = 88.dp).clipToBounds(),
+            Modifier.fillMaxWidth().background(BrandColors.Pitch).heightIn(min = if (dense) 64.dp else 88.dp).clipToBounds(),
             contentAlignment = Alignment.CenterStart,
         ) {
             val pad = (if (topInset) Modifier.windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)) else Modifier)
-                .padding(horizontal = ArbDimens.gutter, vertical = ArbDimens.gutter)
+                .padding(horizontal = if (dense) 16.dp else ArbDimens.gutter, vertical = if (dense) 14.dp else ArbDimens.gutter)
             val text: @Composable (Modifier) -> Unit = { m ->
                 Column(m) {
                     Text(
@@ -248,9 +248,10 @@ fun CredentialBand(modifier: Modifier = Modifier, topInset: Boolean = false, com
                     text(Modifier.fillMaxWidth())
                 }
             } else {
-                Row(pad, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                Row(pad, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (dense) 12.dp else 28.dp)) {
+                    val mark = if (dense) 40.dp else 48.dp
                     // A sang (presentació) sense línies de camp: la vertical creuaria l'hora de la barra d'estat.
-                    Box(if (topInset) Modifier.size(48.dp) else Modifier.size(48.dp).centreLines()) { BrandMark(48.dp, onPitch = true) }
+                    Box(if (topInset || dense) Modifier.size(mark) else Modifier.size(mark).centreLines()) { BrandMark(mark, onPitch = true) }
                     text(Modifier.weight(1f))
                 }
             }

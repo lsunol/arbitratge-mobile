@@ -222,27 +222,16 @@
 
     <!-- C11 Credencial -->
     <string name="cred_title">Credencial d\'aptitud</string>
-    <string name="cred_screen_title">La teva credencial</string>
     <string name="cred_subtitle">Àrbitre de Futbol amb Botons · CFBB</string>
     <string name="cred_field_result">Resultat</string>
     <string name="cred_value_apte">APTE</string>
-    <string name="cred_field_exam">Examen</string>
-    <string name="cred_value_exam">reglament %1$s</string>
-    <string name="cred_field_date">Data del dispositiu</string>
-    <string name="cred_field_code">Codi</string>
-    <string name="cred_result">Resultat: APTE</string>
-    <string name="cred_exam">Examen: reglament %1$s</string>
-    <string name="cred_date">Data del dispositiu: %1$s</string>
+    <string name="cred_field_date">Data de l\'examen</string>
+    <string name="cred_date">Data de l\'examen: %1$s</string>
+    <string name="cred_stamp_micro">ÀRBITRE · CFBB</string>
     <string name="cred_code">Codi: %1$s</string>
-    <string name="cred_orig">Emesa en autoservei</string>
-    <string name="cred_note">Emesa en autoservei. La comprova un organitzador amb el verificador oficial.</string>
-    <string name="cred_disclaimer">No és un certificat oficial ni una garantia forta.</string>
     <string name="btn_show_org">Mostrar a un organitzador</string>
     <string name="qr_description">Codi QR de la credencial de %1$s</string>
-    <string name="present_result">APTE · reglament %1$s</string>
-    <string name="org_present_help">Mantén la pantalla encesa i el mòbil quiet mentre l\'organitzador escaneja.</string>
     <string name="btn_close">Tancar</string>
-    <string name="cred_how_to">Per comprovar-la: obre el verificador oficial des de la seva icona (no des d\'un enllaç rebut) i escaneja aquest codi.</string>
 
     <!-- Errors i recuperació -->
     <string name="err_state">No hem pogut recuperar l\'examen. Pots començar-ne un de nou.</string>

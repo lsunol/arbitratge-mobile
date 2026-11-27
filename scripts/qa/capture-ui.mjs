@@ -189,9 +189,9 @@ async function retakeToQuestions() {
 async function passedAndCredential(rich) {
   await finish(rich ? '22' : null, rich ? '23' : null);
   SS('30', 'resultat-aprovat');
-  await L.tap(/^Veure la credencial$/); await L.waitFor(/La teva credencial/); await wait(900);
+  await L.tap(/^Veure la credencial$/); await L.waitFor(/Mostrar a un organitzador/); await wait(900);
   SS('50', 'credencial');
-  await L.tap(/^Mostrar a un organitzador$/); await L.waitFor(/Mantén la pantalla encesa/); await wait(900);
+  await L.tap(/^Mostrar a un organitzador$/); await L.waitFor(/Tancar/); await wait(900);
   S('51', 'credencial-presentacio');
   await L.tap(/^Tancar$/); await wait(600);
   await L.tap(/^Tornar a l'inici$/);
