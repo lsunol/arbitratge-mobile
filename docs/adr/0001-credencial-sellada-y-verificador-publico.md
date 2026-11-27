@@ -72,3 +72,11 @@ futuros de revocación lo justifican.
   casuals; no és una prova contra un dispositiu modificat o una clau extraïda».
 - Antes de hacer pública la PWA, probar instalación/offline en Android, Chrome/Edge, cámara,
   importación de imagen y pegado de texto.
+
+## Enmienda 2026-11-26 (aprobada por el usuario)
+
+El aviso anti-suplantación por dirección (pantalla «Abans de començar», tarjeta «Adreça que estàs fent servir», aviso de la
+pantalla de inicio y línea en cada resultado) se **retira** de la PWA verificadora: se considera desproporcionado para un club
+y ruido para quien verifica. Se mantiene el riesgo de suplantación como aceptado (riesgo social) y «Sobre els límits» sigue
+explicando que «vàlida» no significa «autèntica». Solo queda, discreta, la dirección y versión en el pie de la pantalla de inicio.
+Ver `docs/design/decisiones-usuario-ui.md` (UI-07).

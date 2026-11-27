@@ -104,5 +104,11 @@ t("contraste texto blanco sobre colores de resultado ≥ 4,5:1", () => {
     console.log(`  contraste ${name} ${hex}: ${ratio.toFixed(2)}:1`);
   }
 });
+t("UI-07: textos retirados del verificador no existen", () => {
+  const all = ["index.html", "app.js", "lib/text.js"].map(read).join("\n");
+  for (const bad of ["Adreça que estàs fent servir", "Obre sempre aquest verificador", "Credencial emesa en autoservei", "coincideix amb el document", "Comprovat en aquest dispositiu amb les claus", "L'adreça és correcta"]) {
+    assert.ok(!all.includes(bad), `no debe existir: ${bad}`);
+  }
+});
 
 if (!process.exitCode) console.log(`static: ${n} comprobaciones OK`);

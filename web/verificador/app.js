@@ -43,11 +43,12 @@ const visible = (s) =>
   String(s).replace(ALL_FORBIDDEN, (c) => `‹U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}›`);
 
 // ---------- navegación
-const SCREENS = ["first", "home", "camera", "image", "text", "result", "install", "about"];
+const SCREENS = ["home", "camera", "image", "text", "result", "install", "about"];
 function render(id, { focus = true } = {}) {
   if (vs.phase === "stale") return;
   stopCamera();
   current = id;
+  document.body.dataset.screen = id;
   for (const s of SCREENS) $("screen-" + s).hidden = s !== id;
   if (focus) {
     const target =
@@ -159,12 +160,7 @@ function enterStaleUi() {
   stopCamera();
   $("keys-loading").hidden = true;
   $("token-input").value = "";
-  clear($("result-body"));
-  $("result-word").textContent = "";
-  $("result-sub").textContent = "";
-  $("result-icon").textContent = "";
-  $("result-head").className = "verdict";
-  $("result-head").removeAttribute("aria-label");
+  clear($("screen-result"));
   for (const s of SCREENS) $("screen-" + s).hidden = true;
   $("main").hidden = true;
   $("update-banner").hidden = true;
@@ -208,7 +204,7 @@ async function registerSw() {
 function paintKeys() {
   $("keys-warning").hidden = vs.phase !== "ready" || vs.keys.size > 0;
   const ids = [...vs.keys.keys()].sort().join(", ") || "cap";
-  $("foot-version").textContent = `Versió ${appVersion} · claus: ${vs.phase === "ready" ? ids : "…"}`;
+  $("foot-version").textContent = `versió ${appVersion} · claus: ${vs.phase === "ready" ? ids : "…"}`;
 }
 // Se carga UNA vez por carga de página, antes de habilitar la verificación.
 async function loadKeys() {
@@ -238,62 +234,93 @@ function dl(rows, big) {
 }
 const fmtDate = (iat) => iat.split("-").reverse().join("/");
 
+const SVG = "http://www.w3.org/2000/svg";
+const ICONS = {
+  valid: ["M6 12.5l4 4 8-9"],
+  invalid: ["M8 8l8 8", "M16 8l-8 8"],
+  unknown: ["M9.5 9.5a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8v.5", "M12 17.5v.1"],
+  format: ["M12 7v6", "M12 16.8v.1"],
+};
+function svgIcon(kind) {
+  const s = document.createElementNS(SVG, "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.setAttribute("aria-hidden", "true");
+  for (const d of ICONS[kind]) {
+    const p = document.createElementNS(SVG, "path");
+    p.setAttribute("d", d);
+    s.append(p);
+  }
+  return s;
+}
+function verdictHead(cv, view, cls) {
+  const head = el("div", { id: "result-head", class: cls, tabindex: "-1", role: "alert", "aria-label": view.aria },
+    el("span", { class: "v-icon", "aria-hidden": "true" }, svgIcon(cv.view)),
+    el("div", {}, el("h2", { id: "result-word" }, view.word), el("p", { id: "result-sub" }, view.sub)));
+  return head;
+}
+
 function showResult(res) {
   const cv = CODE_VIEW[res.code];
   const view = VIEWS[cv.view];
-  const head = $("result-head");
-  head.className = "verdict " + view.cls;
-  $("result-icon").textContent = view.icon;
-  $("result-word").textContent = view.word;
-  $("result-sub").textContent = view.sub;
-  head.setAttribute("aria-label", view.aria);
-  const body = $("result-body");
-  clear(body);
+  const root = $("screen-result");
+  clear(root);
+  let card;
 
   if (res.code === "OK") {
     const f = res.fields;
-    const rows = [
-      [T.d_name, f.nom, true],
-      [T.d_result, f.res],
-      [T.d_exam, `reglament v${f.exv}`],
-      [T.d_date, fmtDate(f.iat)],
-      [T.d_code, res.shortCode],
-      [T.d_orig, T.d_orig_value],
-    ];
-    if (f.bv) rows.push([T.d_bank, f.bv]);
-    body.append(dl(rows, true));
-    body.append(el("p", {}, T.compare_hint));
-    body.append(
-      el("div", { class: "checks" },
-        el("label", {}, el("input", { type: "checkbox" }), T.check_name_doc),
-        el("label", {}, el("input", { type: "checkbox" }), T.check_name_person)),
-    );
-    body.append(el("p", { class: "notice" }, el("span", { "aria-hidden": "true" }, "⚠ "), T.r_valid_warn));
-    body.append(el("p", { class: "here" }, T.v_checked_here(appVersion)));
+    const n = [...f.nom].length;
+    const len = n <= 20 ? "s" : n <= 40 ? "m" : "l";
+    const band = el("header", { class: "carnet-band" },
+      el("img", { class: "carnet-sym", src: "icons/icon.svg", alt: "", width: "40", height: "40" }),
+      el("p", { class: "carnet-title" }, "Credencial d'àrbitre", el("span", {}, "Futbol amb Botons · CFBB")));
+    const row = (k, v, cls) => el("div", {}, el("dt", {}, k), el("dd", { class: cls || false }, v));
+    card = el("article", { class: "carnet" },
+      band,
+      verdictHead(cv, view, "verdict-strip"),
+      el("div", { class: "carnet-body" },
+        el("p", { class: "k", id: "k-nom" }, T.d_name),
+        el("p", { class: "carnet-name", "data-len": len, "aria-labelledby": "k-nom" }, f.nom),
+        el("p", { class: "carnet-tag" }, el("span", { class: "sr-only" }, "Resultat: "), f.res),
+        el("dl", { class: "carnet-rows" },
+          row(T.d_exam, `reglament v${f.exv}`),
+          row(T.d_date, fmtDate(f.iat)),
+          row(T.d_code, res.shortCode, "mono")),
+        el("p", { class: "carnet-more" }, el("button", { type: "button", class: "btn link", id: "btn-valid-limits" }, "Què vol dir «vàlida»?"))));
   } else {
-    if (cv.reason) body.append(el("p", { class: "lead" }, cv.reason));
-    if (!cv.replaceBody && view.body) body.append(el("p", {}, view.body));
-    if (view.todo) {
-      body.append(el("p", {}, "Què pots fer:"));
-      body.append(el("ul", {}, ...view.todo.map((t) => el("li", {}, t))));
+    const trusted = res.untrusted;
+    const kid = trusted?.get("kid");
+    const ctx = {
+      kid: typeof kid === "string" ? visible(kid).slice(0, 40) : "(no indicada)",
+      known: [...vs.keys.keys()].sort(),
+    };
+    const body = el("div", { class: "vc-body" });
+    if (cv.reason) body.append(el("p", { class: "vc-reason" }, cv.reason(ctx)));
+    if (!cv.replaceBody && !cv.reason && view.body) body.append(el("p", { class: "vc-text" }, view.body));
+    if (cv.reason && !cv.replaceBody && !cv.todo && view.body && res.code !== "BAD_SIGNATURE") { /* el motiu ja ho explica */ }
+    const todo = cv.todo || view.todo;
+    if (todo) {
+      body.append(el("p", { class: "vc-todo-title" }, "Què pots fer:"));
+      body.append(el("ul", { class: "vc-todo" }, ...todo.map((t) => el("li", {}, t))));
     }
     if (res.untrusted) body.append(untrustedBlock(res.untrusted));
     if (res.code === "UNKNOWN_VERSION") {
-      body.append(el("button", { type: "button", class: "btn", id: "btn-update-check" }, T.btn_update_pwa));
+      body.append(el("p", { class: "vc-text" }, view.body));
+      body.append(el("button", { type: "button", class: "btn pill secondary", id: "btn-update-check" }, T.btn_update_pwa));
       body.append(el("p", { id: "update-msg", role: "status", "aria-live": "polite" }));
     }
+    card = el("article", { class: "verdict-card " + view.cls }, verdictHead(cv, view, "vc-head"), body);
   }
-  const again = el("button", { type: "button", class: "btn primary" }, res.code === "OK" ? T.btn_again : T.btn_retry_v);
+  const again = el("button", { type: "button", class: "btn pill" }, res.code === "OK" ? T.btn_again : T.btn_retry_v);
   again.addEventListener("click", () => go("home"));
-  body.append(el("div", { class: "actions" }, again));
-  body.append(el("p", { class: "small addr" }, `Adreça que estàs fent servir: ${host}`));
-  body.querySelector("#btn-update-check")?.addEventListener("click", checkUpdate);
+  root.append(card, el("div", { class: "result-actions" }, again));
+  root.querySelector("#btn-update-check")?.addEventListener("click", checkUpdate);
+  root.querySelector("#btn-valid-limits")?.addEventListener("click", () => go("about"));
   go("result");
 }
 
 function untrustedBlock(members) {
   const rows = [];
-  const names = { nom: T.d_name, res: T.d_result, exv: T.d_exam, iat: T.d_date, cid: T.d_code, orig: T.d_orig, kid: "Clau" };
+  const names = { nom: T.d_name, res: T.d_result, exv: T.d_exam, iat: T.d_date, cid: T.d_code, orig: "Emissió", kid: "Clau" };
   for (const [k, label] of Object.entries(names)) {
     if (members.has(k)) rows.push([label, visible(members.get(k))]);
   }
@@ -442,19 +469,11 @@ $("btn-install-dismiss").addEventListener("click", () => {
 document.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", () => history.back()));
 document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => go(b.dataset.goto)));
 document.querySelectorAll("[data-host]").forEach((n) => { n.textContent = host; });
-$("btn-first-ok").addEventListener("click", () => {
-  try { localStorage.setItem("firstVisitDone", "1"); } catch { /* ignore */ }
-  history.replaceState({ s: "home" }, "");
-  render("home");
-});
 
 // ---------- arranque
 applyPhase(vs.phase); // «Carregant…»: nada se puede verificar hasta tener las claves
 loadKeys();
-let seen = false;
-try { seen = localStorage.getItem("firstVisitDone") === "1"; } catch { /* ignore */ }
-const first = !standalone() && !seen;
-history.replaceState({ s: first ? "first" : "home" }, "");
-render(first ? "first" : "home", { focus: false });
+history.replaceState({ s: "home" }, "");
+render("home", { focus: false });
 maybeInstallBanner();
 registerSw();

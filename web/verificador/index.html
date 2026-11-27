@@ -36,16 +36,6 @@
 
 <main id="main">
 
-  <!-- V10: primera visita -->
-  <section id="screen-first" class="screen" hidden aria-labelledby="first-title">
-    <h2 id="first-title" tabindex="-1">Abans de començar</h2>
-    <p class="lead">Aquest és el verificador oficial?</p>
-    <p>Compara l'adreça del navegador amb la que t'ha donat el CFBB:</p>
-    <p class="host-big" data-host></p>
-    <p>Si has arribat aquí des d'un enllaç rebut per missatge o correu, tanca aquesta pàgina i escriu l'adreça tu mateix. Un text a la pàgina no pot demostrar que sigui l'oficial.</p>
-    <button type="button" class="btn primary" id="btn-first-ok">L'adreça és correcta</button>
-  </section>
-
   <!-- V0: inici -->
   <section id="screen-home" class="screen" hidden aria-labelledby="home-title">
     <h2 id="home-title" tabindex="-1" class="sr-only">Inici</h2>
@@ -53,11 +43,6 @@
       <p>Instal·la el verificador al teu mòbil per fer-lo servir sense connexió.</p>
       <button type="button" class="btn" id="btn-install-banner">Instal·lar</button>
       <button type="button" class="btn link" id="btn-install-dismiss">Ara no</button>
-    </div>
-    <div class="card" id="host-card">
-      <p><span aria-hidden="true">ⓘ</span> Adreça que estàs fent servir:</p>
-      <p class="host-big" data-host></p>
-      <p class="small">Compara-la amb l'adreça que t'ha donat el CFBB. Aquest text no demostra que el verificador sigui l'oficial.</p>
     </div>
     <p class="lead">Comprova una credencial d'àrbitre.</p>
     <p class="warn-keys" id="keys-warning" hidden role="status">Aquest verificador no té cap clau de confiança carregada: cap credencial es podrà donar per vàlida.</p>
@@ -68,7 +53,6 @@
     </div>
     <p class="status-line"><span id="offline-label" hidden>Sense connexió. </span><span id="offline-state"></span></p>
     <button type="button" class="btn" id="btn-install">Instal·lar i preparar</button>
-    <p class="warn"><span aria-hidden="true">⚠</span> Obre sempre aquest verificador des de la seva icona o escrivint l'adreça. No facis servir enllaços rebuts per missatge.</p>
     <p class="small">La credencial es comprova en aquest dispositiu.</p>
     <p><button type="button" class="btn link" id="btn-about">Sobre els límits</button></p>
   </section>
@@ -128,14 +112,7 @@
   </section>
 
   <!-- V4–V7: resultat -->
-  <section id="screen-result" class="screen result" hidden aria-labelledby="result-word">
-    <div id="result-head" class="verdict" tabindex="-1" role="alert">
-      <p class="icon" id="result-icon" aria-hidden="true"></p>
-      <h2 id="result-word"></h2>
-      <p id="result-sub"></p>
-    </div>
-    <div id="result-body" class="result-body"></div>
-  </section>
+  <section id="screen-result" class="screen result" hidden aria-live="polite"></section>
 
   <!-- V8: instal·lar -->
   <section id="screen-install" class="screen" hidden aria-labelledby="install-title">
@@ -172,7 +149,6 @@
     <p><strong>Què no comprova.</strong> No és un certificat. Aquesta marca ajuda a detectar canvis casuals; no és una prova contra un dispositiu modificat o una clau extreta. Una persona amb coneixements tècnics podria generar credencials falses que semblarien vàlides: la credencial es basa en la confiança dins del club.</p>
     <p><strong>Cal comparar.</strong> Comprova sempre que les dades coincideixen amb el document i amb la persona.</p>
     <p><strong>Sense revocació ni caducitat.</strong> No hi ha revocació: una credencial ja emesa continua sent vàlida mentre el segell sigui correcte. La data és la del dispositiu de qui la va emetre i no decideix la validesa.</p>
-    <p><strong>Adreça.</strong> L'adreça que es mostra no demostra que el verificador sigui l'oficial: només serveix per comparar-la amb la que t'ha donat el CFBB.</p>
     <p><strong>Privadesa.</strong> La credencial es comprova en aquest dispositiu. No hi ha analítica ni fonts externes.</p>
     <p id="about-version" class="small"></p>
     <p id="about-keys" class="small"></p>
@@ -181,8 +157,7 @@
 </main>
 
 <footer class="foot" id="foot">
-  <p><span aria-hidden="true">ⓘ</span> Adreça: <span data-host class="mono"></span></p>
-  <p id="foot-version" class="small"></p>
+  <p class="small"><span data-host class="mono"></span> · <span id="foot-version"></span></p>
 </footer>
 
 </body>

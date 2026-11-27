@@ -2,14 +2,11 @@
 // són text de la implementació que 04 hauria d'incorporar o validar.
 export const T = {
   // V0
-  v_official: "Adreça que estàs fent servir:",
-  v_official_note: "Compara-la amb l'adreça que t'ha donat el CFBB. Aquest text no demostra que el verificador sigui l'oficial.",
   v_intro: "Comprova una credencial d'àrbitre.",
   v_offline_ready: "Preparat per fer-lo servir sense connexió.",
   v_offline_notready: "Encara no està preparat per fer-lo servir sense connexió.",
   v_offline_state: "Sense connexió",
   v_local: "La credencial es comprova en aquest dispositiu.",
-  v_checked_here: (v) => `Comprovat en aquest dispositiu amb les claus de la versió ${v}.`,
   // Càmera
   cam_rationale: "Necessitem la càmera només per llegir el QR. L'app no desa la imatge.",
   cam_hint: "Apunta la càmera al codi QR de la credencial. Mantén el mòbil quiet.",
@@ -31,18 +28,10 @@ export const T = {
   d_name: "Nom",
   d_result: "Resultat",
   d_exam: "Examen",
-  d_date: "Data del dispositiu",
+  d_date: "Data (del dispositiu)",
   d_code: "Codi",
-  d_orig: "Emissió",
-  d_orig_value: "Autoservei",
-  d_bank: "Banc de preguntes", // (nou: bv)
   d_untrusted: "Dades no fiables",
   d_untrusted_btn: "Veure el que s'ha llegit",
-  check_name_doc: "El nom coincideix amb el document",
-  check_name_person: "El nom coincideix amb la persona",
-  compare_hint: "Comprova que coincideixen amb el document i amb la persona.", // 02 §3.7.8 OK
-  r_valid_warn:
-    "Credencial emesa en autoservei. La marca detecta canvis casuals; no és una prova contra un mòbil o una app modificats.",
   btn_again: "Comprovar una altra credencial",
   btn_retry_v: "Tornar-ho a provar",
   btn_update_pwa: "Buscar actualització",
@@ -92,19 +81,31 @@ export const VIEWS = {
   },
 };
 
-/** Codi (02 §3.7.8) → vista + motiu específic. */
+/** Codi (02 §3.7.8) → vista + motiu específic. `reason` pot ser una funció de {kid, known}: el motiu ha de ser transparent. */
+const KEYS = (known) => (known.length ? known.join(", ") : "cap");
 export const CODE_VIEW = {
   OK: { view: "valid" },
-  BAD_SIGNATURE: { view: "invalid" },
-  UNKNOWN_KID: { view: "invalid", reason: "Clau no reconeguda. Si el verificador és antic, actualitza'l." },
-  KID_NOT_ACCEPTED: { view: "invalid", reason: "Clau no acceptada per seguretat." },
+  BAD_SIGNATURE: {
+    view: "invalid",
+    reason: ({ kid }) => `El segell no coincideix amb les dades (clau «${kid}»). El document s'ha alterat o s'ha llegit malament.`,
+  },
+  UNKNOWN_KID: {
+    view: "invalid",
+    reason: ({ kid, known }) => `La credencial està signada amb la clau «${kid}», que aquest verificador no coneix. Claus conegudes: ${KEYS(known)}.`,
+    todo: ["Actualitza el verificador.", "Si continua igual, no l'acceptis."],
+  },
+  KID_NOT_ACCEPTED: {
+    view: "invalid",
+    reason: ({ kid, known }) => `La clau «${kid}» és coneguda però ja no s'accepta. Claus acceptades: ${KEYS(known)}.`,
+    todo: ["No l'acceptis.", "Demana una credencial emesa amb una versió vigent de l'app."],
+  },
   UNKNOWN_VERSION: { view: "unknown" },
   IS_URL: {
     view: "format",
-    reason: "Aquest QR és un enllaç web. Les credencials d'Arbitratge no són enllaços. No obris aquest enllaç: pot ser fals.",
+    reason: () => "Aquest QR és un enllaç web, no una credencial. No obris l'enllaç: pot ser fals.",
     replaceBody: true,
   },
-  BAD_FORMAT: { view: "format", reason: "No és un codi de credencial o s'ha llegit malament." }, // (nou, 02 §3.7.8)
-  BAD_PAYLOAD: { view: "format", reason: "Codi danyat o mal llegit." }, // (nou, 02 §3.7.8)
-  BAD_FIELDS: { view: "format", reason: "Contingut no conforme." }, // (nou, 02 §3.7.8)
+  BAD_FORMAT: { view: "format", reason: () => "No és un codi de credencial d'Arbitratge, o està tallat o s'ha llegit malament." },
+  BAD_PAYLOAD: { view: "format", reason: () => "El codi té el format correcte però el contingut està malmès o incomplet." },
+  BAD_FIELDS: { view: "format", reason: () => "El codi es llegeix però li falta alguna dada o en té una de no permesa." },
 };
