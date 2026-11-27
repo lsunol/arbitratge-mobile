@@ -28,7 +28,7 @@ export const T = {
   d_name: "Nom",
   d_result: "Resultat",
   d_exam: "Examen",
-  d_date: "Data (del dispositiu)",
+  d_date: "Data de l'examen",
   d_code: "Codi",
   d_untrusted: "Dades no fiables",
   d_untrusted_btn: "Veure el que s'ha llegit",

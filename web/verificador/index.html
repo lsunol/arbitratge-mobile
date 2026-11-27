@@ -17,6 +17,13 @@
 <script type="module" src="app.js"></script>
 </head>
 <body>
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-camera" viewBox="0 0 256 256"><path d="M208,52H182.42L170,33.34A12,12,0,0,0,160,28H96a12,12,0,0,0-10,5.34L73.57,52H48A28,28,0,0,0,20,80V192a28,28,0,0,0,28,28H208a28,28,0,0,0,28-28V80A28,28,0,0,0,208,52Zm4,140a4,4,0,0,1-4,4H48a4,4,0,0,1-4-4V80a4,4,0,0,1,4-4H80a12,12,0,0,0,10-5.34L102.42,52h51.15L166,70.66A12,12,0,0,0,176,76h32a4,4,0,0,1,4,4ZM128,84a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,84Zm0,72a24,24,0,1,1,24-24A24,24,0,0,1,128,156Z"/></symbol>
+  <symbol id="i-image" viewBox="0 0 256 256"><path d="M144,96a16,16,0,1,1,16,16A16,16,0,0,1,144,96Zm92-40V200a20,20,0,0,1-20,20H40a20,20,0,0,1-20-20V56A20,20,0,0,1,40,36H216A20,20,0,0,1,236,56ZM44,60v79.72l33.86-33.86a20,20,0,0,1,28.28,0L147.31,147l17.18-17.17a20,20,0,0,1,28.28,0L212,149.09V60Zm0,136H162.34L92,125.66l-48,48Zm168,0V183l-33.37-33.37L164.28,164l32,32Z"/></symbol>
+  <symbol id="i-clipboard-text" viewBox="0 0 256 256"><path d="M172,164a12,12,0,0,1-12,12H96a12,12,0,0,1,0-24h64A12,12,0,0,1,172,164Zm-12-52H96a12,12,0,0,0,0,24h64a12,12,0,0,0,0-24Zm60-64V216a20,20,0,0,1-20,20H56a20,20,0,0,1-20-20V48A20,20,0,0,1,56,28H90.53a51.88,51.88,0,0,1,74.94,0H200A20,20,0,0,1,220,48ZM100.29,60h55.42a28,28,0,0,0-55.42,0ZM196,52H178.59A52.13,52.13,0,0,1,180,64v8a12,12,0,0,1-12,12H88A12,12,0,0,1,76,72V64a52.13,52.13,0,0,1,1.41-12H60V212H196Z"/></symbol>
+  <symbol id="i-flashlight" viewBox="0 0 256 256"><path d="M184,12H72A20,20,0,0,0,52,32V77.33a20.12,20.12,0,0,0,4,12L76,116V224a20,20,0,0,0,20,20h64a20,20,0,0,0,20-20V116l20-26.67a20.12,20.12,0,0,0,4-12V32A20,20,0,0,0,184,12Zm-4,24V52H76V36Zm-20,66.67a20.12,20.12,0,0,0-4,12V220H100V114.67a20.12,20.12,0,0,0-4-12L76,76H180ZM140,120v32a12,12,0,0,1-24,0V120a12,12,0,0,1,24,0Z"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 256 256"><path d="M228,128a12,12,0,0,1-12,12H69l51.52,51.51a12,12,0,0,1-17,17l-72-72a12,12,0,0,1,0-17l72-72a12,12,0,0,1,17,17L69,116H216A12,12,0,0,1,228,128Z"/></symbol>
+</svg>
 <noscript><p class="noscript">Aquest verificador necessita JavaScript.</p></noscript>
 
 <header class="top">
@@ -47,9 +54,9 @@
     <p class="lead">Comprova una credencial d'àrbitre.</p>
     <p class="warn-keys" id="keys-warning" hidden role="status">Aquest verificador no té cap clau de confiança carregada: cap credencial es podrà donar per vàlida.</p>
     <div class="actions">
-      <button type="button" class="btn primary" id="btn-camera"><span aria-hidden="true">📷</span> Escaneja amb la càmera</button>
-      <button type="button" class="btn" id="btn-image"><span aria-hidden="true">🖼</span> Tria una imatge del mòbil</button>
-      <button type="button" class="btn" id="btn-text"><span aria-hidden="true">📋</span> Enganxa el text</button>
+      <button type="button" class="btn primary" id="btn-camera"><svg class="ico" aria-hidden="true"><use href="#i-camera"/></svg> Escaneja amb la càmera</button>
+      <button type="button" class="btn" id="btn-image"><svg class="ico" aria-hidden="true"><use href="#i-image"/></svg> Tria una imatge del mòbil</button>
+      <button type="button" class="btn" id="btn-text"><svg class="ico" aria-hidden="true"><use href="#i-clipboard-text"/></svg> Enganxa el text</button>
     </div>
     <p class="status-line"><span id="offline-label" hidden>Sense connexió. </span><span id="offline-state"></span></p>
     <button type="button" class="btn" id="btn-install">Instal·lar i preparar</button>
@@ -59,7 +66,7 @@
 
   <!-- V1: càmera -->
   <section id="screen-camera" class="screen" hidden aria-labelledby="camera-title">
-    <button type="button" class="btn back" data-back>← Enrere</button>
+    <button type="button" class="btn back" data-back><svg class="ico" aria-hidden="true"><use href="#i-arrow-left"/></svg> Enrere</button>
     <h2 id="camera-title" tabindex="-1">Escaneja el QR</h2>
     <div id="cam-rationale">
       <p>Necessitem la càmera només per llegir el QR. L'app no desa la imatge.</p>
@@ -69,7 +76,7 @@
       <div class="video-wrap"><video id="video" playsinline muted></video><div class="frame" aria-hidden="true"></div></div>
       <p id="cam-hint" aria-live="polite">Apunta la càmera al codi QR de la credencial. Mantén el mòbil quiet.</p>
       <div class="actions row">
-        <button type="button" class="btn" id="btn-torch" hidden><span aria-hidden="true">💡</span> Llanterna</button>
+        <button type="button" class="btn" id="btn-torch" hidden><svg class="ico" aria-hidden="true"><use href="#i-flashlight"/></svg> Llanterna</button>
         <button type="button" class="btn" id="btn-cam-cancel">Cancel·lar</button>
       </div>
     </div>
@@ -85,7 +92,7 @@
 
   <!-- V2: imatge -->
   <section id="screen-image" class="screen" hidden aria-labelledby="image-title">
-    <button type="button" class="btn back" data-back>← Enrere</button>
+    <button type="button" class="btn back" data-back><svg class="ico" aria-hidden="true"><use href="#i-arrow-left"/></svg> Enrere</button>
     <h2 id="image-title" tabindex="-1">Tria una imatge</h2>
     <p>Tria una captura o una foto on es vegi el QR de la credencial.</p>
     <p class="small">Si tens el PDF, fes-ne una captura i tria-la aquí.</p>
@@ -99,7 +106,7 @@
 
   <!-- V3: text -->
   <section id="screen-text" class="screen" hidden aria-labelledby="text-title">
-    <button type="button" class="btn back" data-back>← Enrere</button>
+    <button type="button" class="btn back" data-back><svg class="ico" aria-hidden="true"><use href="#i-arrow-left"/></svg> Enrere</button>
     <h2 id="text-title" tabindex="-1">Enganxa el text</h2>
     <label for="token-input">Enganxa aquí el codi de verificació que apareix a la credencial. Els espais i els salts de línia no importen.</label>
     <textarea id="token-input" rows="6" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-describedby="paste-hint"></textarea>
@@ -116,7 +123,7 @@
 
   <!-- V8: instal·lar -->
   <section id="screen-install" class="screen" hidden aria-labelledby="install-title">
-    <button type="button" class="btn back" data-back>← Enrere</button>
+    <button type="button" class="btn back" data-back><svg class="ico" aria-hidden="true"><use href="#i-arrow-left"/></svg> Enrere</button>
     <h2 id="install-title" tabindex="-1">Instal·lar i preparar el verificador</h2>
     <p>Només cal fer-ho un cop, amb internet. Instal·lar posa la icona; «preparat» vol dir que ja està tot descarregat.</p>
     <p id="install-done" hidden class="ok-line">Ja la tens a la pantalla d'inici.</p>
@@ -143,7 +150,7 @@
 
   <!-- V9: sobre i límits -->
   <section id="screen-about" class="screen" hidden aria-labelledby="about-title">
-    <button type="button" class="btn back" data-back>← Enrere</button>
+    <button type="button" class="btn back" data-back><svg class="ico" aria-hidden="true"><use href="#i-arrow-left"/></svg> Enrere</button>
     <h2 id="about-title" tabindex="-1">Sobre els límits</h2>
     <p><strong>Què comprova.</strong> Que el codi porta un segell correcte fet amb una clau coneguda i que no s'ha alterat. «Vàlida» no vol dir «autèntica» ni «certificada».</p>
     <p><strong>Què no comprova.</strong> No és un certificat. Aquesta marca ajuda a detectar canvis casuals; no és una prova contra un dispositiu modificat o una clau extreta. Una persona amb coneixements tècnics podria generar credencials falses que semblarien vàlides: la credencial es basa en la confiança dins del club.</p>

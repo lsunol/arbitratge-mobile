@@ -1,6 +1,6 @@
 {
-  "version": "0.2.3",
-  "cache": "verificador-0.2.3",
+  "version": "0.2.5",
+  "cache": "verificador-0.2.5",
   "files": [
     {
       "path": "app.js",
@@ -28,7 +28,7 @@
     },
     {
       "path": "index.html",
-      "sha256": "17d3c0a60008337a6532ce961f7c050216fd2155fcb7e3b03571b3dc6408657a"
+      "sha256": "7c2d9a1851aead0f628ac81f240faafe5ccc23d0a1af12990156c48e0e786ede"
     },
     {
       "path": "keys/index.json",
@@ -68,7 +68,7 @@
     },
     {
       "path": "lib/text.js",
-      "sha256": "c192f431fdaa4e57bcead975f626aba39f29c74ee2dc9a52a3fddc603be9872c"
+      "sha256": "7de89ee50ba634439e320110cb169306f51a1e4d14fdec42eac3a7d6a7434104"
     },
     {
       "path": "lib/verifier-state.js",
@@ -80,7 +80,7 @@
     },
     {
       "path": "styles.css",
-      "sha256": "159452af3e8d4270483a1553fed1ba95900e64e2f76b80dfa6966fb7c368fa41"
+      "sha256": "7cda9d1fa4ba695d6e0ee212a5cfe36a125893e5326774cae36e703a7d7843e8"
     },
     {
       "path": "vendor/jsQR.js",
