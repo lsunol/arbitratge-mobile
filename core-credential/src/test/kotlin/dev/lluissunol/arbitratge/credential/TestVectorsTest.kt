@@ -33,6 +33,8 @@ class TestVectorsTest {
         // Vàlids
         "V01" to "OK", "V02" to "OK", "V03" to "OK", "V04" to "OK", "V05" to "OK", "V06" to "OK",
         "V07" to "OK", "V08" to "OK", "V09" to "OK", "V10" to "OK", "V11" to "OK",
+        // V12 ok/tot/dur (cadena G5), V13 ok/tot sense dur, V14 només dur
+        "V12" to "OK", "V13" to "OK", "V14" to "OK",
         // F01 buit o només espais
         "F01-empty" to "BAD_FORMAT", "F01-spaces" to "BAD_FORMAT", "F01-removable-only" to "BAD_FORMAT",
         // F02 https://… i HTTP://…
@@ -73,6 +75,7 @@ class TestVectorsTest {
         "P04-null" to "BAD_PAYLOAD", "P04-decimal" to "BAD_PAYLOAD", "P04-exponent" to "BAD_PAYLOAD",
         "P04-negative" to "BAD_PAYLOAD", "P04-ten-digits" to "BAD_PAYLOAD", "P04-leading-zero" to "BAD_PAYLOAD",
         "P04-v-decimal" to "BAD_PAYLOAD", "P04-v-exponent" to "BAD_PAYLOAD",
+        "P04-ok-decimal" to "BAD_PAYLOAD", "P04-dur-negative" to "BAD_PAYLOAD",
         // P05 nom duplicat, també per escapament
         "P05-nom" to "BAD_PAYLOAD", "P05-nom-escaped" to "BAD_PAYLOAD", "P05-kid-escaped" to "BAD_PAYLOAD",
         "P05-v" to "BAD_PAYLOAD", "P05-unknown" to "BAD_PAYLOAD",
@@ -118,10 +121,15 @@ class TestVectorsTest {
         "C07-app-33-chars" to "BAD_FIELDS", "C07-app-non-ascii" to "BAD_FIELDS",
         // C08 exp, nbf, crit o alg
         "C08-exp" to "BAD_FIELDS", "C08-nbf" to "BAD_FIELDS", "C08-crit" to "BAD_FIELDS", "C08-alg" to "BAD_FIELDS",
+        // C09 ok/tot/dur: ok sense tot (o al revés), ok > tot, fora de rang, com a text
+        "C09-ok-without-tot" to "BAD_FIELDS", "C09-tot-without-ok" to "BAD_FIELDS", "C09-ok-gt-tot" to "BAD_FIELDS",
+        "C09-tot-zero" to "BAD_FIELDS", "C09-tot-100" to "BAD_FIELDS", "C09-ok-100" to "BAD_FIELDS",
+        "C09-dur-86401" to "BAD_FIELDS", "C09-ok-text" to "BAD_FIELDS", "C09-tot-text" to "BAD_FIELDS",
+        "C09-dur-text" to "BAD_FIELDS",
         // Extres del mateix contracte (límits i precedències)
         "X01" to "OK", "X02" to "OK", "X03" to "OK", "X04" to "BAD_FORMAT", "X05" to "UNKNOWN_VERSION",
         "X06" to "IS_URL", "X07" to "OK", "X08" to "OK", "X09" to "KID_NOT_ACCEPTED", "X10" to "OK",
-        "X11" to "BAD_FORMAT",
+        "X11" to "BAD_FORMAT", "X12" to "OK", "X13" to "OK", "X14" to "OK",
     )
 
     @Test
@@ -174,6 +182,9 @@ class TestVectorsTest {
                     "v" to MiniJson.Number(cr.v.toString()), "kid" to cr.kid, "cid" to cr.cid, "nom" to cr.nom,
                     "res" to cr.res, "exv" to cr.exv, "iat" to cr.iat, "orig" to cr.orig,
                 )
+                cr.ok?.let { got["ok"] = MiniJson.Number(it.toString()) }
+                cr.tot?.let { got["tot"] = MiniJson.Number(it.toString()) }
+                cr.dur?.let { got["dur"] = MiniJson.Number(it.toString()) }
                 cr.bv?.let { got["bv"] = it }
                 cr.app?.let { got["app"] = it }
                 if (got != f) failures += "$id: camps $got != $f"

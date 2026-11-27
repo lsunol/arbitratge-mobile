@@ -80,3 +80,13 @@ pantalla de inicio y línea en cada resultado) se **retira** de la PWA verificad
 y ruido para quien verifica. Se mantiene el riesgo de suplantación como aceptado (riesgo social) y «Sobre els límits» sigue
 explicando que «vàlida» no significa «autèntica». Solo queda, discreta, la dirección y versión en el pie de la pantalla de inicio.
 Ver `docs/design/decisiones-usuario-ui.md` (UI-07).
+
+## Enmienda 2026-11-26 (b): resultado del examen en la credencial (aprobada por el usuario)
+
+El token `ARB1` (`v = 1`) admite tres campos **opcionales** firmados con el resto del payload: `ok`
+(aciertos, 0–99), `tot` (preguntas del examen, 1–99; junto con `ok` o ninguno, `ok ≤ tot`) y `dur`
+(duración en segundos, 0–86400). Es una ampliación compatible: no cambia la gramática, la firma, los
+límites ni los códigos de los vectores existentes; los tokens sin ellos siguen siendo válidos y un
+verificador anterior los ignora como miembros desconocidos (no los muestra). No se crea `ARB2`.
+`dur` procede del reloj del dispositivo y es informativa, como la fecha de emisión. Contrato y
+vectores: `docs/design/02-credencial-y-amenazas.md` §3.7.0, §3.7.5, §3.7.6 y §3.7.11.

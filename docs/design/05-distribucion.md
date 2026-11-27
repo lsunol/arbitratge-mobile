@@ -604,10 +604,10 @@ Reglas:
 | Decisión | Propuesta [S] | Alternativas |
 |---|---|---|
 | **Subdominio** | **`arbitratge.futbolbotons.cat`** (descarga en `/`, verificador en `/verificador/`) | `descarrega.futbolbotons.cat` (si se prefiere lenguaje llano); `verifica.futbolbotons.cat` solo con **repo de Pages separado** (un repo solo sirve un dominio personalizado) |
-| Estado del dominio (decisión del usuario, 2026-11-26) | Dominio definitivo **`arbitratge.futbolbotons.cat`**; `arbitratge-app.` descartado. **Pendiente de DNS/Hostalia**: hoy lo sirve el **proyecto base** (`CNAME`, H2), así que hay que decidir cómo se sustituye o se reparte antes de apuntarlo aquí | — |
-| Fase piloto | Se publica en la URL de Pages del repo, **`https://lsunol.github.io/arbitratge-mobile/`**, sin dominio propio. `stamp-web --host lsunol.github.io/arbitratge-mobile` estampa esa dirección (landing, `og:url`, `latest.json`) y no publica el `CNAME`. Al migrar: omitir `--host` | — |
+| Estado del dominio (2026-11-26) | **Activo**: el usuario apuntó el DNS (Hostalia) a este repo. Dominio definitivo **`arbitratge.futbolbotons.cat`** (`arbitratge-app.` descartado). El proyecto base ya no lo sirve | — |
+| Fase piloto | Terminada: se publicó brevemente en `https://lsunol.github.io/arbitratge-mobile/` con `stamp-web --host`. Ahora `pages.yml` publica por defecto con el dominio propio (`custom_domain=true`); `--host` queda para pruebas en github.io | — |
 | Repo que sirve Pages | `lsunol/arbitratge-mobile` (propietario: usuario personal, no la org `cfbbarcelona`) | `cfbbarcelona/arbitratge-mobile` si se transfiere |
-| DNS (cuando se configure) | Registro **CNAME** `arbitratge` → `lsunol.github.io` (cuenta personal) [S; PV]. Ojo: un mismo dominio solo lo sirve un sitio de Pages | — |
+| DNS | Registro **CNAME** `arbitratge` → `lsunol.github.io` (cuenta personal) configurado y resolviendo. Ajuste en Pages: dominio personalizado `arbitratge.futbolbotons.cat` + HTTPS forzado. Un mismo dominio solo lo sirve un sitio de Pages | — |
 | Verificación de dominio | Opcional en cuenta personal: verificar `futbolbotons.cat` en los ajustes de Pages del usuario (TXT de desafío) para evitar *takeover* (H11) | — |
 | HTTPS | Forzar HTTPS en Pages cuando emita el certificado (H11) | — |
 | `CNAME` | En `web/CNAME` (`arbitratge.futbolbotons.cat`); se copia al artefacto solo cuando se publica con ese dominio | — |

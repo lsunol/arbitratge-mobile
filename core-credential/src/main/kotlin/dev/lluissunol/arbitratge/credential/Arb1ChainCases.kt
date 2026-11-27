@@ -3,7 +3,7 @@ package dev.lluissunol.arbitratge.credential
 import java.time.LocalDate
 
 /**
- * Definició única dels casos V01–V05 de `02` §3.7.11 que genera l'**emissor de producció** amb
+ * Definició única dels casos V01–V05 i V12 de `02` §3.7.11 que genera l'**emissor de producció** amb
  * `kid=test` (cadena "Android signa → PWA verifica", porta G5 de `05` §5.8). La usen el generador
  * de `test-vectors/` (JVM) i la prova instrumentada de l'APK de test (API 26+), perquè tots dos
  * emetin exactament les mateixes peticions.
@@ -44,10 +44,13 @@ object Arb1ChainCases {
         val nom: String,
         val bv: String? = null,
         val app: String? = null,
+        val ok: Int? = null,
+        val tot: Int? = null,
+        val dur: Int? = null,
     ) {
         /** Camps que el verificador ha de retornar (literalment) amb `code == OK`. */
         fun expected(kid: String, cid: String): Arb1Credential =
-            Arb1Credential(Arb1.VERSION, kid, cid, nom, Arb1.RES_APTE, "1", IAT, Arb1.ORIG_AUTOSERVEI, bv, app)
+            Arb1Credential(Arb1.VERSION, kid, cid, nom, Arb1.RES_APTE, "1", IAT, Arb1.ORIG_AUTOSERVEI, bv, app, ok, tot, dur)
 
         /** Emet el cas amb l'emissor de producció (o la seva variant amb escapes per a V03). */
         fun issue(sealer: CredentialSealer, kid: String, trustedKeys: TrustedKeys, cid: () -> String): IssueResult {
@@ -60,8 +63,8 @@ object Arb1ChainCases {
         }
     }
 
-    private fun req(nom: String, bv: String? = null, app: String? = null) =
-        IssueRequest(nom, "1", LocalDate.parse(IAT), bv, app)
+    private fun req(nom: String, bv: String? = null, app: String? = null, ok: Int? = null, tot: Int? = null, dur: Int? = null) =
+        IssueRequest(nom, "1", LocalDate.parse(IAT), bv, app, ok = ok, tot = tot, dur = dur)
 
     val cases: List<ChainCase> = listOf(
         ChainCase("V01", "Només obligatoris, nom ASCII", req(NOM_ASCII), false, NOM_ASCII),
@@ -69,5 +72,10 @@ object Arb1ChainCases {
         ChainCase("V03", "Mateix nom que V02 amb escapes \\u00XX", req(NOM_ACCENTS), true, NOM_ACCENTS),
         ChainCase("V04", "nom de 80 punts de codi amb un caràcter fora del BMP", req(NOM_80), false, NOM_80),
         ChainCase("V05", "Amb bv i app", req(NOM_ASCII, "2026.11.1", "1.0.0+5"), false, NOM_ASCII, "2026.11.1", "1.0.0+5"),
+        ChainCase(
+            "V12", "Amb resultat ok, tot i dur (i bv)",
+            req(NOM_ACCENTS, bv = "2026.11.1", ok = 27, tot = 30, dur = 1834), false, NOM_ACCENTS,
+            bv = "2026.11.1", ok = 27, tot = 30, dur = 1834,
+        ),
     )
 }

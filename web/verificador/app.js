@@ -232,6 +232,8 @@ function dl(rows, big) {
   }
   return d;
 }
+/** Durada en segons → «14 min 32 s». */
+const fmtDur = (s) => (s >= 60 ? `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ""}` : `${s} s`);
 const fmtDate = (iat) => iat.split("-").reverse().join("/");
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -284,6 +286,8 @@ function showResult(res) {
         el("dl", { class: "carnet-rows" },
           row(T.d_exam, `reglament v${f.exv}`),
           row(T.d_date, fmtDate(f.iat)),
+          ...(f.tot !== undefined ? [row(T.d_score, `${f.ok} de ${f.tot}`)] : []),
+          ...(f.dur !== undefined ? [row(T.d_time, fmtDur(f.dur))] : []),
           row(T.d_code, res.shortCode, "mono")),
         el("p", { class: "carnet-more" }, el("button", { type: "button", class: "btn link", id: "btn-valid-limits" }, "Què vol dir «vàlida»?"))));
   } else {

@@ -11,7 +11,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
- * Cadena G5 en JVM: V01–V05 emesos per l'emissor de producció (V03 amb la instrumentació
+ * Cadena G5 en JVM: V01–V05 i V12 emesos per l'emissor de producció (V03 amb la instrumentació
  * d'escapes) i verificats amb codi `OK` i camps literals. La mateixa prova s'ha d'executar a
  * l'APK de test (API 26+) amb el verificador del dispositiu i la PWA.
  */
@@ -24,8 +24,8 @@ class Arb1ChainCasesTest {
     private fun payloadJson(token: String) = String(Base64Url.decodeCanonical(token.split('.')[1])!!, Charsets.UTF_8)
 
     @Test
-    fun v01ToV05AreIssuedByTheIssuerAndVerifyOk() {
-        assertEquals(listOf("V01", "V02", "V03", "V04", "V05"), Arb1ChainCases.cases.map { it.id })
+    fun v01ToV05AndV12AreIssuedByTheIssuerAndVerifyOk() {
+        assertEquals(listOf("V01", "V02", "V03", "V04", "V05", "V12"), Arb1ChainCases.cases.map { it.id })
         for (case in Arb1ChainCases.cases) {
             val cid = "3f0c1e9a-5b7d-4c2e-9a10-6d8b2f4e7c0" + case.id.last()
             val issued = assertIs<IssueResult.Issued>(case.issue(sealer, "test", TestMaterial.trusted) { cid }, case.id)
@@ -37,6 +37,9 @@ class Arb1ChainCasesTest {
             assertEquals(vf["nom"], case.nom, case.id)
             assertEquals(vf["bv"], case.bv, case.id)
             assertEquals(vf["app"], case.app, case.id)
+            assertEquals(vf["ok"], case.ok?.let { MiniJson.Number(it.toString()) }, case.id)
+            assertEquals(vf["tot"], case.tot?.let { MiniJson.Number(it.toString()) }, case.id)
+            assertEquals(vf["dur"], case.dur?.let { MiniJson.Number(it.toString()) }, case.id)
         }
     }
 

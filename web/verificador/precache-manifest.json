@@ -1,10 +1,10 @@
 {
-  "version": "0.2.5",
-  "cache": "verificador-0.2.5",
+  "version": "0.2.6",
+  "cache": "verificador-0.2.6",
   "files": [
     {
       "path": "app.js",
-      "sha256": "01ca3d698836553f7cffe860601969c0474ee2be58a45573ef2997df7918541c"
+      "sha256": "5a1b028b59f9268dc19588f3ae22787bb54b0ebbaee28764111eddfc8fcb6642"
     },
     {
       "path": "icons/apple-touch-icon.png",
@@ -40,7 +40,7 @@
     },
     {
       "path": "lib/arb1.js",
-      "sha256": "c121a3b9eb1d7e448db5e473a169fc4c18c939881d93178b0eda3e67efe58135"
+      "sha256": "a60519eb2e24f35bfce353c6d0892acb90dc96c323e6da5f983342dd3cc6b53a"
     },
     {
       "path": "lib/base64url.js",
@@ -68,7 +68,7 @@
     },
     {
       "path": "lib/text.js",
-      "sha256": "7de89ee50ba634439e320110cb169306f51a1e4d14fdec42eac3a7d6a7434104"
+      "sha256": "939b9bcdb989ec5379fd585ef8b99b25cb525cc306b2f30735fcccf384335fca"
     },
     {
       "path": "lib/verifier-state.js",

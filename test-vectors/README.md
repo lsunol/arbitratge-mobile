@@ -41,22 +41,26 @@ va como escape `\uXXXX` (pares sustitutos para fuera del BMP). Un `JSON.parse` n
 ```
 
 - `fields` contiene `v` (entero), `kid`, `cid`, `nom`, `res`, `exv`, `iat`, `orig` y, si están en el
-  token, `bv` y `app`. Los miembros desconocidos se ignoran y **no** aparecen. `nom` es el texto
+  token, `ok`, `tot`, `dur` (enteros) y `bv`, `app`. Los miembros desconocidos se ignoran y **no** aparecen. `nom` es el texto
   tras resolver escapes y **sin** normalizar (V11 está en NFD a propósito).
 - Criterio (G1/G5): igualdad **exacta** de `code` en cada caso; para `OK`, igualdad literal de
   `fields`. Cero casos sin ejecutar.
-- Grupos: todos los públicos de §3.7.11 (V01–V11, F01–F09, U01, P01–P09, K01, K03, S01–S06,
-  C01–C08). **R01 y K02 no están**: son exclusivos de release (G3) con la lista de producción.
+- Grupos: todos los públicos de §3.7.11 (V01–V14, F01–F09, U01, P01–P09, K01, K03, S01–S06,
+  C01–C09). V12–V14, C09, `P04-ok-decimal`, `P04-dur-negative` y X12–X14 cubren los campos
+  opcionales de resultado `ok`/`tot`/`dur` (ampliación 2026-11-26, `02` §3.7.0); el generador los
+  añade **al final** para que los 178 casos anteriores no cambien ni un byte. **R01 y K02 no están**: son exclusivos de release (G3) con la lista de producción.
 - Cada variante enumerada en §3.7.11 tiene su id estable (p. ej. `C01-missing-iat`, `C08-alg`,
   `F06-plus`, `P07-kid-dash`, `S04-r-n`). `TestVectorsTest` contiene la lista completa de ids y
   códigos de forma independiente del generador: quitar, renombrar o cambiar de código un caso
   hace fallar las pruebas. Una implementación JS debería comprobar lo mismo (todos los ids
   ejecutados y ninguno ausente).
-- Grupo `X01…X11`: extras del mismo contrato (límites exactos y precedencias: entrada de 2048,
-  payload de 512 bytes, 16 miembros, `ARB1000.`, `ARB10.`, escapes en nombres de miembro…). No
+- Grupo `X01…X14`: extras del mismo contrato (límites exactos y precedencias: entrada de 2048,
+  payload de 512 bytes, 16 miembros, `ARB1000.`, `ARB10.`, escapes en nombres de miembro, límites
+  de `ok`/`tot`/`dur`, payload con `nom` de 80 caracteres de 3 bytes y todos los opcionales al
+  máximo…). No
   añaden reglas; deben pasar igual.
-- Los casos V01, V02, V04, V05, V06 y V08 los produce el **emisor de producción**
-  (`CredentialIssuer`) con `kid=test` en la JVM; las peticiones de V01–V05 salen de
+- Los casos V01, V02, V04, V05, V06, V08, V12, V13, V14 y X14 los produce el **emisor de producción**
+  (`CredentialIssuer`) con `kid=test` en la JVM; las peticiones de V01–V05 y V12 salen de
   `Arb1ChainCases` (fuente única compartida con G5). El V03 fijo se construye con la clave de
   prueba, pero su payload es **idéntico byte a byte** al que produce el emisor instrumentado
   `CredentialIssuer.withNonAsciiEscapes` con el mismo `cid` (lo comprueba `Arb1ChainCasesTest`).
@@ -87,15 +91,15 @@ WebCrypto: `importKey("pkcs8", der, {name:"ECDSA", namedCurve:"P-256"}, false, [
 PKCS#8 lo generó la JCA (sin clave pública embebida); Node/Chromium lo importan. La PWA **no**
 necesita estas privadas para G1 (solo `spki`).
 
-## G5: cadena Android firma → PWA verifica (V01–V05)
+## G5: cadena Android firma → PWA verifica (V01–V05 y V12)
 
 `05` §5.8 G5. No se guarda aquí: se genera en cada ejecución, en `$RUNNER_TEMP` o equivalente.
 
 1. Un APK **de test** (nunca `release`) con `core-credential` y la clave `test` de
    `test-keys.json` (`JcaEs256Sealer(pkcs8)`) en emulador/dispositivo **API 26+**.
 2. La prueba instrumentada, con `@OptIn(Arb1TestInstrumentation::class)`, recorre
-   `Arb1ChainCases.cases` (V01–V05) y llama a `case.issue(sealer, "test", trustedTest) { cid }`:
-   V01, V02, V04 y V05 usan el constructor de producción de `CredentialIssuer`; V03 usa
+   `Arb1ChainCases.cases` (V01–V05 y V12) y llama a `case.issue(sealer, "test", trustedTest) { cid }`:
+   V01, V02, V04, V05 y V12 usan el constructor de producción de `CredentialIssuer`; V03 usa
    `CredentialIssuer.withNonAsciiEscapes` (mismo emisor, misma validación, sello y
    autoverificación; solo cambia la serialización a escapes `\uXXXX`). Cada emisión debe dar
    `Issued` (autoverificación `OK`).
@@ -141,7 +145,9 @@ Orden y códigos: `02` §3.7.8; el primer fallo decide. Puntos donde es fácil d
    (`^…$` en JS; ojo con `m`); `iat` fecha gregoriana con años 0000–9999 y bisiesto
    `(y%4==0 && y%100!=0) || y%400==0`; `nom` según §3.7.5.1 contando **puntos de código**
    (`[...nom].length`) y el conjunto F fijo; nombres reservados `exp`, `nbf`, `crit`, `alg` ⇒
-   `BAD_FIELDS`. El verificador **no** comprueba NFC.
+   `BAD_FIELDS`. El verificador **no** comprueba NFC. `ok`/`tot`/`dur`: `Number.isInteger` y
+   rango (0–99, 1–99, 0–86400); `ok` y `tot` juntos o ninguno, `ok <= tot`; un texto ⇒
+   `BAD_FIELDS` (decimales y negativos ya son `BAD_PAYLOAD` en el paso 6).
 
 ## Regenerar
 

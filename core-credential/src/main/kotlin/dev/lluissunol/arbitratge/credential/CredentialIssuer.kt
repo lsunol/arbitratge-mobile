@@ -12,6 +12,10 @@ import java.util.UUID
  * @param iat data local del dispositiu en emetre (informativa, "data del dispositiu").
  * @param extensions membres informatius desconeguts per a `v=1` (§3.7.5); per defecte cap. No
  *   poden usar noms coneguts ni reservats.
+ * @param ok encerts de l'examen (0..99), opcional. Cal donar-lo juntament amb [tot] (o cap dels
+ *   dos) i `ok <= tot`.
+ * @param tot total de preguntes de l'examen (1..99), opcional; vegeu [ok].
+ * @param dur durada de l'examen en segons (0..86400), opcional i independent.
  */
 data class IssueRequest(
     val nomInput: String,
@@ -20,6 +24,9 @@ data class IssueRequest(
     val bv: String? = null,
     val app: String? = null,
     val extensions: Map<String, String> = emptyMap(),
+    val ok: Int? = null,
+    val tot: Int? = null,
+    val dur: Int? = null,
 )
 
 /** Error d'emissió: no s'emet cap credencial (ni a mitges). */
@@ -75,6 +82,12 @@ class CredentialIssuer private constructor(
         if (!Fields.EXV.matches(request.exv)) return reject(IssueError.InvalidField("exv"))
         if (request.bv != null && !Fields.BV.matches(request.bv)) return reject(IssueError.InvalidField("bv"))
         if (request.app != null && !Fields.APP.matches(request.app)) return reject(IssueError.InvalidField("app"))
+        if (request.ok != null && request.ok !in Arb1.OK_RANGE) return reject(IssueError.InvalidField("ok"))
+        if (request.tot != null && request.tot !in Arb1.TOT_RANGE) return reject(IssueError.InvalidField("tot"))
+        if (!Fields.isValidScore(request.ok, request.tot)) {
+            return reject(IssueError.InvalidField(if (request.tot == null) "tot" else "ok"))
+        }
+        if (request.dur != null && request.dur !in Arb1.DUR_RANGE) return reject(IssueError.InvalidField("dur"))
         for ((name, value) in request.extensions) {
             if (name in Arb1.RESERVED_NAMES) return reject(IssueError.ReservedName(name))
             if (name in Arb1.FIELD_ORDER || !EXTENSION_NAME.matches(name)) return reject(IssueError.InvalidField(name))
@@ -86,6 +99,9 @@ class CredentialIssuer private constructor(
             "v" to Arb1.VERSION, "kid" to kid, "cid" to cid, "nom" to nom, "res" to Arb1.RES_APTE,
             "exv" to request.exv, "iat" to iat, "orig" to Arb1.ORIG_AUTOSERVEI,
         )
+        request.ok?.let { fields["ok"] = it }
+        request.tot?.let { fields["tot"] = it }
+        request.dur?.let { fields["dur"] = it }
         request.bv?.let { fields["bv"] = it }
         request.app?.let { fields["app"] = it }
         fields.putAll(request.extensions)
@@ -113,7 +129,9 @@ class CredentialIssuer private constructor(
         if (check.code != VerificationCode.OK || credential == null) {
             return reject(IssueError.SelfVerificationFailed(check.code))
         }
-        if (credential.nom != nom || credential.cid != cid || credential.iat != iat) {
+        if (credential.nom != nom || credential.cid != cid || credential.iat != iat ||
+            credential.ok != request.ok || credential.tot != request.tot || credential.dur != request.dur
+        ) {
             return reject(IssueError.SelfVerificationFailed(check.code))
         }
         // 6. El text exacte és la credencial.

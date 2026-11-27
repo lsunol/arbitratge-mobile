@@ -40,10 +40,10 @@ for (const c of cases.cases) {
 }
 // Grupos obligatorios de 02 §3.7.11 (R01 y K02 son solo de release / G3).
 const required = [
-  "V01","V02","V03","V04","V05","V06","V07","V08","V09","V10","V11",
+  "V01","V02","V03","V04","V05","V06","V07","V08","V09","V10","V11","V12","V13","V14",
   "F01","F02","F03","F04","F05","F06","F07","F08","F09","U01",
   "P01","P02","P03","P04","P05","P06","P07","P08","P09","K01","K03",
-  "S01","S02","S03","S04","S05","S06","C01","C02","C03","C04","C05","C06","C07","C08",
+  "S01","S02","S03","S04","S05","S06","C01","C02","C03","C04","C05","C06","C07","C08","C09",
 ];
 const groups = new Set(cases.cases.map((c) => c.group));
 for (const g of required) if (!groups.has(g)) failures.push(`grupo ausente: ${g}`);

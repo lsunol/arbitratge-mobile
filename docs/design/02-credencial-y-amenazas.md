@@ -249,6 +249,13 @@ para que un lector la marque como confiable haría falta una CA de una lista de 
 - Cualquier cambio posterior a este apartado que altere bytes, campos o resultados exige
   **nueva versión de formato** (`ARB2`, §3.7.5) o, si es aclaratorio, actualizar los vectores en
   el mismo cambio.
+- **Ampliación 2026-11-26 [D, aprobada por el usuario; ADR 0001, enmienda de la misma fecha]**:
+  campos **opcionales** de resultado `ok`, `tot` y `dur` en `v = 1` (§3.7.5). No cambia la
+  gramática, la firma, los límites ni los códigos de ningún vector anterior; los tokens sin estos
+  campos siguen siendo válidos y un verificador anterior los ignora como miembros desconocidos.
+  Único efecto retroactivo: un token con firma válida que ya llevara `ok`/`tot`/`dur` como
+  miembro desconocido con un valor no conforme pasa de `OK` a `BAD_FIELDS`; ningún emisor los ha
+  producido.
 
 #### 3.7.1 Gramática del texto
 
@@ -352,8 +359,17 @@ en silencio [S].
 | `exv` | Texto `^[0-9A-Za-z._-]{1,16}$` | Sí | Tras la firma | Versión de reglas. Esquema de valores: `05` §7.2 (producción: entero como texto, p. ej. `"1"`) |
 | `iat` | Texto `^[0-9]{4}-[0-9]{2}-[0-9]{2}$` y **fecha gregoriana válida** (mes 01–12, día válido, bisiestos); sin hora ni zona; sin rango | Sí | Tras la firma | Fecha **local** del reloj del dispositivo al emitir; se muestra como "data del dispositiu"; **no** decide validez |
 | `orig` | Exactamente `"autoservei"` | Sí | Tras la firma | Origen de la emisión |
+| `ok` | Entero JSON `0`–`99` (encerts). **Junto con `tot` o ninguno de los dos**; si están, `ok ≤ tot` | No | Tras la firma (si existe) | Resultado del examen: aciertos. Se muestra como "`ok` de `tot`" (texto de `04`) |
+| `tot` | Entero JSON `1`–`99` (preguntas del examen). Junto con `ok` (regla anterior) | No | Tras la firma (si existe) | Total de preguntas |
+| `dur` | Entero JSON `0`–`86400` (segundos). Independiente de `ok`/`tot` | No | Tras la firma (si existe) | Duración del examen; medida por el reloj del dispositivo, **informativa** (como `iat`, no fiable) |
 | `bv` | Texto `^[0-9A-Za-z._+-]{1,24}$` | No | Tras la firma (si existe) | `bank_version` pública y no sensible. Si la app lo emite es decisión residual de `01`/`03`/`05`; el contrato admite ambos casos |
 | `app` | Texto `^[0-9A-Za-z._+-]{1,32}$` (`versionName`) | No | Tras la firma (si existe) | Diagnóstico; no se muestra en el resultado principal |
+
+Para `ok`, `tot` y `dur`, "entero" es el de §3.7.4: un decimal, un exponente o un negativo
+(`27.0`, `1e1`, `-1`) ya es `BAD_PAYLOAD` en el paso 6 para cualquier miembro, antes de la firma;
+un texto (`"27"`), un valor fuera de rango, `ok` sin `tot` (o al revés) u `ok > tot` es
+`BAD_FIELDS` en el paso 10. Solo se emiten aprobados, pero el contrato no deriva `res` de
+`ok`/`tot`: el umbral de aprobado no viaja en el token.
 
 **Nombres reservados en `v=1`**: `exp`, `nbf`, `crit`, `alg`. La app `v=1` **NO DEBE** emitirlos;
 su presencia en un token con firma válida ⇒ `BAD_FIELDS`. Así una futura caducidad no puede
@@ -390,8 +406,8 @@ pueden diferir y el nombre ya está protegido por la firma; la NFC se prueba en 
 ##### 3.7.5.2 Serialización del emisor y ejemplo ficticio
 
 Recomendada (no afecta a la verificación, que opera sobre bytes): orden `v, kid, cid, nom, res,
-exv, iat, orig, bv, app`; sin espacios; caracteres no ASCII en UTF-8 directo; solo se escapan
-`"` y `\`. Obligatorio: cumplir §3.7.4 y §3.7.5.
+exv, iat, orig, ok, tot, dur, bv, app`; enteros en decimal sin ceros a la izquierda; sin
+espacios; caracteres no ASCII en UTF-8 directo; solo se escapan `"` y `\`. Obligatorio: cumplir §3.7.4 y §3.7.5.
 
 Ejemplo **ficticio** (151 bytes):
 
@@ -400,6 +416,12 @@ Ejemplo **ficticio** (151 bytes):
 ```
 
 → `payload-seg` de 202 caracteres; token de 4 + 1 + 202 + 1 + 86 = **294** caracteres.
+
+El mismo ejemplo con resultado (`,"ok":27,"tot":30,"dur":1834` añade 28 bytes; 179 en total):
+
+```json
+{"v":1,"kid":"s1","cid":"3f0c1e9a-5b7d-4c2e-9a10-6d8b2f4e7c01","nom":"Anna Exemple Puig","res":"APTE","exv":"1","iat":"2026-11-20","orig":"autoservei","ok":27,"tot":30,"dur":1834}
+```
 
 #### 3.7.6 Límites
 
@@ -415,6 +437,17 @@ Ejemplo **ficticio** (151 bytes):
 
 Supersede los 1024/2048 divergentes de la revisión 3 y de `03` §6.2.4: 2048 es el límite de
 **entrada**, 1024 el del **token**.
+
+**Holgura del payload (comprobada con `ok`/`tot`/`dur`, 2026-11-26)** [H, prueba
+`CredentialIssuerTest.maximumPayloadWithAllFieldsFitsIn512Bytes` y vector X14]: con `nom` de 80
+puntos de código de hasta 3 bytes UTF-8 (todo el BMP: latino, catalán, CJK) y **todos** los campos
+opcionales al máximo de su patrón (`kid` de 16, `exv` de 16, `ok`/`tot` 99, `dur` 86400, `bv` de
+24, `app` de 32) el payload mide **505 bytes** ≤ 512 (token de 766 caracteres ≤ 775 ≤ 1024; X14, con
+`kid=test`, mide 493). Solo
+un `nom` de 80 caracteres **fuera del BMP** (4 bytes) con casi todos los opcionales al máximo lo
+supera (585 bytes); ya ocurría sin los campos nuevos (556) y el emisor lo rechaza sin credencial a
+medias (`PayloadTooLarge`, §3.7.10 paso 2). Con los valores de producción (`kid` `s1`, `exv` `1`,
+`bv` corto, sin `app`) incluso ese caso cabe (500 bytes). **No se cambian los límites.**
 
 #### 3.7.7 Normalización de la entrada (escaneo, imagen y pegado)
 
@@ -550,20 +583,20 @@ en `05`):
 casos con `id`, `input` (texto exacto, con escapes si hace falta), `code` y `result` esperados.
 Ejecución (puertas G1/G3/G5, `05` §5.8): los vectores públicos corren en CI/G5; R01 y K02 son exclusivos de release/G3. En el contexto correspondiente, el verificador Kotlin en JVM **y en dispositivo o emulador API
 26+** (el proveedor JCA de Android no es el del JDK [PV]), y la PWA en navegador y en Node con
-WebCrypto [PV]. Cadena real **Android firma → PWA verifica**: los casos V01–V05 los genera el
+WebCrypto [PV]. Cadena real **Android firma → PWA verifica**: los casos V01–V05 y V12 los genera el
 emisor de producción, instrumentado con `kid=test`, en Android.
 
 | Grupo | Casos mínimos | Código |
 |---|---|---|
-| **Válidos** | V01 solo obligatorios, nombre ASCII · V02 acentos y `l·l` en UTF-8 directo · V03 el mismo nombre con escapes `\u00XX` · V04 `nom` de 80 puntos de código con un carácter fuera del BMP · V05 con `bv` y `app` · V06 con miembro desconocido · V07 JSON con espacios insignificantes · V08 `r` o `s` con ceros a la izquierda · V09 `s` alto (`n−s` de V01) · V10 V01 con espacios, tabuladores, saltos, U+00A0 y U+200B intercalados y exteriores · V11 `nom` en NFD firmado por un emisor de prueba | `OK` |
+| **Válidos** | V01 solo obligatorios, nombre ASCII · V02 acentos y `l·l` en UTF-8 directo · V03 el mismo nombre con escapes `\u00XX` · V04 `nom` de 80 puntos de código con un carácter fuera del BMP · V05 con `bv` y `app` · V06 con miembro desconocido · V07 JSON con espacios insignificantes · V08 `r` o `s` con ceros a la izquierda · V09 `s` alto (`n−s` de V01) · V10 V01 con espacios, tabuladores, saltos, U+00A0 y U+200B intercalados y exteriores · V11 `nom` en NFD firmado por un emisor de prueba · V12 con `ok`, `tot` y `dur` · V13 `ok` y `tot` sin `dur` · V14 solo `dur` | `OK` |
 | **Entrada y envoltorio** | F01 vacío o solo espacios · F03 entrada > 2048 · F04 `arb1.`, `ARB0.`, `ARB01.`, `ARB1` sin punto · F05 2 o 4 segmentos · F06 con `=`, con `+` o `/`, con carácter no ASCII · F07 base64url no canónico en payload y en firma · F08 firma de 63 o 65 bytes, firma DER · F09 payload vacío o de 513 bytes, token > 1024 | `BAD_FORMAT` |
 | | F02 `https://…` y `HTTP://…` | `IS_URL` |
 | **Versión** | U01 `ARB2.` + resto válido · `ARB2.xyz` · `ARB999.` | `UNKNOWN_VERSION` |
-| **Payload** | P01 UTF-8 inválido (*overlong*, sustituto codificado, byte suelto) · P02 BOM · P03 no objeto, mal formado, coma final · P04 valor anidado, array, `true`/`null`, decimal, exponente, negativo, entero de 10 dígitos · P05 nombre duplicado, también por escape · P06 `\ud800` aislado · P07 falta `v` o `kid`, `v` como texto, `v=2` en `ARB1`, `kid` con mayúsculas o `-` · P08 17 miembros · P09 un byte del payload alterado que rompe el JSON | `BAD_PAYLOAD` |
+| **Payload** | P01 UTF-8 inválido (*overlong*, sustituto codificado, byte suelto) · P02 BOM · P03 no objeto, mal formado, coma final · P04 valor anidado, array, `true`/`null`, decimal, exponente, negativo, entero de 10 dígitos (también `ok` decimal y `dur` negativo) · P05 nombre duplicado, también por escape · P06 `\ud800` aislado · P07 falta `v` o `kid`, `v` como texto, `v=2` en `ARB1`, `kid` con mayúsculas o `-` · P08 17 miembros · P09 un byte del payload alterado que rompe el JSON | `BAD_PAYLOAD` |
 | **Claves** | K01 `kid` inexistente · K02 `kid=test` contra la lista de producción | `UNKNOWN_KID` |
 | | K03 `kid=testx` | `KID_NOT_ACCEPTED` |
 | **Firma** | S01 un carácter de `nom` cambiado (JSON válido) · S02 un bit de la firma cambiado · S03 payload de un token con la firma de otro · S04 `r = 0`, `s = 0` o `r ≥ n` · **S05 firma sobre los bytes JSON decodificados (contrato antiguo de `03`)** · S06 firmado con otra clave P-256 y `kid=test` | `BAD_SIGNATURE` |
-| **Campos** (firmados con `test`) | C01 falta cada obligatorio · C02 `res` = `"apte"` o `"APTA"` · C03 `orig` distinto · C04 `cid` en mayúsculas o no v4 · C05 `iat` = `2026-02-30`, con hora o entero · C06 `nom` vacío, con espacio inicial/final, doble espacio, U+0007, U+202E o 81 puntos de código · C07 `exv`, `bv` o `app` fuera de patrón · C08 con `exp`, `nbf`, `crit` o `alg` | `BAD_FIELDS` |
+| **Campos** (firmados con `test`) | C01 falta cada obligatorio · C02 `res` = `"apte"` o `"APTA"` · C03 `orig` distinto · C04 `cid` en mayúsculas o no v4 · C05 `iat` = `2026-02-30`, con hora o entero · C06 `nom` vacío, con espacio inicial/final, doble espacio, U+0007, U+202E o 81 puntos de código · C07 `exv`, `bv` o `app` fuera de patrón · C08 con `exp`, `nbf`, `crit` o `alg` · C09 `ok` sin `tot`, `tot` sin `ok`, `ok > tot`, `tot = 0`, `tot = 100`, `ok = 100`, `dur = 86401`, `ok`/`tot`/`dur` como texto | `BAD_FIELDS` |
 | **Release** | R01 token de autocomprobación firmado con la clave inyectada (§3.7.9) | `OK` en la PWA a publicar |
 
 Emisor (pruebas unitarias de `03`, además de V01–V05): entrada con NFD, espacios múltiples y
@@ -725,7 +758,10 @@ use la **dirección oficial** (T15).
 1. Uno de los cuatro resultados de ADR 0001 con su motivo en catalán, según el código de §3.7.8.
 2. Solo con `OK` (`VÀLIDA`): **los datos decodificados del QR** en letra grande (nombre,
    resultado, "data del dispositiu", `exv`, código corto de `cid`, `bv` si existe) e instrucción
-   "Comprova que coincideixen amb el document i amb la persona".
+   "Comprova que coincideixen amb el document i amb la persona". Si existen, `ok`/`tot` ("27 de
+   30 encerts") y `dur` (en minutos/segundos legibles); sin ellos no se muestra nada en su lugar
+   (tokens anteriores). Textos y disposición: `04` / `pwa-developer`. `dur` es informativa (reloj
+   del dispositivo).
 3. Aviso corto fijo de §4.
 4. Nunca acepta `kid`, versión o algoritmo desconocidos (§3.7.8).
 

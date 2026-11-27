@@ -49,8 +49,8 @@ android {
         applicationId = "dev.lluissunol.arbitratge"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1009 // 05 §7.1: X*100000+Y*1000+Z*10+9 (0.1.0 -> 1009)
-        versionName = "0.1.0"
+        versionCode = 2009 // 05 §7.1: X*100000+Y*1000+Z*10+9 (0.2.0 -> 2009)
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

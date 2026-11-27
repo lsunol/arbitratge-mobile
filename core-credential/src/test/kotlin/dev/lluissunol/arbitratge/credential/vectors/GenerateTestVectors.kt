@@ -2,6 +2,7 @@
 
 package dev.lluissunol.arbitratge.credential.vectors
 
+import dev.lluissunol.arbitratge.credential.Arb1
 import dev.lluissunol.arbitratge.credential.Arb1ChainCases
 import dev.lluissunol.arbitratge.credential.Arb1TestInstrumentation
 import dev.lluissunol.arbitratge.credential.Base64Url
@@ -160,8 +161,14 @@ private class Generator(private val dir: File, private val initKeys: Boolean) {
 
     private fun json(m: List<Pair<String, String>>) = m.joinToString(",", "{", "}") { "\"${it.first}\":${it.second}" }
 
-    private fun fields(cid: String, nom: String = nomV01, bv: String? = null, app: String? = null, kid: String = "test"): Map<String, Any> {
-        val f = linkedMapOf<String, Any>("v" to 1, "kid" to kid, "cid" to cid, "nom" to nom, "res" to "APTE", "exv" to "1", "iat" to iat, "orig" to "autoservei")
+    private fun fields(
+        cid: String, nom: String = nomV01, bv: String? = null, app: String? = null, kid: String = "test",
+        ok: Int? = null, tot: Int? = null, dur: Int? = null, exv: String = "1",
+    ): Map<String, Any> {
+        val f = linkedMapOf<String, Any>("v" to 1, "kid" to kid, "cid" to cid, "nom" to nom, "res" to "APTE", "exv" to exv, "iat" to iat, "orig" to "autoservei")
+        ok?.let { f["ok"] = it }
+        tot?.let { f["tot"] = it }
+        dur?.let { f["dur"] = it }
         bv?.let { f["bv"] = it }
         app?.let { f["app"] = it }
         return f
@@ -182,10 +189,12 @@ private class Generator(private val dir: File, private val initKeys: Boolean) {
         return r.token
     }
 
-    private fun req(nom: String, bv: String? = null, app: String? = null, ext: Map<String, String> = emptyMap()) =
-        IssueRequest(nom, "1", LocalDate.parse(iat), bv, app, ext)
+    private fun req(
+        nom: String, bv: String? = null, app: String? = null, ext: Map<String, String> = emptyMap(),
+        ok: Int? = null, tot: Int? = null, dur: Int? = null, exv: String = "1",
+    ) = IssueRequest(nom, exv, LocalDate.parse(iat), bv, app, ext, ok, tot, dur)
 
-    /** Petició V01–V05 compartida amb la prova de cadena G5 (font única: [Arb1ChainCases]). */
+    /** Petició V01–V05 i V12 compartida amb la prova de cadena G5 (font única: [Arb1ChainCases]). */
     private fun chain(id: String): IssueRequest = Arb1ChainCases.cases.single { it.id == id }.request
 
     private fun parts(token: String) = token.split('.')
@@ -481,6 +490,65 @@ private class Generator(private val dir: File, private val initKeys: Boolean) {
         add("X09", "kid=testx signat amb una clau d'una altra (l'estat decideix abans que la firma)", token(json(base(cidK, kid = "testx")), test), VerificationCode.KID_NOT_ACCEPTED)
         add("X10", "Membre desconegut enter de 9 dígits i 0", token(json(base(cidX) + ("x" to "999999999") + ("y" to "0"))), VerificationCode.OK, fields(cidX))
         add("X11", "Prefix ARB1 seguit d'URL: no és URL (no comença per http)", "ARB1.https://x", VerificationCode.BAD_FORMAT)
+
+        // ---- Camps opcionals de resultat ok/tot/dur (§3.7.5). Afegits al final perquè l'RNG amb
+        // llavor fixa no canviï cap byte dels casos anteriors.
+        resultFieldCases()
+    }
+
+    private fun resultFieldCases() {
+        val cidV12 = cid(12)
+        add(
+            "V12", "Emissor: amb resultat ok, tot i dur (i bv)", issue(cidV12, chain("V12")), VerificationCode.OK,
+            fields(cidV12, nomV02, bv = "2026.11.1", ok = 27, tot = 30, dur = 1834),
+        )
+        val cidV13 = cid(13)
+        add("V13", "Emissor: ok i tot sense dur", issue(cidV13, req(nomV01, ok = 30, tot = 30)), VerificationCode.OK, fields(cidV13, ok = 30, tot = 30))
+        val cidV14 = cid(14)
+        add("V14", "Emissor: només dur (sense ok ni tot)", issue(cidV14, req(nomV01, dur = 900)), VerificationCode.OK, fields(cidV14, dur = 900))
+
+        val cidX = cid(600)
+        add(
+            "X12", "Límits inferiors: ok=0, tot=1, dur=0",
+            token(json(base(cidX) + ("ok" to "0") + ("tot" to "1") + ("dur" to "0"))), VerificationCode.OK, fields(cidX, ok = 0, tot = 1, dur = 0),
+        )
+        add(
+            "X13", "Límits superiors: ok=99, tot=99, dur=86400, en ordre no recomanat (dur, tot, ok)",
+            token(json(base(cidX) + ("dur" to "86400") + ("tot" to "99") + ("ok" to "99"))), VerificationCode.OK, fields(cidX, ok = 99, tot = 99, dur = 86400),
+        )
+        // Mida: nom de 80 punts de codi de 3 bytes UTF-8 i tots els camps opcionals al màxim del
+        // seu patró. kid=test (4); amb kid de 16 caràcters serien 12 bytes més (≤ 512 igualment).
+        val cidX14 = cid(601)
+        val nom3 = "ア".repeat(Arb1.MAX_NOM_CODE_POINTS)
+        val exv16 = "1".repeat(16)
+        val bv24 = "2".repeat(24)
+        val app32 = "3".repeat(32)
+        val x14 = issue(cidX14, req(nom3, bv = bv24, app = app32, ok = 99, tot = 99, dur = 86400, exv = exv16))
+        check(payloadOf(x14).size + 12 <= Arb1.MAX_PAYLOAD_BYTES) { "el payload màxim no cap a 512 bytes" }
+        add(
+            "X14", "Emissor: nom de 80 punts de codi de 3 bytes UTF-8 i tots els camps opcionals al màxim (payload ${payloadOf(x14).size} bytes)",
+            x14, VerificationCode.OK, fields(cidX14, nom3, bv = bv24, app = app32, ok = 99, tot = 99, dur = 86400, exv = exv16),
+        )
+
+        // Gramàtica (pas 6, abans de la firma): decimals i negatius ja són BAD_PAYLOAD a qualsevol membre.
+        val cidP = cid(700)
+        add("P04-ok-decimal", "ok decimal 27.0", token(json(base(cidP) + ("ok" to "27.0") + ("tot" to "30"))), VerificationCode.BAD_PAYLOAD)
+        add("P04-dur-negative", "dur negatiu -1", token(json(base(cidP) + ("dur" to "-1"))), VerificationCode.BAD_PAYLOAD)
+
+        // Camps (pas 10, signats amb test).
+        val cidC = cid(800)
+        listOf(
+            Triple("ok-without-tot", "ok sense tot", listOf("ok" to "27")),
+            Triple("tot-without-ok", "tot sense ok", listOf("tot" to "30")),
+            Triple("ok-gt-tot", "ok > tot (31 > 30)", listOf("ok" to "31", "tot" to "30")),
+            Triple("tot-zero", "tot = 0", listOf("ok" to "0", "tot" to "0")),
+            Triple("tot-100", "tot = 100", listOf("ok" to "27", "tot" to "100")),
+            Triple("ok-100", "ok = 100 (amb tot = 99)", listOf("ok" to "100", "tot" to "99")),
+            Triple("dur-86401", "dur = 86401", listOf("dur" to "86401")),
+            Triple("ok-text", "ok com a text", listOf("ok" to q("27"), "tot" to "30")),
+            Triple("tot-text", "tot com a text", listOf("ok" to "27", "tot" to q("30"))),
+            Triple("dur-text", "dur com a text", listOf("dur" to q("1834"))),
+        ).forEach { (id, d, extra) -> add("C09-$id", "Resultat: $d", token(json(base(cidC) + extra)), VerificationCode.BAD_FIELDS) }
     }
 
     private fun v11Token(): String = token(json(base(cid(11), "Nu\u0301ria Pe\u0301rez")))
@@ -508,6 +576,9 @@ private class Generator(private val dir: File, private val initKeys: Boolean) {
             if (c.code == VerificationCode.OK) {
                 val cr = r.credential!!
                 val got = linkedMapOf<String, Any>("v" to cr.v, "kid" to cr.kid, "cid" to cr.cid, "nom" to cr.nom, "res" to cr.res, "exv" to cr.exv, "iat" to cr.iat, "orig" to cr.orig)
+                cr.ok?.let { got["ok"] = it }
+                cr.tot?.let { got["tot"] = it }
+                cr.dur?.let { got["dur"] = it }
                 cr.bv?.let { got["bv"] = it }
                 cr.app?.let { got["app"] = it }
                 check(got == c.fields) { "cas ${c.id}: camps diferents" }

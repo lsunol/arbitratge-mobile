@@ -94,6 +94,24 @@ function validateFields(m) {
   if (!validNom(nom)) return null;
   if (m.get("res") !== "APTE" || m.get("orig") !== "autoservei") return null;
   const fields = { v: m.get("v"), kid: m.get("kid"), cid, nom, res: "APTE", exv, iat, orig: "autoservei" };
+  // Resultado opcional (§3.7.5): enteros JSON en rango; ok y tot juntos o ninguno; ok <= tot.
+  const int = (k, min, max) => {
+    const v = m.get(k);
+    return Number.isInteger(v) && v >= min && v <= max ? v : null;
+  };
+  if (m.has("ok") !== m.has("tot")) return null;
+  if (m.has("ok")) {
+    const ok = int("ok", 0, 99);
+    const tot = int("tot", 1, 99);
+    if (ok === null || tot === null || ok > tot) return null;
+    fields.ok = ok;
+    fields.tot = tot;
+  }
+  if (m.has("dur")) {
+    const dur = int("dur", 0, 86400);
+    if (dur === null) return null;
+    fields.dur = dur;
+  }
   if (m.has("bv")) {
     const bv = str("bv", BV_RE);
     if (bv === null) return null;

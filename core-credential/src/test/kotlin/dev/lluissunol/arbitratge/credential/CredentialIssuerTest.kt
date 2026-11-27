@@ -94,6 +94,74 @@ class CredentialIssuerTest {
     }
 
     @Test
+    fun resultFieldsAreSerializedInRecommendedOrderAndVerify() {
+        val r = issued(
+            issuer.issue(IssueRequest("Anna Exemple Puig", "1", iat, bv = "2026.11.1", app = "1.0.0+5", ok = 27, tot = 30, dur = 1834)),
+        )
+        val json = String(Base64Url.decodeCanonical(r.token.split('.')[1])!!, Charsets.UTF_8)
+        assertTrue(
+            json.endsWith(",\"orig\":\"autoservei\",\"ok\":27,\"tot\":30,\"dur\":1834,\"bv\":\"2026.11.1\",\"app\":\"1.0.0+5\"}"),
+            json,
+        )
+        assertEquals(27, r.credential.ok)
+        assertEquals(30, r.credential.tot)
+        assertEquals(1834, r.credential.dur)
+        val v = verifier.verify(r.token)
+        assertEquals(VerificationCode.OK, v.code)
+        assertEquals(r.credential, v.credential)
+    }
+
+    @Test
+    fun resultFieldsAreOptionalAndIndependent() {
+        val none = issued(issuer.issue(IssueRequest("Anna", "1", iat)))
+        assertEquals(Triple(null, null, null), Triple(none.credential.ok, none.credential.tot, none.credential.dur))
+        val onlyDur = issued(issuer.issue(IssueRequest("Anna", "1", iat, dur = 0)))
+        assertEquals(Triple(null, null, 0), Triple(onlyDur.credential.ok, onlyDur.credential.tot, onlyDur.credential.dur))
+        val score = issued(issuer.issue(IssueRequest("Anna", "1", iat, ok = 0, tot = 1)))
+        assertEquals(Triple(0, 1, null), Triple(score.credential.ok, score.credential.tot, score.credential.dur))
+        val max = issued(issuer.issue(IssueRequest("Anna", "1", iat, ok = 99, tot = 99, dur = 86400)))
+        assertEquals(Triple(99, 99, 86400), Triple(max.credential.ok, max.credential.tot, max.credential.dur))
+    }
+
+    @Test
+    fun invalidResultFieldsAreRejected() {
+        fun reason(ok: Int?, tot: Int?, dur: Int? = null) =
+            rejected(issuer.issue(IssueRequest("Anna", "1", iat, ok = ok, tot = tot, dur = dur)))
+        assertEquals(IssueError.InvalidField("tot"), reason(27, null))
+        assertEquals(IssueError.InvalidField("ok"), reason(null, 30))
+        assertEquals(IssueError.InvalidField("ok"), reason(31, 30))
+        assertEquals(IssueError.InvalidField("ok"), reason(-1, 30))
+        assertEquals(IssueError.InvalidField("ok"), reason(100, 99))
+        assertEquals(IssueError.InvalidField("tot"), reason(0, 0))
+        assertEquals(IssueError.InvalidField("tot"), reason(27, 100))
+        assertEquals(IssueError.InvalidField("dur"), reason(null, null, -1))
+        assertEquals(IssueError.InvalidField("dur"), reason(null, null, 86401))
+        assertEquals(IssueError.InvalidField("ok"), rejected(issuer.issue(IssueRequest("Anna", "1", iat, extensions = mapOf("ok" to "1")))))
+    }
+
+    @Test
+    fun maximumPayloadWithAllFieldsFitsIn512Bytes() {
+        // §3.7.6: nom de 80 punts de codi de 3 bytes UTF-8 + tots els camps al màxim del patró.
+        val sixteenKid = CredentialIssuer({ ByteArray(64) }, "a".repeat(16), TestMaterial.trusted) { cid }
+        val r = sixteenKid.issue(
+            IssueRequest("\u30a2".repeat(80), "1".repeat(16), iat, bv = "2".repeat(24), app = "3".repeat(32), ok = 99, tot = 99, dur = 86400),
+        )
+        // No hi ha clau per a aquest kid: ha d'arribar a l'autoverificació (⇒ la mida s'ha acceptat).
+        assertEquals(IssueError.SelfVerificationFailed(VerificationCode.UNKNOWN_KID), rejected(r))
+        val ok = issued(
+            issuer.issue(
+                IssueRequest("\u30a2".repeat(80), "1".repeat(16), iat, bv = "2".repeat(24), app = "3".repeat(32), ok = 99, tot = 99, dur = 86400),
+            ),
+        )
+        assertEquals(493, Base64Url.decodeCanonical(ok.token.split('.')[1])!!.size) // 505 amb kid de 16
+        assertTrue(ok.token.length <= 775)
+        // 80 caràcters fora del BMP (4 bytes) no hi caben amb tots els camps al màxim (ja passava sense ok/tot/dur).
+        val nonBmp = "\uD842\uDFB7".repeat(80)
+        val big = issuer.issue(IssueRequest(nonBmp, "1".repeat(16), iat, bv = "2".repeat(24), app = "3".repeat(32), ok = 99, tot = 99, dur = 86400))
+        assertIs<IssueError.PayloadTooLarge>(rejected(big))
+    }
+
+    @Test
     fun reservedAndKnownNamesAreRejectedAsExtensions() {
         for (n in listOf("exp", "nbf", "crit", "alg")) {
             assertEquals(IssueError.ReservedName(n), rejected(issuer.issue(IssueRequest("Anna", "1", iat, extensions = mapOf(n to "x")))))

@@ -1616,6 +1616,234 @@
       "input": "ARB1.https://x",
       "code": "BAD_FORMAT",
       "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "V12",
+      "group": "V12",
+      "description": "Emissor: amb resultat ok, tot i dur (i bv)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMDY1ZWI1ZGEtZDc0Yy00MTE0LWI0NzAtYzQ4YjkwYjAxYTIyIiwibm9tIjoiTsO6cmlhIEdhbMK3bGEgUMOpcmV6IiwicmVzIjoiQVBURSIsImV4diI6IjEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkiLCJvayI6MjcsInRvdCI6MzAsImR1ciI6MTgzNCwiYnYiOiIyMDI2LjExLjEifQ.xOC8lfjWmYh9l5cRtgsMxlvDZUCLyk7aveYYCmF1PztK-znosXl-kiMe151GUyDKV8Pf0QE7QiMuVxJ00U2ajw",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "065eb5da-d74c-4114-b470-c48b90b01a22",
+        "nom": "N\u00faria Gal\u00b7la P\u00e9rez",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "ok": 27,
+        "tot": 30,
+        "dur": 1834,
+        "bv": "2026.11.1"
+      },
+      "shortCode": "065E-B5DA"
+    },
+    {
+      "id": "V13",
+      "group": "V13",
+      "description": "Emissor: ok i tot sense dur",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMmZhNzQxZWMtODg4Mi00M2M3LWI1NWYtNzg5ZDhhZGUxZjlkIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjozMCwidG90IjozMH0.3LX5Bta8IacWXmbfLB-DH7fmG0OMfeW-_h2_koM3lbUfF32SfU35g6PwvN5Z0kkq8g4Ak3ryLXUszwDCluH-lw",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "2fa741ec-8882-43c7-b55f-789d8ade1f9d",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "ok": 30,
+        "tot": 30
+      },
+      "shortCode": "2FA7-41EC"
+    },
+    {
+      "id": "V14",
+      "group": "V14",
+      "description": "Emissor: nom\u00e9s dur (sense ok ni tot)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYzJhMTdiZjktMGI0Ny00NWE1LTk4YzYtN2QyY2E5ZDU3NzY0Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImR1ciI6OTAwfQ.J4n8MHUdqLYVO4AXJGuxYSuBj9LuxOR7GWqx6_RcUi8FDVBfQyjkhvaxQ1Q7GZkIij-RYNhbZsXL19Mz1hYb0Q",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "c2a17bf9-0b47-45a5-98c6-7d2ca9d57764",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "dur": 900
+      },
+      "shortCode": "C2A1-7BF9"
+    },
+    {
+      "id": "X12",
+      "group": "X12",
+      "description": "L\u00edmits inferiors: ok=0, tot=1, dur=0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMjk3ZGI3MWEtMDk4OS00NWJjLTlhYzgtMDlhZmNkYzk3MmFhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjowLCJ0b3QiOjEsImR1ciI6MH0.Q357SLrt5wejDeGHi1JEj-J6oQedywqrtCjdYg0OUr-QdW2bzv9wN-vU9iAAD3sb9JnRwH2TNiN9w9LCXqVqDQ",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "297db71a-0989-45bc-9ac8-09afcdc972aa",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "ok": 0,
+        "tot": 1,
+        "dur": 0
+      },
+      "shortCode": "297D-B71A"
+    },
+    {
+      "id": "X13",
+      "group": "X13",
+      "description": "L\u00edmits superiors: ok=99, tot=99, dur=86400, en ordre no recomanat (dur, tot, ok)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMjk3ZGI3MWEtMDk4OS00NWJjLTlhYzgtMDlhZmNkYzk3MmFhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImR1ciI6ODY0MDAsInRvdCI6OTksIm9rIjo5OX0.yJ4UROgZs9Osjj-KOXakrIShzzTV8KInI1KvFKpjvCz9qP7freLlzOhPx9MDWP9RLrnQbsMHy6gdL2vYebg_Yg",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "297db71a-0989-45bc-9ac8-09afcdc972aa",
+        "nom": "Anna Exemple Puig",
+        "res": "APTE",
+        "exv": "1",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "ok": 99,
+        "tot": 99,
+        "dur": 86400
+      },
+      "shortCode": "297D-B71A"
+    },
+    {
+      "id": "X14",
+      "group": "X14",
+      "description": "Emissor: nom de 80 punts de codi de 3 bytes UTF-8 i tots els camps opcionals al m\u00e0xim (payload 493 bytes)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiY2RkNDRmNjktZDMxMi00MTU1LWJkMmUtMDgyOWY0N2U5MWM4Iiwibm9tIjoi44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44Ki44KiIiwicmVzIjoiQVBURSIsImV4diI6IjExMTExMTExMTExMTExMTEiLCJpYXQiOiIyMDI2LTExLTIwIiwib3JpZyI6ImF1dG9zZXJ2ZWkiLCJvayI6OTksInRvdCI6OTksImR1ciI6ODY0MDAsImJ2IjoiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyIiwiYXBwIjoiMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMifQ.-9PMDZp8z-0q6_05HPZgSVZJYyU28hbKz9hUNWP9fazElrQaVsLtIi7soeb-MMC4pSVa_MsANHso2y0zd_PBKQ",
+      "code": "OK",
+      "result": "V\u00c0LIDA",
+      "fields": {
+        "v": 1,
+        "kid": "test",
+        "cid": "cdd44f69-d312-4155-bd2e-0829f47e91c8",
+        "nom": "\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2\u30a2",
+        "res": "APTE",
+        "exv": "1111111111111111",
+        "iat": "2026-11-20",
+        "orig": "autoservei",
+        "ok": 99,
+        "tot": 99,
+        "dur": 86400,
+        "bv": "222222222222222222222222",
+        "app": "33333333333333333333333333333333"
+      },
+      "shortCode": "CDD4-4F69"
+    },
+    {
+      "id": "P04-ok-decimal",
+      "group": "P04",
+      "description": "ok decimal 27.0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMmNhODUxODktNWUwNC00NTNmLTgyZjUtYWYzMDA1NTIyMjI0Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoyNy4wLCJ0b3QiOjMwfQ.i9CNSUMk5h5W7P5gNLmTfmpn0En6XucW48rGEVTfsL-x6gR1BWEjHCwheJlUtTNhyzJSbWbFg0qS8F_80d7W9g",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "P04-dur-negative",
+      "group": "P04",
+      "description": "dur negatiu -1",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiMmNhODUxODktNWUwNC00NTNmLTgyZjUtYWYzMDA1NTIyMjI0Iiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImR1ciI6LTF9.DmKY7iD-ysy_Aya9ctM0oh8nEi536AJHpnAO1ItYS1Spe1YNap0r2WTqgMi9mFMACxlLzRqv2ny_qsiGaCfiLQ",
+      "code": "BAD_PAYLOAD",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-ok-without-tot",
+      "group": "C09",
+      "description": "Resultat: ok sense tot",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoyN30.sKJM_3Ak_vcl-6n8fPiVFPoIhPWo19ftE7nLMGCdZpWpQnQpq9fDK7zGW0c9n9uBF1_KScDDHi3t85yKFYLLuw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-tot-without-ok",
+      "group": "C09",
+      "description": "Resultat: tot sense ok",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsInRvdCI6MzB9.645Jre7rHnxlvo6N2HFkzC5QLSxHsCgRqpa7o3xBRLwWqOWO0uKLhq90uTmZuyRxVjYipFD6K96gWZiBw8B93A",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-ok-gt-tot",
+      "group": "C09",
+      "description": "Resultat: ok > tot (31 > 30)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjozMSwidG90IjozMH0.gCGE2t0k2WfKbk5km09rt6tIFg5Ro6ROW2z4SxR7HEZA1Q7Q804mHU7KoJ-Zxn6qJ9o2kWfTAX6Vpzw6baUtkg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-tot-zero",
+      "group": "C09",
+      "description": "Resultat: tot = 0",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjowLCJ0b3QiOjB9.tA-e4R83TkTGOLhqzqCwQTffPsy_2vHrxqJdJwRw8VGzI84sHMq4q1rIrII-AqtpGKXoWhpPylkPgohiDyRiZw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-tot-100",
+      "group": "C09",
+      "description": "Resultat: tot = 100",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoyNywidG90IjoxMDB9.PMZKoL2KyMHIH6uV9vzMwa6psOj5zexyDrhuhtulAPtH8ECeCiWCjjYapNlH3ndTA2AcTtaAK238rFvCm-UN8A",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-ok-100",
+      "group": "C09",
+      "description": "Resultat: ok = 100 (amb tot = 99)",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoxMDAsInRvdCI6OTl9.dufuc20v_zD6DKKvmgRSvXwyuORoNYhO7jkJN0eonWXMpkl0J6s5JEAXqvYwAq5bopqonMHM2X0FzT98eydmGg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-dur-86401",
+      "group": "C09",
+      "description": "Resultat: dur = 86401",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImR1ciI6ODY0MDF9.gCpYFmy7u3okazp_tBbszxzyfzMdc77pCHEeK8XbLGFtWaDJKiurjEL3dDcKw5mP6_pZ2jkTbBN8PPvSK49Ksg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-ok-text",
+      "group": "C09",
+      "description": "Resultat: ok com a text",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoiMjciLCJ0b3QiOjMwfQ.ufYpS0PuhBaHmda-9u0hUPo1VhCCuTsjCXeNLvBDZXDLGsq9T9eqY7r1X_ozA-c_nurJ6pQm6ICZKDq_T27Lnw",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-tot-text",
+      "group": "C09",
+      "description": "Resultat: tot com a text",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsIm9rIjoyNywidG90IjoiMzAifQ.wbOVj8nNiFte-RZxgA3JvGlq50YmqAGkbRII4K4aewPgO4JlKAYLV3ThMQ69wpTz6EUyWDERCV7b0OFAdyUdgA",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
+    },
+    {
+      "id": "C09-dur-text",
+      "group": "C09",
+      "description": "Resultat: dur com a text",
+      "input": "ARB1.eyJ2IjoxLCJraWQiOiJ0ZXN0IiwiY2lkIjoiYjBiNzljZjQtM2Y3My00ZjAzLWEwNmItNmEwM2M1NzY5MzVhIiwibm9tIjoiQW5uYSBFeGVtcGxlIFB1aWciLCJyZXMiOiJBUFRFIiwiZXh2IjoiMSIsImlhdCI6IjIwMjYtMTEtMjAiLCJvcmlnIjoiYXV0b3NlcnZlaSIsImR1ciI6IjE4MzQifQ.uRRJn3VA0-HE_j17TC3NfimN1g4o2O8mKEQCyDdF82W8vDwj0TJJHfaifomUy9EKHgc20uPbfg_Q_iom-QHEcg",
+      "code": "BAD_FIELDS",
+      "result": "FORMAT INCORRECTE"
     }
   ]
 }

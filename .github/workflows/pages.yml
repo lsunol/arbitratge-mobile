@@ -16,9 +16,9 @@ on:
         required: true
         type: string
       custom_domain:
-        description: "Publicar con el dominio propio de web/CNAME (solo cuando el DNS esté configurado)"
+        description: "Publicar con el dominio propio de web/CNAME (arbitratge.futbolbotons.cat); desmarcar para usar lsunol.github.io"
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:

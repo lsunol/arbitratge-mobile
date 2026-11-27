@@ -31,4 +31,4 @@ node scripts/stamp-web.mjs --production --version 1.2.3 --version-code 102039 \
 - `--production` exige `verificador/keys/*.json` idénticas byte a byte a `trusted-keys/*.json` (mismo conjunto); `--preview` no.
 - Lista blanca de ficheros explícita (landing, `brand/`, `fonts/`, verificador fichero a fichero + claves validadas); sin enlaces simbólicos.
 - Navegador manual: `python -m http.server 8092 -d _site`
-- Pilot sin dominio propio: añade `--host lsunol.github.io/arbitratge-mobile` (landing y `latest.json` muestran esa URL; no se publica el `CNAME`)..
+- Pruebas en github.io (sin dominio propio): añade `--host lsunol.github.io/arbitratge-mobile` (landing y `latest.json` muestran esa URL; no se publica el `CNAME`)..

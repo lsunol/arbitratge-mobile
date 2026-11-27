@@ -784,7 +784,11 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
         return try {
             val issuing = deps.issuing().getOrElse { return CredentialPhase.Pending }
             val date: LocalDate = Instant.ofEpochMilli(s.finishedWall ?: deps.clock.wallMs()).atZone(deps.zone).toLocalDate()
-            val r = issuing.issue(s.cid, IssueRequest(nomInput = s.candidateName, exv = s.examVersion, iat = date, bv = s.bankVersion))
+            val r = issuing.issue(s.cid, IssueRequest(
+                nomInput = s.candidateName, exv = s.examVersion, iat = date, bv = s.bankVersion,
+                ok = s.correctCount, tot = s.session.total.takeIf { s.correctCount != null },
+                dur = (elapsed(s) / 1000L).toInt().coerceIn(0, 86400),
+            ))
             when (r) {
                 is IssueResult.Rejected -> CredentialPhase.Pending
                 is IssueResult.Issued -> {

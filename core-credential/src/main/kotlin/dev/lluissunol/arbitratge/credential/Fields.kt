@@ -54,10 +54,29 @@ internal object Fields {
         if (orig != Arb1.ORIG_AUTOSERVEI) return null
         val bv = optional(members, "bv", BV) ?: return null
         val app = optional(members, "app", APP) ?: return null
-        return Arb1Credential(v, kid, cid, nom, res, exv, iat, orig, bv.value, app.value)
+        val ok = optionalInt(members, "ok", Arb1.OK_RANGE) ?: return null
+        val tot = optionalInt(members, "tot", Arb1.TOT_RANGE) ?: return null
+        val dur = optionalInt(members, "dur", Arb1.DUR_RANGE) ?: return null
+        if (!isValidScore(ok.value, tot.value)) return null
+        return Arb1Credential(v, kid, cid, nom, res, exv, iat, orig, bv.value, app.value, ok.value, tot.value, dur.value)
+    }
+
+    /** `ok` i `tot` junts o cap; si hi són, `ok <= tot` (els rangs ja s'han comprovat). */
+    fun isValidScore(ok: Int?, tot: Int?): Boolean = when {
+        ok == null && tot == null -> true
+        ok == null || tot == null -> false
+        else -> ok <= tot
     }
 
     private class Opt(val value: String?)
+
+    private class OptInt(val value: Int?)
+
+    private fun optionalInt(members: Map<String, PayloadValue>, name: String, range: IntRange): OptInt? {
+        val raw = members[name] ?: return OptInt(null)
+        val i = raw as? PayloadValue.Integer ?: return null
+        return if (i.value in range) OptInt(i.value) else null
+    }
 
     private fun optional(members: Map<String, PayloadValue>, name: String, pattern: Regex): Opt? {
         val raw = members[name] ?: return Opt(null)

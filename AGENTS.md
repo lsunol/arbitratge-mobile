@@ -26,7 +26,7 @@ entrada para pasar el enlace a los aspirantes y descargar el APK. Nada más.
 - **Proyecto base** (web + Supabase, misma finalidad):
   - Local: `C:\Users\lluis\Visual Studio Code Projects\arbitratge`
   - Repo: https://github.com/cfbbarcelona/arbitratge
-  - Producción: https://arbitratge.futbolbotons.cat/
+  - Producción (antiguo; desde 2026-11-26 ese dominio es de este proyecto): https://arbitratge.futbolbotons.cat/
   - Reutilizable: banco de preguntas (`scripts/questions.sql`, migraciones en
     `supabase/migrations/`), tipos de pregunta (`single_choice`, `multiple_choice`,
     `true_false`), reglas de examen (`num_questions`, `time_limit_minutes`,
@@ -35,6 +35,7 @@ entrada para pasar el enlace a los aspirantes y descargar el APK. Nada más.
   castellano.
 - El proyecto tendrá al menos un repositorio público para GitHub Pages/Actions. El banco
   de preguntas no debe quedar rastreable en su historial ni en archivos públicos.
+- **Dominio (2026-11-26):** `arbitratge.futbolbotons.cat` ya apunta a ESTE proyecto (GitHub Pages de `lsunol/arbitratge-mobile`; web de descarga en `/`, verificador en `/verificador/`). Publicación: `pages.yml` (manual, tag + bank_version). El proyecto base ya no lo sirve.
 - Ojo: el `AGENTS.md` del proyecto base dice "~10 candidats/mes, sense mesures
   anti-trampes". Es contexto de **aquel** proyecto, no un requisito de este.
 
