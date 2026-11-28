@@ -1,7 +1,11 @@
 package dev.lluissunol.arbitratge.ui
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.LocalContext
+import dev.lluissunol.arbitratge.credential.CredentialImage
+import dev.lluissunol.arbitratge.credential.CredentialExport
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -106,10 +110,8 @@ fun ApteStamp(modifier: Modifier = Modifier, ink: Color = BrandColors.StampInk) 
                 .clearAndSetSemantics { contentDescription = spoken },
             contentAlignment = Alignment.Center,
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(stringResource(R.string.cred_value_apte), style = ArbText.stamp, color = ink, maxLines = 1)
-                Text(stringResource(R.string.cred_stamp_micro), style = ArbText.stampMicro, color = ink, maxLines = 1)
-            }
+            // Només «APTE», centrat dins del segell (T-02): sense segona línia.
+            Text(stringResource(R.string.cred_value_apte), style = ArbText.stamp, color = ink, maxLines = 1)
         }
     }
 }
@@ -127,15 +129,37 @@ private fun DateField(date: String, modifier: Modifier = Modifier) {
 /**
  * C11 (UI-08): la credencial com un document en paper blanc (també amb el tema fosc), SENSE barra superior: banda de marca
  * → nom → [data | segell APTE] → QR. El segell és sobre la fila de la data, mai sobre el QR. Sense check verd ni «VÀLIDA».
- * Enrere: gest/botó del sistema (BackHandler d'ArbitratgeRoot) i «Tornar a l'inici». Només presentació: el QR (ARB1) no canvia.
+ * Enrere: gest/botó del sistema (BackHandler d'ArbitratgeRoot). «Descarregar» desa la imatge PNG a Baixades i «Compartir»
+ * obre el full de compartir (T-01/T-02). Només presentació: el QR (ARB1) no canvia.
  */
+private class CredentialImageLabels(val apte: String, val date: String, val code: String, val header: String)
+
 @Composable
-fun CredentialScreen(c: StoredCredential, onPresent: () -> Unit, onHome: () -> Unit, onBack: () -> Unit) {
+fun CredentialScreen(c: StoredCredential, onPresent: () -> Unit, onBack: () -> Unit) {
     // El token guardado es lo que se codifica: nunca se reconstruye (02 §3.7.10 paso 6).
     val qr = remember(c.token) { QrEncoder.encode(c.token) }
+    val context = LocalContext.current
+    val labels = CredentialImageLabels(
+        stringResource(R.string.cred_value_apte), stringResource(R.string.cred_field_date), stringResource(R.string.cred_field_code),
+        stringResource(R.string.cred_image_header),
+    )
+    val okMsg = stringResource(R.string.cred_download_ok)
+    val failMsg = stringResource(R.string.cred_download_fail)
+    val shareTitle = stringResource(R.string.cred_share_title)
+    // T-01: la imatge es genera amb el token desat (mai reconstruït) i la llegeix el verificador.
+    fun image() = CredentialImage.render(
+        c.name, labels.apte, labels.date, displayDate(c.iat), labels.code, credentialShortCode(c.cid), labels.header, qr,
+    )
+    fun share() = runCatching { CredentialExport.share(context, image(), credentialShortCode(c.cid), shareTitle) }
+        .onFailure { Toast.makeText(context, failMsg, Toast.LENGTH_LONG).show() }
+    fun download() {
+        val saved = runCatching { CredentialExport.saveToDownloads(context, image(), credentialShortCode(c.cid)) }.getOrNull()
+        if (saved != null) Toast.makeText(context, okMsg, Toast.LENGTH_LONG).show() else share() // API 26–28: full de compartir
+    }
     ScreenScaffold(title = null, topBar = { StatusInset() }, pinBottom = false, bottom = {
         PrimaryButton(stringResource(R.string.btn_show_org), onPresent, icon = drawable(R.drawable.ic_qr_code))
-        TertiaryButton(stringResource(R.string.btn_home), onHome, minHeight = ArbDimens.touchMin)
+        SecondaryButton(stringResource(R.string.btn_download), { download() })
+        TertiaryButton(stringResource(R.string.btn_share), { share() }, minHeight = ArbDimens.touchMin)
     }) {
         Surface(
             Modifier.fillMaxWidth().softShadow(ArbShape.document),

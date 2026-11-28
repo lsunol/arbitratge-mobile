@@ -489,7 +489,7 @@ class ComposeScreensTest {
 
     // UI-08: sense barra superior, segell APTE (no chip), sense «Examen», «Codi» ni avís d'autoservei.
     @Test fun credentialScreenHasNoTopBarShowsStampAndDateAndNeverClaimsValidity() {
-        rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}, {}) } }
+        rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}) } }
         rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
         rule.onNodeWithText("20/11/2026").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Data de l'examen").assertIsDisplayed()
@@ -504,8 +504,9 @@ class ComposeScreensTest {
     }
 
     @Test fun credentialFollowsTheOrderNameStampQrAndTheStampNeverCoversTheQr() {
-        rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}, {}) } }
-        fun box(n: androidx.compose.ui.test.SemanticsNodeInteraction) = n.performScrollTo().fetchSemanticsNode().boundsInRoot
+        rule.setContent { ArbitratgeTheme { CredentialScreen(cred, {}, {}) } }
+        // Sense performScrollTo: cada scroll mou el contingut i faria incomparables les coordenades entre nodes.
+        fun box(n: androidx.compose.ui.test.SemanticsNodeInteraction) = n.fetchSemanticsNode().boundsInRoot
         val name = box(rule.onNodeWithText("Maria Puig Vila"))
         val stamp = box(rule.onNodeWithTag("apte_stamp"))
         val qr = box(rule.onNodeWithContentDescription("Codi QR de la credencial de Maria Puig Vila"))
@@ -538,7 +539,7 @@ class ComposeScreensTest {
     }
 
     @Test fun credentialAt200PercentDarkStillShowsTheDocument() {
-        rule.setContent { Scaled(2f, dark = true) { CredentialScreen(cred, {}, {}, {}) } }
+        rule.setContent { Scaled(2f, dark = true) { CredentialScreen(cred, {}, {}) } }
         rule.onNodeWithText("Maria Puig Vila").assertIsDisplayed()
         rule.onNodeWithText("20/11/2026").performScrollTo().assertIsDisplayed()
         rule.onNodeWithText("Mostrar a un organitzador").performScrollTo().assertIsDisplayed()

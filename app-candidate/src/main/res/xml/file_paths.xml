@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Només la subcarpeta de la caché amb la imatge de la credencial a compartir (T-01). -->
+    <cache-path name="share" path="share/" />
+</paths>

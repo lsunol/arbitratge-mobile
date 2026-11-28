@@ -227,8 +227,14 @@
     <string name="cred_value_apte">APTE</string>
     <string name="cred_field_date">Data de l\'examen</string>
     <string name="cred_date">Data de l\'examen: %1$s</string>
-    <string name="cred_stamp_micro">ÀRBITRE · CFBB</string>
     <string name="cred_code">Codi: %1$s</string>
+    <string name="btn_download">Descarregar</string>
+    <string name="btn_share">Compartir</string>
+    <string name="cred_field_code">Codi</string>
+    <string name="cred_image_header">Credencial d\'àrbitre · CFBB</string>
+    <string name="cred_download_ok">Imatge desada a Baixades.</string>
+    <string name="cred_download_fail">No s\'ha pogut desar la imatge.</string>
+    <string name="cred_share_title">Comparteix la credencial</string>
     <string name="btn_show_org">Mostrar a un organitzador</string>
     <string name="qr_description">Codi QR de la credencial de %1$s</string>
     <string name="btn_close">Tancar</string>

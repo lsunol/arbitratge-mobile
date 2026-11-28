@@ -335,7 +335,6 @@ object ArbText {
     val score = TextStyle(fontFamily = Atkinson, fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight(700), fontFeatureSettings = "tnum")
     val link = TextStyle(fontFamily = Atkinson, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight(700))
     val stamp = TextStyle(fontFamily = Atkinson, fontSize = 30.sp, lineHeight = 32.sp, fontWeight = FontWeight(800), letterSpacing = 3.sp)
-    val stampMicro = TextStyle(fontFamily = Atkinson, fontSize = 12.sp, lineHeight = 14.sp, fontWeight = FontWeight(700), letterSpacing = 1.sp)
     val code = TextStyle(
         fontFamily = AtkinsonMono, fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight(600),
         letterSpacing = 1.sp,
