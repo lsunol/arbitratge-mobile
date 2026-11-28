@@ -15,8 +15,9 @@ amb aquesta configuració del projecte:
    `bank-curator` i la verificació (§5.2 de la skill) a `reviewer`. Al xat només recomptes,
    IDs i articles; mai el text de preguntes o respostes. No escriguis res del banc dins
    d'aquest repositori públic.
-2. **Reglament:** `docs/reglament/rules.json` (unitats `art-N`/`art-N.M`, ja segmentades) i
-   `docs/reglament/reglament-de-joc-2026-11.md`. `rulebook_version`: `2026-11-provisional`.
+2. **Reglament:** la versió vigent és l'etiqueta (data AAAA-MM-DD) de `docs/reglament/CURRENT`; usa
+   `docs/reglament/<etiqueta>/rules.json` (unitats `art-N`/`art-N.M`, ja segmentades) i
+   `docs/reglament/<etiqueta>/reglament.md`. `rulebook_version` = aquesta etiqueta.
 3. **Banc privat:** carpeta `$ARB_BANK_DIR` o, si no està definida,
    `C:\Users\lluis\projects\arbitratge-bank` (fora del repo públic). Si no existeix, pregunta
    abans de crear-la (amb `bank/`, `drafts/`, `work/` i `git init`, sense remot).
@@ -30,7 +31,7 @@ amb aquesta configuració del projecte:
 6. **IDs:** el següent `q-NNNN` lliure considerant banc i esborranys.
 7. **Sortida:** `<banc>/drafts/drafts-<AAAA-MM-DD>.json` i `<banc>/drafts/review-<AAAA-MM-DD>.md`.
    Valida amb
-   `node ~/.agents/skills/rulebook-exam-questions/scripts/validate-drafts.mjs <drafts> --rules docs/reglament/rules.json [--bank <banc>/bank/bank.json]`
+   `node ~/.agents/skills/rulebook-exam-questions/scripts/validate-drafts.mjs <drafts> --rules docs/reglament/<etiqueta>/rules.json [--bank <banc>/bank/bank.json]`
    fins que surti `OK`, i fes la verificació independent (§5.2) abans de donar-ho per acabat.
 8. **No incorporis res al `bank.json`** sense l'aprovació explícita de l'usuari (§6 de la skill).
 

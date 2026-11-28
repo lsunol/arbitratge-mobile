@@ -119,7 +119,7 @@ de sello ARB1 existe en el APK final por ADR 0001, pero su material de build sig
   contenido: solo recuentos, versiones e IDs técnicos. Para crear preguntas o explicaciones
   a partir del reglamento usa la skill global `rulebook-exam-questions` (trabajo en la
   carpeta privada del banco, nunca en este repo).
-- Reglamento en `docs/reglament/` (público; `rules.json` con unidades citables). Preguntas nuevas:
+- Reglamento en `docs/reglament/<etiqueta>/` (público; la etiqueta es la fecha AAAA-MM-DD de la versión, vigente en `docs/reglament/CURRENT`; `reglament.md` + `rules.json` con unidades citables). La etiqueta es el valor de `rulebook_version` de las preguntas y del campo de reglamento de la app. Preguntas nuevas:
   comando `/genera-preguntes <N> [abast]` (original en `.agents/commands/`, sincronizado por
   `scripts/sync-agents.mjs`).
 - **Navegación del examen (decisión del usuario, 2026-11-20):** el candidato puede volver a
