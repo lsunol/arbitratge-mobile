@@ -11,7 +11,8 @@ import { fileURLToPath } from 'node:url';
 export const PKG = 'dev.lluissunol.arbitratge';
 const ANDROID = process.env.ANDROID_CLI ?? join(homedir(), 'AppData', 'AndroidCLI', 'android.exe');
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const bank = JSON.parse(readFileSync(join(root, 'bank-sample', 'bank-sample.json'), 'utf8'));
+// ARB_BANK_FILE: banc alternatiu (p. ex. el de pilot, fora del repo) per a captures amb preguntes reals; mai s'imprimeix.
+export const bank = JSON.parse(readFileSync(process.env.ARB_BANK_FILE ?? join(root, 'bank-sample', 'bank-sample.json'), 'utf8'));
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export const SERIAL = process.env.ANDROID_SERIAL || 'emulator-5554';
