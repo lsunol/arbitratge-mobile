@@ -35,6 +35,12 @@ abstract class SessionDao {
     )
     abstract suspend fun finishedWithoutCredential(): List<SessionEntity>
 
+    @Query(
+        "SELECT * FROM session WHERE state = 'FINISHED' AND kind = 'EXAM' AND correct_count IS NOT NULL " +
+            "AND rowid < (SELECT rowid FROM session WHERE id = :id)",
+    )
+    abstract suspend fun finishedExamsBefore(id: String): List<SessionEntity>
+
     @Query("SELECT id FROM session WHERE state IN ('IN_PROGRESS', 'FINISHED', 'ABANDONED')")
     abstract suspend fun readableCandidateIds(): List<String>
 

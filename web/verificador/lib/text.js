@@ -31,6 +31,7 @@ export const T = {
   d_date: "Data de l'examen",
   d_score: "Encerts",
   d_time: "Temps",
+  d_fails: "Intents fallits",
   d_code: "Codi",
   d_untrusted: "Dades no fiables",
   d_untrusted_btn: "Veure el que s'ha llegit",

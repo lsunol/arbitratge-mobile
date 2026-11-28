@@ -70,6 +70,12 @@ interface SessionStore {
     suspend fun finishedWithoutCredential(): List<StoredSession>
     suspend fun session(id: String): StoredSession?
 
+    /**
+     * Exámenes (`EXAM`, no práctica) terminados y SUSPENDIDOS (nota obtenida, `correct < umbral`) insertados ANTES
+     * de [sessionId]: son los "intentos fallidos" de la credencial (`fail`). Los abandonados no cuentan.
+     */
+    suspend fun failedExamsBefore(sessionId: String): Int
+
     /** Crea la sesión `IN_PROGRESS`. Falla si ya hay otra activa (unicidad en BD). */
     suspend fun create(session: StoredSession)
 

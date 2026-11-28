@@ -46,7 +46,7 @@ const CID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const EXV_RE = /^[0-9A-Za-z._-]{1,16}$/;
 const IAT_RE = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
 const BV_RE = /^[0-9A-Za-z._+-]{1,24}$/;
-const APP_RE = /^[0-9A-Za-z._+-]{1,32}$/;
+const APP_RE = /^[0-9A-Za-z._+-]{1,24}$/;
 const RESERVED = ["exp", "nbf", "crit", "alg"];
 
 /** Conjunto F de §3.7.5.1 (lista fija, independiente de la versión de Unicode). */
@@ -94,34 +94,25 @@ function validateFields(m) {
   if (!validNom(nom)) return null;
   if (m.get("res") !== "APTE" || m.get("orig") !== "autoservei") return null;
   const fields = { v: m.get("v"), kid: m.get("kid"), cid, nom, res: "APTE", exv, iat, orig: "autoservei" };
-  // Resultado opcional (§3.7.5): enteros JSON en rango; ok y tot juntos o ninguno; ok <= tot.
+  // Resultado obligatorio (§3.7.5): enteros JSON en rango; ok <= tot.
   const int = (k, min, max) => {
     const v = m.get(k);
     return Number.isInteger(v) && v >= min && v <= max ? v : null;
   };
-  if (m.has("ok") !== m.has("tot")) return null;
-  if (m.has("ok")) {
-    const ok = int("ok", 0, 99);
-    const tot = int("tot", 1, 99);
-    if (ok === null || tot === null || ok > tot) return null;
-    fields.ok = ok;
-    fields.tot = tot;
-  }
-  if (m.has("dur")) {
-    const dur = int("dur", 0, 86400);
-    if (dur === null) return null;
-    fields.dur = dur;
-  }
-  if (m.has("bv")) {
-    const bv = str("bv", BV_RE);
-    if (bv === null) return null;
-    fields.bv = bv;
-  }
-  if (m.has("app")) {
-    const app = str("app", APP_RE);
-    if (app === null) return null;
-    fields.app = app;
-  }
+  const ok = int("ok", 0, 99);
+  const tot = int("tot", 1, 99);
+  const dur = int("dur", 0, 86400);
+  const fail = int("fail", 0, 99);
+  if (ok === null || tot === null || dur === null || fail === null || ok > tot) return null;
+  fields.ok = ok;
+  fields.tot = tot;
+  fields.dur = dur;
+  fields.fail = fail;
+  const bv = str("bv", BV_RE);
+  const app = str("app", APP_RE);
+  if (bv === null || app === null) return null;
+  fields.bv = bv;
+  fields.app = app;
   return fields;
 }
 

@@ -117,7 +117,7 @@ class PrimitivesTest {
         val t = TestMaterial.trusted["test"]!!
         val keys = TrustedKeys.of(listOf(TrustedKeys.entryFromSpki("test", t.spki, KeyStatus.RETIRED)))
         val issuer = CredentialIssuer(JcaEs256Sealer(TestMaterial.pkcs8("test")), "test", keys)
-        val r = issuer.issue(IssueRequest("Anna", "1", java.time.LocalDate.of(2026, 1, 1)))
+        val r = issuer.issue(IssueRequest("Anna", "1", java.time.LocalDate.of(2026, 1, 1), 27, 30, 1834, 0, "2026.11.1", "1.0.0+5"))
         assertTrue(r is IssueResult.Issued)
         // K02 (només release/G3): kid=test contra una llista sense "test" ⇒ UNKNOWN_KID.
         assertEquals(VerificationCode.UNKNOWN_KID, CredentialVerifier(TrustedKeys.EMPTY).verify(r.token).code)

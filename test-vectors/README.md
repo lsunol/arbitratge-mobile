@@ -41,14 +41,14 @@ va como escape `\uXXXX` (pares sustitutos para fuera del BMP). Un `JSON.parse` n
 ```
 
 - `fields` contiene `v` (entero), `kid`, `cid`, `nom`, `res`, `exv`, `iat`, `orig` y, si están en el
-  token, `ok`, `tot`, `dur` (enteros) y `bv`, `app`. Los miembros desconocidos se ignoran y **no** aparecen. `nom` es el texto
+  token, `ok`, `tot`, `dur`, `fail` (enteros, obligatorios) y, si están, `bv`, `app`. Los miembros desconocidos se ignoran y **no** aparecen. `nom` es el texto
   tras resolver escapes y **sin** normalizar (V11 está en NFD a propósito).
 - Criterio (G1/G5): igualdad **exacta** de `code` en cada caso; para `OK`, igualdad literal de
   `fields`. Cero casos sin ejecutar.
 - Grupos: todos los públicos de §3.7.11 (V01–V14, F01–F09, U01, P01–P09, K01, K03, S01–S06,
-  C01–C09). V12–V14, C09, `P04-ok-decimal`, `P04-dur-negative` y X12–X14 cubren los campos
-  opcionales de resultado `ok`/`tot`/`dur` (ampliación 2026-11-26, `02` §3.7.0); el generador los
-  añade **al final** para que los 178 casos anteriores no cambien ni un byte. **R01 y K02 no están**: son exclusivos de release (G3) con la lista de producción.
+  C01–C09). V12–V14, C09, `P04-ok-decimal`, `P04-dur-negative`, `P04-fail-negative` y X12–X14 cubren los campos
+  de resultado `ok`/`tot`/`dur`/`fail`, obligatorios desde la enmienda 2026-11-28 (`02` §3.7.0). Esa
+  enmienda hizo obligatorios los cuatro campos: **todos los vectores válidos se regeneraron** (firmas nuevas). **R01 y K02 no están**: son exclusivos de release (G3) con la lista de producción.
 - Cada variante enumerada en §3.7.11 tiene su id estable (p. ej. `C01-missing-iat`, `C08-alg`,
   `F06-plus`, `P07-kid-dash`, `S04-r-n`). `TestVectorsTest` contiene la lista completa de ids y
   códigos de forma independiente del generador: quitar, renombrar o cambiar de código un caso
@@ -145,8 +145,8 @@ Orden y códigos: `02` §3.7.8; el primer fallo decide. Puntos donde es fácil d
    (`^…$` en JS; ojo con `m`); `iat` fecha gregoriana con años 0000–9999 y bisiesto
    `(y%4==0 && y%100!=0) || y%400==0`; `nom` según §3.7.5.1 contando **puntos de código**
    (`[...nom].length`) y el conjunto F fijo; nombres reservados `exp`, `nbf`, `crit`, `alg` ⇒
-   `BAD_FIELDS`. El verificador **no** comprueba NFC. `ok`/`tot`/`dur`: `Number.isInteger` y
-   rango (0–99, 1–99, 0–86400); `ok` y `tot` juntos o ninguno, `ok <= tot`; un texto ⇒
+   `BAD_FIELDS`. El verificador **no** comprueba NFC. `ok`/`tot`/`dur`/`fail` (obligatorios): `Number.isInteger` y
+   rango (0–99, 1–99, 0–86400, 0–99); `ok <= tot`; ausente o texto ⇒
    `BAD_FIELDS` (decimales y negativos ya son `BAD_PAYLOAD` en el paso 6).
 
 ## Regenerar

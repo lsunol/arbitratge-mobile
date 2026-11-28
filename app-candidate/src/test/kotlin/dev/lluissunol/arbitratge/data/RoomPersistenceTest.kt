@@ -74,6 +74,26 @@ class RoomPersistenceTest {
         )
     }
 
+    @Test fun failedExamsBeforeCountsOnlyFinishedFailedExamsInserted_before() = runBlocking<Unit> {
+        val store = RoomSessionStore(openDb().sessionDao())
+        val clock = ClockState(TestEnv.bank.rules.limitMs, 1_000L, 1L, null, 1_800_000_000_000L)
+        val threshold = TestEnv.bank.rules.passThresholdCount
+        suspend fun play(id: String, correct: Int?) {
+            store.create(newSession(id))
+            if (correct == null) store.abandon(id)
+            else store.finish(id, clock, Finish(FinishReason.COMPLETED, correct, 1_800_000_100_000L))
+        }
+        play("a", 0) // suspendido
+        play("b", null) // abandonado: no cuenta
+        play("c", threshold - 1) // suspendido
+        play("d", threshold) // aprobado: no cuenta
+        play("e", threshold) // el aprobado actual
+        assertEquals(0, store.failedExamsBefore("a"))
+        assertEquals(1, store.failedExamsBefore("b"))
+        assertEquals(2, store.failedExamsBefore("e"))
+        assertEquals(2, store.failedExamsBefore("e")) // idempotente
+    }
+
     @Test fun roundTripKeepsEverythingIncludingNullBootAndAnchorWall() = runBlocking<Unit> {
         val store = RoomSessionStore(openDb().sessionDao())
         val s = newSession("s1")

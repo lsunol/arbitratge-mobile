@@ -7,7 +7,7 @@ internal object Fields {
     val EXV = Regex("[0-9A-Za-z._-]{1,16}")
     val IAT = Regex("[0-9]{4}-[0-9]{2}-[0-9]{2}")
     val BV = Regex("[0-9A-Za-z._+-]{1,24}")
-    val APP = Regex("[0-9A-Za-z._+-]{1,32}")
+    val APP = Regex("[0-9A-Za-z._+-]{1,24}")
 
     private val REQUIRED_TEXT = listOf("cid", "nom", "res", "exv", "iat", "orig")
 
@@ -52,35 +52,25 @@ internal object Fields {
         if (!EXV.matches(exv)) return null
         if (!isValidIat(iat)) return null
         if (orig != Arb1.ORIG_AUTOSERVEI) return null
-        val bv = optional(members, "bv", BV) ?: return null
-        val app = optional(members, "app", APP) ?: return null
-        val ok = optionalInt(members, "ok", Arb1.OK_RANGE) ?: return null
-        val tot = optionalInt(members, "tot", Arb1.TOT_RANGE) ?: return null
-        val dur = optionalInt(members, "dur", Arb1.DUR_RANGE) ?: return null
-        if (!isValidScore(ok.value, tot.value)) return null
-        return Arb1Credential(v, kid, cid, nom, res, exv, iat, orig, bv.value, app.value, ok.value, tot.value, dur.value)
+        val bv = requiredText(members, "bv", BV) ?: return null
+        val app = requiredText(members, "app", APP) ?: return null
+        val ok = requiredInt(members, "ok", Arb1.OK_RANGE) ?: return null
+        val tot = requiredInt(members, "tot", Arb1.TOT_RANGE) ?: return null
+        val dur = requiredInt(members, "dur", Arb1.DUR_RANGE) ?: return null
+        val fail = requiredInt(members, "fail", Arb1.FAIL_RANGE) ?: return null
+        if (ok > tot) return null
+        return Arb1Credential(v, kid, cid, nom, res, exv, iat, orig, ok, tot, dur, fail, bv, app)
     }
 
-    /** `ok` i `tot` junts o cap; si hi són, `ok <= tot` (els rangs ja s'han comprovat). */
-    fun isValidScore(ok: Int?, tot: Int?): Boolean = when {
-        ok == null && tot == null -> true
-        ok == null || tot == null -> false
-        else -> ok <= tot
+    /** Enter JSON obligatori dins del rang; absent, text o fora de rang ⇒ `null` (⇒ `BAD_FIELDS`). */
+    private fun requiredInt(members: Map<String, PayloadValue>, name: String, range: IntRange): Int? {
+        val i = members[name] as? PayloadValue.Integer ?: return null
+        return if (i.value in range) i.value else null
     }
 
-    private class Opt(val value: String?)
-
-    private class OptInt(val value: Int?)
-
-    private fun optionalInt(members: Map<String, PayloadValue>, name: String, range: IntRange): OptInt? {
-        val raw = members[name] ?: return OptInt(null)
-        val i = raw as? PayloadValue.Integer ?: return null
-        return if (i.value in range) OptInt(i.value) else null
-    }
-
-    private fun optional(members: Map<String, PayloadValue>, name: String, pattern: Regex): Opt? {
-        val raw = members[name] ?: return Opt(null)
-        val t = raw as? PayloadValue.Text ?: return null
-        return if (pattern.matches(t.value)) Opt(t.value) else null
+    /** Text obligatori que compleix el patró; absent, no text o fora de patró ⇒ `null` (⇒ `BAD_FIELDS`). */
+    private fun requiredText(members: Map<String, PayloadValue>, name: String, pattern: Regex): String? {
+        val t = members[name] as? PayloadValue.Text ?: return null
+        return if (pattern.matches(t.value)) t.value else null
     }
 }

@@ -42,15 +42,16 @@ object Arb1ChainCases {
         val request: IssueRequest,
         val escapeNonAscii: Boolean,
         val nom: String,
-        val bv: String? = null,
-        val app: String? = null,
-        val ok: Int? = null,
-        val tot: Int? = null,
-        val dur: Int? = null,
+        val bv: String = BV,
+        val app: String = APP,
+        val ok: Int = OK,
+        val tot: Int = TOT,
+        val dur: Int = DUR,
+        val fail: Int = FAIL,
     ) {
         /** Camps que el verificador ha de retornar (literalment) amb `code == OK`. */
         fun expected(kid: String, cid: String): Arb1Credential =
-            Arb1Credential(Arb1.VERSION, kid, cid, nom, Arb1.RES_APTE, "1", IAT, Arb1.ORIG_AUTOSERVEI, bv, app, ok, tot, dur)
+            Arb1Credential(Arb1.VERSION, kid, cid, nom, Arb1.RES_APTE, "1", IAT, Arb1.ORIG_AUTOSERVEI, ok, tot, dur, fail, bv, app)
 
         /** Emet el cas amb l'emissor de producció (o la seva variant amb escapes per a V03). */
         fun issue(sealer: CredentialSealer, kid: String, trustedKeys: TrustedKeys, cid: () -> String): IssueResult {
@@ -63,19 +64,28 @@ object Arb1ChainCases {
         }
     }
 
-    private fun req(nom: String, bv: String? = null, app: String? = null, ok: Int? = null, tot: Int? = null, dur: Int? = null) =
-        IssueRequest(nom, "1", LocalDate.parse(IAT), bv, app, ok = ok, tot = tot, dur = dur)
+    /** Resultat per defecte dels casos de cadena (camps obligatoris). */
+    const val OK = 27
+    const val TOT = 30
+    const val DUR = 1834
+    const val FAIL = 0
+
+    const val BV = "2026.11.1"
+    const val APP = "1.0.0+5"
+
+    private fun req(nom: String, bv: String = BV, app: String = APP, ok: Int = OK, tot: Int = TOT, dur: Int = DUR, fail: Int = FAIL) =
+        IssueRequest(nom, "1", LocalDate.parse(IAT), ok, tot, dur, fail, bv, app)
 
     val cases: List<ChainCase> = listOf(
-        ChainCase("V01", "Només obligatoris, nom ASCII", req(NOM_ASCII), false, NOM_ASCII),
+        ChainCase("V01", "Només camps obligatoris, nom ASCII", req(NOM_ASCII), false, NOM_ASCII),
         ChainCase("V02", "Accents i l·l en UTF-8 directe", req(NOM_ACCENTS), false, NOM_ACCENTS),
         ChainCase("V03", "Mateix nom que V02 amb escapes \\u00XX", req(NOM_ACCENTS), true, NOM_ACCENTS),
         ChainCase("V04", "nom de 80 punts de codi amb un caràcter fora del BMP", req(NOM_80), false, NOM_80),
-        ChainCase("V05", "Amb bv i app", req(NOM_ASCII, "2026.11.1", "1.0.0+5"), false, NOM_ASCII, "2026.11.1", "1.0.0+5"),
+        ChainCase("V05", "bv i app diferents dels valors per defecte", req(NOM_ASCII, "2027.01.0", "0.9.0-rc.1"), false, NOM_ASCII, "2027.01.0", "0.9.0-rc.1"),
         ChainCase(
-            "V12", "Amb resultat ok, tot i dur (i bv)",
-            req(NOM_ACCENTS, bv = "2026.11.1", ok = 27, tot = 30, dur = 1834), false, NOM_ACCENTS,
-            bv = "2026.11.1", ok = 27, tot = 30, dur = 1834,
+            "V12", "Amb ok, tot, dur i fail=2 diferents dels valors per defecte",
+            req(NOM_ACCENTS, ok = 25, tot = 30, dur = 1500, fail = 2), false, NOM_ACCENTS,
+            ok = 25, tot = 30, dur = 1500, fail = 2,
         ),
     )
 }

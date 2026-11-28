@@ -37,9 +37,10 @@ class Arb1ChainCasesTest {
             assertEquals(vf["nom"], case.nom, case.id)
             assertEquals(vf["bv"], case.bv, case.id)
             assertEquals(vf["app"], case.app, case.id)
-            assertEquals(vf["ok"], case.ok?.let { MiniJson.Number(it.toString()) }, case.id)
-            assertEquals(vf["tot"], case.tot?.let { MiniJson.Number(it.toString()) }, case.id)
-            assertEquals(vf["dur"], case.dur?.let { MiniJson.Number(it.toString()) }, case.id)
+            assertEquals(vf["ok"], MiniJson.Number(case.ok.toString()), case.id)
+            assertEquals(vf["tot"], MiniJson.Number(case.tot.toString()), case.id)
+            assertEquals(vf["dur"], MiniJson.Number(case.dur.toString()), case.id)
+            assertEquals(vf["fail"], MiniJson.Number(case.fail.toString()), case.id)
         }
     }
 
@@ -60,12 +61,12 @@ class Arb1ChainCasesTest {
         val iat = LocalDate.of(2026, 11, 20)
         val cid = "3f0c1e9a-5b7d-4c2e-9a10-6d8b2f4e7c01"
         val prod = assertIs<IssueResult.Issued>(
-            CredentialIssuer(sealer, "test", TestMaterial.trusted) { cid }.issue(IssueRequest(Arb1ChainCases.NOM_ACCENTS, "1", iat)),
+            CredentialIssuer(sealer, "test", TestMaterial.trusted) { cid }.issue(IssueRequest(Arb1ChainCases.NOM_ACCENTS, "1", iat, 27, 30, 1834, 0, "2026.11.1", "1.0.0+5")),
         )
         assertFalse(payloadJson(prod.token).contains("\\u"))
         val esc = assertIs<IssueResult.Issued>(
             CredentialIssuer.withNonAsciiEscapes(sealer, "test", TestMaterial.trusted) { cid }
-                .issue(IssueRequest(Arb1ChainCases.NOM_80, "1", iat)),
+                .issue(IssueRequest(Arb1ChainCases.NOM_80, "1", iat, 27, 30, 1834, 0, "2026.11.1", "1.0.0+5")),
         )
         assertTrue(payloadJson(esc.token).contains("\\ud842\\udfb7\\u7530"))
         assertEquals(Arb1ChainCases.NOM_80, esc.credential.nom)

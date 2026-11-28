@@ -188,6 +188,23 @@ class ExamViewModelTest {
         assertEquals(3, r.result.failures)
     }
 
+    @Test fun credentialCarriesResultAndFailedAttemptsBeforeIt() = testBody {
+        val store = InMemoryStore()
+        val vm = vmOf(store, FakeClock())
+        begin(vm)
+        playAll(vm, listOf(true, true, false, false, false)) // suspendido
+        vm.onGoHome(); settle()
+        begin(vm)
+        playAll(vm, listOf(true, false, false, false, false)) // suspendido
+        vm.onGoHome(); settle()
+        begin(vm)
+        playAll(vm, listOf(true, true, true, false, true)) // aprobado: 4/5
+        val ready = assertIs<CredentialPhase.Ready>(assertIs<Stage.Result>(vm.stage.value).credential).credential
+        val trusted = TrustedKeys.of(listOf(TrustedKeys.parseEntry(TestEnv.devTrustedJson, "dev").getOrThrow()))
+        val c = CredentialVerifier(trusted).verify(ready.token).credential!!
+        assertEquals(Triple(4, 5, 2), Triple(c.ok, c.tot, c.fail))
+    }
+
     // ------------------------------------------------------------------ persistencia (B3)
 
     @Test fun answerSaveFailureKeepsSelectionVisibleAndBlocksNavigation() = testBody {

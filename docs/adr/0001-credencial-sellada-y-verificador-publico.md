@@ -90,3 +90,14 @@ límites ni los códigos de los vectores existentes; los tokens sin ellos siguen
 verificador anterior los ignora como miembros desconocidos (no los muestra). No se crea `ARB2`.
 `dur` procede del reloj del dispositivo y es informativa, como la fecha de emisión. Contrato y
 vectores: `docs/design/02-credencial-y-amenazas.md` §3.7.0, §3.7.5, §3.7.6 y §3.7.11.
+
+## Enmienda 2026-11-28: resultado obligatorio e intentos suspendidos (aprobada por el usuario)
+
+`ok`, `tot`, `dur`, `bv` (versión del banco de preguntas) y `app` (`versionName` de la app) pasan a ser **obligatorios** y se añade el campo obligatorio `fail` (entero
+0–99): número de exámenes suspendidos antes de este. Un examen cuenta como suspendido cuando el
+candidato llegó a obtener nota y a ver errores y soluciones (examen terminado, también por tiempo);
+no cuentan los abandonados ni la práctica. El contador sale de la base de datos local del móvil, así
+que reinstalar la app lo reinicia: es informativo, como `dur` e `iat`. `app` baja de 32 a 24
+caracteres para que el payload máximo siga ≤ 512 bytes. Sigue siendo `ARB1`/`v = 1`: no existe
+ninguna credencial emitida a terceros, así que la incompatibilidad con tokens anteriores no tiene
+efecto real. La PWA muestra ahora también `fail` («Intents fallits») como una fila más del carnet; la revisión de diseño de esa fila queda pendiente.

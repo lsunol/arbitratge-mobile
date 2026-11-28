@@ -39,12 +39,13 @@ object Arb1 {
 
     /** §3.7.5.2: ordre recomanat de serialització. */
     val FIELD_ORDER: List<String> =
-        listOf("v", "kid", "cid", "nom", "res", "exv", "iat", "orig", "ok", "tot", "dur", "bv", "app")
+        listOf("v", "kid", "cid", "nom", "res", "exv", "iat", "orig", "ok", "tot", "dur", "fail", "bv", "app")
 
-    /** §3.7.5: rangs dels camps opcionals de resultat (enters JSON). */
+    /** §3.7.5: rangs dels camps de resultat (enters JSON, obligatoris). */
     val OK_RANGE: IntRange = 0..99
     val TOT_RANGE: IntRange = 1..99
     val DUR_RANGE: IntRange = 0..86400
+    val FAIL_RANGE: IntRange = 0..99
 
     const val RES_APTE = "APTE"
     const val ORIG_AUTOSERVEI = "autoservei"
@@ -84,14 +85,18 @@ data class Arb1Credential(
     val exv: String,
     val iat: String,
     val orig: String,
-    val bv: String? = null,
-    val app: String? = null,
-    /** Encerts (0..99). Present si i només si també ho és [tot]; `ok <= tot`. */
-    val ok: Int? = null,
+    /** Encerts (0..99); `ok <= tot`. */
+    val ok: Int,
     /** Total de preguntes de l'examen (1..99). */
-    val tot: Int? = null,
-    /** Durada de l'examen en segons (0..86400). Independent de [ok]/[tot]. */
-    val dur: Int? = null,
+    val tot: Int,
+    /** Durada de l'examen en segons (0..86400). */
+    val dur: Int,
+    /** Intents d'examen suspesos abans d'aquest (0..99); informatiu, comptat al dispositiu. */
+    val fail: Int,
+    /** `bank_version` del banc de preguntes (pública, no sensible). */
+    val bv: String,
+    /** `versionName` de l'app que ha emès la credencial. */
+    val app: String,
 ) {
     /** §3.7.5: primers 8 hex de `cid` en majúscules com `XXXX-XXXX` (mateix al PDF i a la PWA). */
     val shortCode: String

@@ -52,6 +52,13 @@ class RoomSessionStore(private val dao: SessionDao) : SessionStore {
 
     override suspend fun session(id: String): StoredSession? = guard { dao.session(id)?.let { load(it) } }
 
+    override suspend fun failedExamsBefore(sessionId: String): Int = guard {
+        dao.finishedExamsBefore(sessionId).count { e ->
+            val threshold = ExamJson.decodeFromString(ExamRules.serializer(), e.rules).passThresholdCount
+            (e.correctCount ?: 0) < threshold
+        }
+    }
+
     override suspend fun create(session: StoredSession) = guard {
         require(session.state == SessionState.IN_PROGRESS) { "només es creen sessions IN_PROGRESS" }
         dao.createTx(session.toEntity())

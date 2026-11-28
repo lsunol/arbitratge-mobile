@@ -286,8 +286,9 @@ function showResult(res) {
         el("dl", { class: "carnet-rows" },
           row(T.d_exam, `reglament v${f.exv}`),
           row(T.d_date, fmtDate(f.iat)),
-          ...(f.tot !== undefined ? [row(T.d_score, `${f.ok} de ${f.tot}`)] : []),
-          ...(f.dur !== undefined ? [row(T.d_time, fmtDur(f.dur))] : []),
+          row(T.d_score, `${f.ok} de ${f.tot}`),
+          row(T.d_time, fmtDur(f.dur)),
+          row(T.d_fails, String(f.fail)),
           row(T.d_code, res.shortCode, "mono")),
         el("p", { class: "carnet-more" }, el("button", { type: "button", class: "btn link", id: "btn-valid-limits" }, "Què vol dir «vàlida»?"))));
   } else {

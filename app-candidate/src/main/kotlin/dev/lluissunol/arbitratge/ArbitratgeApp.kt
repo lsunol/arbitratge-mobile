@@ -39,7 +39,14 @@ class AppContainer(private val context: Context) {
         bank = { bank },
         issuing = { issuing },
         prefs = welcomePrefs,
+        appVersion = appVersion,
     )
+
+    /** `versionName` del paquete instalado (viaja en la credencial como `app`). */
+    private val appVersion: String by lazy {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
+            ?.takeIf { it.matches(Regex("[0-9A-Za-z._+-]{1,24}")) } ?: "0.0.0"
+    }
 }
 
 class ArbitratgeApp : Application() {

@@ -77,6 +77,13 @@ class InMemoryStore : SessionStore {
         sessions.values.filter { it.state == SessionState.FINISHED && credentials.values.none { c -> c.sessionId == it.id } }
             .also { maybeFail(Op.READ_PENDING); failIfCorrupt() }
     override suspend fun session(id: String) = sessions[id].also { maybeFail(Op.READ) }
+    override suspend fun failedExamsBefore(sessionId: String): Int {
+        maybeFail(Op.READ)
+        return sessions.values.takeWhile { it.id != sessionId }.count {
+            it.kind == dev.lluissunol.arbitratge.data.SessionKind.EXAM && it.state == SessionState.FINISHED && it.correctCount != null &&
+                it.correctCount < it.session.snapshot.rules.passThresholdCount
+        }
+    }
 
     override suspend fun create(session: StoredSession) {
         maybeFail(Op.CREATE)
@@ -172,7 +179,7 @@ object TestEnv {
         listOf(dev.lluissunol.arbitratge.credential.TrustedKeys.parseEntry(devTrustedJson, "dev").getOrThrow()),
     )
     fun realIssuingToken(cid: String = "7f3a92c1-4b5d-4e6f-8a9b-000000000001"): String =
-        (realIssuing.issue(cid, IssueRequest("Maria Puig Vila", "sample-1", java.time.LocalDate.of(2026, 11, 20), "0.0.0-sample")) as IssueResult.Issued).token
+        (realIssuing.issue(cid, IssueRequest("Maria Puig Vila", "sample-1", java.time.LocalDate.of(2026, 11, 20), 27, 30, 1834, 0, "0.0.0-sample", "0.0.0")) as IssueResult.Issued).token
     val realIssuing: CredentialIssuing by lazy { ArbCredentialIssuing(SealMaterial(devKey, "dev")) }
 
     fun deps(

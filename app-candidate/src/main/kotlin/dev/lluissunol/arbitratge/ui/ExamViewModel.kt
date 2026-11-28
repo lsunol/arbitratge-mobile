@@ -59,6 +59,8 @@ class ExamDeps(
     /** UUID v4 en minúsculas (02 §3.7.5). */
     val newCid: () -> String = { UUID.randomUUID().toString() },
     val zone: ZoneId = ZoneId.systemDefault(),
+    /** `versionName` de la app; viaja en la credencial como `app` (02 §3.7.5). */
+    val appVersion: String = "0.0.0",
 )
 
 /** Eventos de una sola vez hacia la Activity. */
@@ -785,9 +787,10 @@ class ExamViewModel(private val deps: ExamDeps) : ViewModel() {
             val issuing = deps.issuing().getOrElse { return CredentialPhase.Pending }
             val date: LocalDate = Instant.ofEpochMilli(s.finishedWall ?: deps.clock.wallMs()).atZone(deps.zone).toLocalDate()
             val r = issuing.issue(s.cid, IssueRequest(
-                nomInput = s.candidateName, exv = s.examVersion, iat = date, bv = s.bankVersion,
-                ok = s.correctCount, tot = s.session.total.takeIf { s.correctCount != null },
+                nomInput = s.candidateName, exv = s.examVersion, iat = date, bv = s.bankVersion, app = deps.appVersion,
+                ok = s.correctCount ?: return CredentialPhase.Pending, tot = s.session.total,
                 dur = (elapsed(s) / 1000L).toInt().coerceIn(0, 86400),
+                fail = deps.store.failedExamsBefore(s.id).coerceIn(0, 99),
             ))
             when (r) {
                 is IssueResult.Rejected -> CredentialPhase.Pending

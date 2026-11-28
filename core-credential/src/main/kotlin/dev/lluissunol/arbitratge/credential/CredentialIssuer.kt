@@ -12,21 +12,24 @@ import java.util.UUID
  * @param iat data local del dispositiu en emetre (informativa, "data del dispositiu").
  * @param extensions membres informatius desconeguts per a `v=1` (§3.7.5); per defecte cap. No
  *   poden usar noms coneguts ni reservats.
- * @param ok encerts de l'examen (0..99), opcional. Cal donar-lo juntament amb [tot] (o cap dels
- *   dos) i `ok <= tot`.
- * @param tot total de preguntes de l'examen (1..99), opcional; vegeu [ok].
- * @param dur durada de l'examen en segons (0..86400), opcional i independent.
+ * @param ok encerts de l'examen (0..99), obligatori; `ok <= tot`.
+ * @param tot total de preguntes de l'examen (1..99), obligatori.
+ * @param dur durada de l'examen en segons (0..86400), obligatori.
+ * @param fail intents d'examen suspesos abans d'aquest (0..99), obligatori.
+ * @param bv `bank_version` del banc de preguntes, obligatori.
+ * @param app `versionName` de l'app, obligatori.
  */
 data class IssueRequest(
     val nomInput: String,
     val exv: String,
     val iat: LocalDate,
-    val bv: String? = null,
-    val app: String? = null,
+    val ok: Int,
+    val tot: Int,
+    val dur: Int,
+    val fail: Int,
+    val bv: String,
+    val app: String,
     val extensions: Map<String, String> = emptyMap(),
-    val ok: Int? = null,
-    val tot: Int? = null,
-    val dur: Int? = null,
 )
 
 /** Error d'emissió: no s'emet cap credencial (ni a mitges). */
@@ -80,14 +83,12 @@ class CredentialIssuer private constructor(
         val cid = cidGenerator()
         if (!Fields.CID.matches(cid)) return reject(IssueError.InvalidField("cid"))
         if (!Fields.EXV.matches(request.exv)) return reject(IssueError.InvalidField("exv"))
-        if (request.bv != null && !Fields.BV.matches(request.bv)) return reject(IssueError.InvalidField("bv"))
-        if (request.app != null && !Fields.APP.matches(request.app)) return reject(IssueError.InvalidField("app"))
-        if (request.ok != null && request.ok !in Arb1.OK_RANGE) return reject(IssueError.InvalidField("ok"))
-        if (request.tot != null && request.tot !in Arb1.TOT_RANGE) return reject(IssueError.InvalidField("tot"))
-        if (!Fields.isValidScore(request.ok, request.tot)) {
-            return reject(IssueError.InvalidField(if (request.tot == null) "tot" else "ok"))
-        }
-        if (request.dur != null && request.dur !in Arb1.DUR_RANGE) return reject(IssueError.InvalidField("dur"))
+        if (!Fields.BV.matches(request.bv)) return reject(IssueError.InvalidField("bv"))
+        if (!Fields.APP.matches(request.app)) return reject(IssueError.InvalidField("app"))
+        if (request.tot !in Arb1.TOT_RANGE) return reject(IssueError.InvalidField("tot"))
+        if (request.ok !in Arb1.OK_RANGE || request.ok > request.tot) return reject(IssueError.InvalidField("ok"))
+        if (request.dur !in Arb1.DUR_RANGE) return reject(IssueError.InvalidField("dur"))
+        if (request.fail !in Arb1.FAIL_RANGE) return reject(IssueError.InvalidField("fail"))
         for ((name, value) in request.extensions) {
             if (name in Arb1.RESERVED_NAMES) return reject(IssueError.ReservedName(name))
             if (name in Arb1.FIELD_ORDER || !EXTENSION_NAME.matches(name)) return reject(IssueError.InvalidField(name))
@@ -98,12 +99,9 @@ class CredentialIssuer private constructor(
         val fields = linkedMapOf<String, Any>(
             "v" to Arb1.VERSION, "kid" to kid, "cid" to cid, "nom" to nom, "res" to Arb1.RES_APTE,
             "exv" to request.exv, "iat" to iat, "orig" to Arb1.ORIG_AUTOSERVEI,
+            "ok" to request.ok, "tot" to request.tot, "dur" to request.dur, "fail" to request.fail,
+            "bv" to request.bv, "app" to request.app,
         )
-        request.ok?.let { fields["ok"] = it }
-        request.tot?.let { fields["tot"] = it }
-        request.dur?.let { fields["dur"] = it }
-        request.bv?.let { fields["bv"] = it }
-        request.app?.let { fields["app"] = it }
         fields.putAll(request.extensions)
         if (fields.size > Arb1.MAX_MEMBERS) return reject(IssueError.InvalidField("extensions"))
 
@@ -130,7 +128,8 @@ class CredentialIssuer private constructor(
             return reject(IssueError.SelfVerificationFailed(check.code))
         }
         if (credential.nom != nom || credential.cid != cid || credential.iat != iat ||
-            credential.ok != request.ok || credential.tot != request.tot || credential.dur != request.dur
+            credential.ok != request.ok || credential.tot != request.tot || credential.dur != request.dur ||
+            credential.fail != request.fail || credential.bv != request.bv || credential.app != request.app
         ) {
             return reject(IssueError.SelfVerificationFailed(check.code))
         }
